@@ -39,7 +39,9 @@ class ZoomOverlay(CanvasOverlay):
         (0, 0),
         (0, 0),
     )
-    gridded: bool = True
+    # TODO: this is nicer in `gridded` mode, but currently broken until we fix
+    #       the vispy side (see napari/napari#9778)
+    gridded: bool = False
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
