@@ -356,6 +356,14 @@ napari_builtins = [
 write_to = "src/napari/_version.py"
 fallback_version = "0.7.1.dev0"
 
+[tool.uv]
+no-build-package = ["numpy"]
+required-environments = [
+    "sys_platform == 'win32' and platform_machine == 'AMD64' and python_version == '3.14'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.14'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64' and python_version == '3.14'",
+]
+
 [tool.check-manifest]
 ignore = [
   ".circleci/continue_config.yml",
