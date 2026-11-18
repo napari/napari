@@ -9,15 +9,14 @@ Use the buttons in the dock widget to compare what appears in the terminal,
 the bottom-right popup area, and the log dock.
 
 napari shows a Python warning once per line of code that raises it, even if
-the message changes. So both ``warnings.warn()`` buttons only show their
-first press; the second one changes its message each time to show that.
+the message changes, so the ``warnings.warn()`` and thread_worker warning
+buttons only show their first press.
 
 .. tags:: gui, dev
 """
 
 import logging
 import warnings
-from itertools import count
 
 from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
@@ -32,7 +31,6 @@ from napari.utils.notifications import (
 
 logger = logging.getLogger('napari.examples.message_routing')
 logger.setLevel(logging.DEBUG)
-warning_counter = count(1)
 
 
 def _raise_value_error(message: str) -> None:
@@ -51,21 +49,7 @@ def log_warning() -> None:
 
 def python_warning() -> None:
     warnings.warn(
-        (
-            'warnings.warn(): repeated warning; shown once, later presses '
-            'are hidden'
-        ),
-        stacklevel=1,
-    )
-
-
-def python_warning_new_message() -> None:
-    count_value = next(warning_counter)
-    warnings.warn(
-        (
-            f'warnings.warn(): new message #{count_value} from the same line; '
-            'shown once, because napari hides warnings by line, not message'
-        ),
+        'warnings.warn(): shown once, later presses are hidden',
         stacklevel=1,
     )
 
@@ -134,10 +118,7 @@ def _build_controls() -> QWidget:
     layout.addWidget(instructions)
     layout.addWidget(_button('print()', print_message))
     layout.addWidget(_button('logger.warning()', log_warning))
-    layout.addWidget(_button('warnings.warn() repeated', python_warning))
-    layout.addWidget(
-        _button('warnings.warn() new message', python_warning_new_message)
-    )
+    layout.addWidget(_button('warnings.warn()', python_warning))
     layout.addWidget(_button('show_info()', napari_info))
     layout.addWidget(_button('show_warning()', napari_warning))
     layout.addWidget(_button('show_error(str(exc))', flattened_error))
