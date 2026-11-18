@@ -21,6 +21,7 @@ from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.scene_axes import SceneAxesOverlay
 from napari.components.overlays.text import (
     CurrentSliceOverlay,
+    DimsDisplayedOverlay,
     LayerNameOverlay,
     TextOverlay,
 )
@@ -35,6 +36,7 @@ __all__ = [
     'CoordinateGridOverlay',
     'CrosshairOverlay',
     'CurrentSliceOverlay',
+    'DimsDisplayedOverlay',
     'LabelsBrushStrokeOverlay',
     'LabelsPolygonOverlay',
     'LayerNameOverlay',

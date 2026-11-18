@@ -412,6 +412,9 @@ class QtDims(QWidget):
                 self.dims._play_ready = True
 
     def closeEvent(self, event):
+        # The animation thread is a child of this widget, and deleting a
+        # QThread that is still running aborts the whole process.
+        self.stop()
         [w.deleteLater() for w in self.slider_widgets]
         self.deleteLater()
         event.accept()

@@ -20,7 +20,10 @@ from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
-from napari.layers.labels._labels_utils import get_contours
+from napari.layers.labels._labels_utils import (
+    get_contours,
+    interpolate_coordinates,
+)
 from napari.layers.labels.labels import WrongSelectedLabelError
 from napari.utils import Colormap
 from napari.utils._test_utils import (
@@ -920,7 +923,9 @@ def test_brush_bbox_anisotropic_scale():
 
     shape, dims_to_paint = layer._get_shape_and_dims_to_paint()
     coord = (10, 15)
-    brush_info = layer._get_brush_mask_and_bbox(coord, dims_to_paint, shape)
+    brush_info = layer._get_brush_mask_and_bbox(
+        np.array([coord]), dims_to_paint, shape
+    )
     assert brush_info is not None
     _, min_vals, max_vals = brush_info
 
@@ -2449,6 +2454,202 @@ def test_draw(colormap, expected):
     labels._draw(1, (15, 15), (15, 15))
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0, 1])
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
+
+
+def _make_labels_array(array_type, base):
+    """Return a copy of ``base`` backed by the requested array type."""
+    if array_type == 'numpy':
+        return base.copy()
+    if array_type == 'dask':
+        return da.from_array(base.copy(), chunks=(32, 32))
+    if array_type == 'zarr':
+        return zarr.array(base, chunks=(32, 32))
+    ts = pytest.importorskip('tensorstore')
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'memory'},
+        'metadata': {
+            'shape': base.shape,
+            'chunks': [32, 32],
+            'dtype': base.dtype.str,
+        },
+    }
+    array = ts.open(spec, create=True).result()
+    array[...] = base
+    return array
+
+
+@pytest.mark.parametrize(
+    'array_type', ['numpy', 'dask', 'zarr', 'tensorstore']
+)
+def test_draw_batches_stamps_across_backends(array_type):
+    """A drag matches per-stamp paint, with one undo atom per event."""
+    base = np.zeros((64, 64), dtype=np.uint32)
+    segments = [(10, 12), (52, 24), (28, 55)]
+    brush, label = 5, 3
+
+    # reference: paint every interpolated coordinate individually (numpy)
+    ref = Labels(base.copy())
+    ref.brush_size, ref.selected_label, ref.mode = brush, label, 'paint'
+    last = segments[0]
+    for point in segments:
+        for coord in interpolate_coordinates(
+            np.array(last, float), np.array(point, float), brush
+        ):
+            ref.paint(coord, label, refresh=False)
+        last = point
+    expected = np.asarray(ref.data)
+    assert (expected == label).any()  # the stroke painted something
+
+    # drag on the backend under test, as one undo item like a mouse drag
+    layer = Labels(_make_labels_array(array_type, base))
+    layer.brush_size, layer.selected_label, layer.mode = brush, label, 'paint'
+    last = segments[0]
+    with layer.block_history():
+        layer._draw(label, last, last)
+        for point in segments[1:]:
+            layer._draw(label, last, point)
+            last = point
+
+    npt.assert_array_equal(np.asarray(layer.data), expected)
+    npt.assert_array_equal(np.asarray(layer._slice.image.raw), expected)
+    assert len(layer._undo_history[-1]) == 3  # one history atom per _draw
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), base)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), expected)
+
+
+@pytest.mark.parametrize(
+    ('ndisplay', 'start', 'end'),
+    [
+        (2, (4, 5, 5), (4, 30, 35)),
+        (2, (3, 5, 5), (6, 30, 35)),
+        (3, (5, 15, 15), (25, 15, 15)),
+    ],
+    ids=['one-plane', 'slice-change', '3d-view-depth'],
+)
+def test_draw_matches_per_stamp_paint(ndisplay, start, end):
+    """A 2D brush drag on 3D data matches painting each stamp alone."""
+
+    def make():
+        # all foreground, so the 3D view's background check keeps every stamp
+        layer = Labels(np.ones((30, 40, 40), dtype=np.uint8))
+        layer._slice_dims(Dims(ndim=3, ndisplay=ndisplay))
+        layer.brush_size, layer.mode = 7, 'paint'
+        return layer
+
+    start, end = np.array(start, float), np.array(end, float)
+    ref = make()
+    for coord in interpolate_coordinates(start, end, 7):
+        ref.paint(coord, 2, refresh=False)
+
+    layer = make()
+    layer._draw(2, start, end)
+
+    npt.assert_array_equal(layer.data, ref.data)
+
+
+@pytest.mark.parametrize('label', [0, 2], ids=['erase', 'paint'])
+@pytest.mark.parametrize(
+    ('shape', 'scale', 'points'),
+    [
+        ((40, 40), (1, 1), [(-4, 5), (-4, 35)]),
+        ((40, 40), (1, 1), [(-30, -30), (20, 20)]),
+        ((40, 40), (1, 1), [(20, 20), (20, 70), (44, 70), (44, -5)]),
+        ((40, 40), (1, 3), [(5, -1), (35, -1)]),
+        ((6, 40, 40), (1, 1, 1), [(1, -3, 5), (1, -3, 35)]),
+    ],
+    ids=[
+        'center-outside',
+        'drag-in',
+        'drag-around-outside',
+        'anisotropic',
+        '3d-brush',
+    ],
+)
+def test_draw_outside_layer_paints_only_overlap(shape, scale, points, label):
+    """A brush centered outside the layer paints just its overlap, no wrap."""
+    pad, brush = 40, 10
+    base = np.random.default_rng(0).integers(1, 4, shape, dtype=np.uint8)
+
+    def make(data):
+        layer = Labels(data, scale=scale)
+        layer.n_edit_dimensions = len(shape)
+        layer.brush_size = brush
+        layer.mode = 'erase' if label == 0 else 'paint'
+        return layer
+
+    pts = [np.array(p, float) for p in points]
+    segments = [(pts[0], pts[0]), *itertools.pairwise(pts)]
+    layer = make(base.copy())
+    for start, end in segments:
+        layer._draw(label, start, end)
+
+    # reference: each stamp shifted onto a padded copy, where none is clipped
+    ref = make(np.pad(base, pad))
+    for start, end in segments:
+        for coord in np.round(interpolate_coordinates(start, end, brush)):
+            ref.paint(coord + pad, label, refresh=False)
+    inner = tuple(slice(pad, pad + s) for s in shape)
+
+    npt.assert_array_equal(layer.data, ref.data[inner])
+    assert (layer.data != base).any()
+
+
+def test_draw_just_outside_layer_does_not_wrap():
+    """A brush just past the left edge doesn't wrap to the right edge."""
+    layer = Labels(np.zeros((40, 40), dtype=np.uint8))
+    layer.brush_size, layer.mode = 10, 'paint'
+    start, end = np.array([10.0, -8.0]), np.array([30.0, -8.0])
+    layer._draw(1, start, start)
+    layer._draw(1, start, end)
+
+    assert not layer.data.any()
+
+
+@pytest.mark.parametrize('bad', [np.nan, np.inf])
+def test_paint_non_finite_coord_raises(bad):
+    layer = Labels(np.zeros((20, 20), dtype=np.uint8))
+    with pytest.raises(ValueError, match='finite'):
+        layer.paint((bad, 5), 1)
+    assert not layer.data.any()
+
+
+def _draw_3d_view(data, label, start, end):
+    """Drag a 3D brush from start to end in one event, in a 3D view."""
+    layer = Labels(data.copy())
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    layer.n_edit_dimensions = 3
+    layer.brush_size = 6
+    layer.mode = 'erase' if label == 0 else 'paint'
+    layer._draw(label, np.array(start, float), np.array(end, float))
+    return np.asarray(layer.data)
+
+
+def test_draw_3d_view_paint_does_not_bridge_gaps():
+    """In a 3D view, a stroke between two objects doesn't paint the gap."""
+    data = np.zeros((30, 30, 70), dtype=np.uint32)
+    data[5:25, 5:25, 5:25] = 1
+    data[5:25, 5:25, 45:65] = 3
+
+    painted = _draw_3d_view(data, 2, (15, 15, 20), (15, 15, 50)) == 2
+
+    assert painted[..., :25].any()
+    assert painted[..., 45:].any()
+    # only the brush overhanging each object reaches into the gap
+    assert not painted[..., 28:42].any()
+
+
+def test_draw_3d_view_erase_clears_full_swath():
+    """In a 3D view, an erase stroke clears every voxel its brush covers."""
+    data = np.ones((30, 30, 70), dtype=np.uint32)
+    start, end = (15, 15, 10), (15, 15, 60)
+
+    erased = _draw_3d_view(data, 0, start, end) == 0
+    swath = _draw_3d_view(data, 2, start, end) == 2
+
+    npt.assert_array_equal(erased, swath)
 
 
 class TestLabels:
