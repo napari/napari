@@ -30,5 +30,5 @@ class BrushCircleOverlay(CanvasOverlay):
     position: tuple[int, int] = (0, 0)
     position_is_frozen: bool = False
     # TODO: this is nicer in `gridded` mode, but currently broken until we fix
-    #       the vispy side (see napari/napari#9428)
+    #       the vispy side (see napari/napari#9778)
     gridded: bool = False
