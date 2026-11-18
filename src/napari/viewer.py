@@ -107,7 +107,7 @@ class Viewer(ViewerModel):
     @deprecated(
         (
             'viewer.mouse_over_canvas is a deprecated attribute since 0.10.0. '
-            'This now always returns True, and will be removed later.'
+            'There is no planned replacement.'
         ),
         category=FutureWarning,
         stacklevel=2,
@@ -117,7 +117,7 @@ class Viewer(ViewerModel):
 
         .. deprecated:: 0.10.0
         """
-        return True
+        return not self.window._qt_window._status_locked
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
@@ -288,6 +288,11 @@ class Viewer(ViewerModel):
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
+        # The canvas is deleted with the window, so it does not need to
+        # update its scene graph after the layers are removed. The window is
+        # gone if the viewer was already closed.
+        if hasattr(self.window, '_qt_window'):
+            self.window._qt_viewer.canvas._closing = True
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
