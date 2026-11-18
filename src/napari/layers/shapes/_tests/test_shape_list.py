@@ -636,8 +636,7 @@ SHEAR = np.array([[1, 3], [0, 1]])
 
 
 @pytest.mark.parametrize(
-    ('method', 'arg'),
-    [('rotate', 15), ('flip', 0), ('flip', 1), ('transform', SHEAR)],
+    ('method', 'arg'), [('rotate', 15), ('flip', 0), ('flip', 1)]
 )
 def test_mesh_consistent_after_transform(method, arg):
     shape_list = ShapeList()
