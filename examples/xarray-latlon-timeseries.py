@@ -16,6 +16,7 @@ before displaying it in napari.
 """
 import numpy as np
 import pint
+import pooch
 import xarray as xr
 
 import napari
@@ -29,8 +30,20 @@ ureg.define('degrees_east = degree')
 
 # open the xarray global sea surface temperature (40MB) and North America
 # air temperature (30MB) datasets
-sst = xr.tutorial.open_dataset('ersstv5')
-airtemp = xr.tutorial.open_dataset('air_temperature')
+data_url = 'https://github.com/pydata/xarray-data/raw/master'
+cache_dir = pooch.os_cache('xarray_tutorial_data')
+sst_path = pooch.retrieve(
+    f'{data_url}/ersstv5.nc',
+    known_hash='sha256:2ae53611d00069440641ad8ec36b216c9f543462161ae86589723c9d19ff90c6',
+    path=cache_dir,
+)
+airtemp_path = pooch.retrieve(
+    f'{data_url}/air_temperature.nc',
+    known_hash='sha256:c606b89c35970a2983b914b76df4adbb409003ef34aa7cfd7f582e41f307482b',
+    path=cache_dir,
+)
+sst = xr.open_dataset(sst_path)
+airtemp = xr.open_dataset(airtemp_path)
 
 # Show the raw (not resampled) model data
 viewer, sst_layer = napari.imshow(
