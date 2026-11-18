@@ -45,7 +45,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
-from napari.types import LayerDataType
+from napari.types import LayerDataType, Matrix2D, Vector1D
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -365,7 +365,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Values on the negative side of the normal are discarded if the plane is enabled.
     metadata : dict
         Layer metadata.
-    mode: str
+    mode : str
         The layer's interactive mode.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
@@ -396,6 +396,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
+    locked : bool or LayerLock
+        Which UI operations are locked on this layer. ``True`` and ``False``
+        are equivalent to ``LayerLock.ALL`` and ``LayerLock.NONE``.
 
     Attributes
     ----------
@@ -536,7 +539,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def __init__(
         self,
-        data: Any,
+        data: Any,  # each layer type accepts its own kind of data
         ndim: int,
         *,
         affine: npt.ArrayLike | Affine | None = None,
@@ -549,22 +552,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         | ClippingPlaneList
         | None = None,
         metadata: dict | None = None,
-        mode: Mode | str = 'pan_zoom',
+        mode: str = 'pan_zoom',
         multiscale: bool = False,
         name: str | None = None,
         opacity: float = 1.0,
         projection_mode: str = 'none',
-        rotate: float
-        | Sequence[float]
-        | Sequence[Sequence[float]]
-        | npt.NDArray
-        | None = None,
-        scale: Sequence[float] | npt.NDArray | None = None,
-        shear: Sequence[float]
-        | Sequence[Sequence[float]]
-        | npt.NDArray
-        | None = None,
-        translate: Sequence[float] | npt.NDArray | None = None,
+        rotate: float | Vector1D | Matrix2D | None = None,
+        scale: Vector1D | None = None,
+        shear: Vector1D | Matrix2D | None = None,
+        translate: Vector1D | None = None,
         units: Sequence[str | pint.Unit | None] | None = None,
         visible: bool = True,
         locked: bool | LayerLock = False,
@@ -1516,13 +1512,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Parameters
         ----------
-        position : tuple
+        position : tuple or array
             Position in data coordinates.
 
         Returns
         -------
-        value : tuple
-            Value of the data.
+        value : Any
+            Value of the data. Its type depends on the layer.
         """
         raise NotImplementedError
 
@@ -1784,9 +1780,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         simplified = self._transforms[1:].simplified
         return simplified.inverse(coords)
 
-    def data_to_world(
-        self, position: Sequence[float] | np.ndarray
-    ) -> tuple[float, ...]:
+    def data_to_world(self, position: Vector1D) -> tuple[float, ...]:
         """Convert from data coordinates to world coordinates.
 
         Parameters
@@ -2131,7 +2125,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _update_level_and_corners(
         self,
         data_bbox_int: np.ndarray,
-        shape_threshold: tuple[int, ...],
+        shape_threshold: tuple[float, float],
         displayed_axes: list[int],
     ) -> None:
         """Update the data level and corner pixels for the current viewport.

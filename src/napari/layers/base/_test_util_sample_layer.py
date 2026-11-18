@@ -95,7 +95,7 @@ class SampleLayer(Layer):
     def _update_thumbnail(self) -> None:
         pass
 
-    def _get_value(self, position: npt.ArrayLike) -> np.ndarray:
+    def _get_value(self, position: npt.ArrayLike) -> np.ndarray | np.generic:
         return self.data[tuple(np.asarray(position, dtype=int))]
 
     def _post_init(self) -> None:
