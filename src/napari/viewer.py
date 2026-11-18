@@ -120,7 +120,7 @@ class Viewer(ViewerModel):
     @deprecated(
         (
             'viewer.mouse_over_canvas is a deprecated attribute since 0.10.0. '
-            'This now always returns True, and will be removed later.'
+            'There is no planned replacement.'
         ),
         category=FutureWarning,
         stacklevel=2,
@@ -130,7 +130,7 @@ class Viewer(ViewerModel):
 
         .. deprecated:: 0.10.0
         """
-        return True
+        return not self.window._qt_window._status_locked
 
     @property
     @deprecated(
