@@ -212,7 +212,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
-    _viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    __viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    _needs_viewbox_to_world_update: bool = PrivateAttr(default=True)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -295,16 +296,35 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
+        # initialize the affine
         self._update_viewbox_to_world()
-        self.scene.camera.events.center.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.zoom.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.angles.connect(self._update_viewbox_to_world)
-        self.canvas.events.size.connect(self._update_viewbox_to_world)
-        self.canvas.grid.events.connect(self._update_viewbox_to_world)
-        self.dims.events.ndisplay.connect(self._update_viewbox_to_world)
-        self.layers.events.inserted.connect(self._update_viewbox_to_world)
-        self.layers.events.removed.connect(self._update_viewbox_to_world)
-        self.layers.events.reordered.connect(self._update_viewbox_to_world)
+
+        self.scene.camera.events.center.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.zoom.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.angles.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.orientation.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.canvas.events.size.connect(self._update_viewbox_to_world_deferred)
+        self.canvas.grid.events.connect(self._update_viewbox_to_world_deferred)
+        self.dims.events.ndisplay.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.inserted.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.removed.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.reordered.connect(
+            self._update_viewbox_to_world_deferred
+        )
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -1080,8 +1100,28 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             viewbox_position, dtype=float
         ) + self._viewbox_origin(viewbox)
 
-    def _update_viewbox_to_world(self, event=None) -> None:
-        """Recompute the persistent viewbox-local -> world affine."""
+    @property
+    def _viewbox_to_world(self) -> Affine:
+        """Viewbox to world affine transform.
+
+        This affine describe the non-projective component of the transform
+        between a viewbox's scene and the global world coordinates.
+
+        The projective component is handled by canvas_to_world separately,
+        since it's not reversible and requires custom handling in the two
+        directions.
+        """
+        if self._needs_viewbox_to_world_update:
+            # deferred calculation to only when needed
+            self._update_viewbox_to_world()
+        return self.__viewbox_to_world
+
+    def _update_viewbox_to_world_deferred(self, event=None) -> None:
+        """Defer recomputation of the persistent viewbox -> world affine."""
+        self._needs_viewbox_to_world_update = True
+
+    def _update_viewbox_to_world(self) -> None:
+        """Update the persisstent viewbox -> world affine."""
         from scipy.spatial.transform import Rotation as R
 
         ndisplay = self.dims.ndisplay
@@ -1091,10 +1131,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         )
         half = viewbox_size / 2
 
+        # Orientation flips. Only x and y matter, not z, because in 3D we
+        # project onto the camera-center plane.
+        vertical, horizontal = self.scene.camera.orientation2d
+        flip_map = np.diag(
+            [
+                1,
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
+            ]
+        )
+
         if ndisplay == 2:
-            center = np.asarray(self.scene.camera.center[-2:], dtype=float)
-            linear_matrix = np.eye(2) / zoom
-            translate = center - half / zoom
+            center = np.asarray(self.scene.camera.center[1:], dtype=float)
+            linear_matrix = flip_map[1:, 1:] / zoom
+            translate = center - linear_matrix @ half
         else:
             # note that while we call napari axes "zyx", in terms of angles to
             # rot conversion we need to treat them as normal xyz for internal
@@ -1107,19 +1158,23 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             center = np.asarray(
                 self.scene.camera.center[-ndisplay:], dtype=float
             )
-            linear_matrix = rot_matrix.T / zoom
-            translate = center - rot_matrix.T @ np.array([0.0, *half]) / zoom
+            linear_matrix = (rot_matrix.T / zoom) @ flip_map
+            translate = center - linear_matrix @ np.array([0.0, *half])
 
-        affine = self._viewbox_to_world
+        # get the Affine object, which is our own fancy transform machinery
+        affine = self.__viewbox_to_world
         if affine.ndim != ndisplay:
             affine_matrix = np.eye(ndisplay + 1)
             affine_matrix[:-1, :-1] = linear_matrix
             affine_matrix[:-1, -1] = translate
-            self._viewbox_to_world = Affine(affine_matrix=affine_matrix)
+            self.__viewbox_to_world = Affine(affine_matrix=affine_matrix)
         else:
             affine.linear_matrix = linear_matrix
             affine.translate = translate
+
         affine.name = 'viewbox_to_world'
+
+        self._needs_viewbox_to_world_update = False
 
     def canvas_to_world(
         self,
@@ -1144,52 +1199,15 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         world_position : np.ndarray
             Canvas position (on the canvas plane) converted to world coordinates.
         """
-        ndisplay = self.dims.ndisplay
-        camera = self.scene.camera
-
-        if viewbox is None:
-            viewbox = (0, 0)
-        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
-        spacing = (
-            self.canvas.grid._compute_canvas_spacing(
-                self.canvas.size, self.layers
-            )
-            if self.canvas.grid.enabled
-            else 0
-        )
-        viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
-        world_center = np.array(camera.center)
-
-        # account for orientation flip. Only x and y matter, not depth, because
-        # in 3D we poject onto the origin camera plane.
-        vertical, horizontal = camera.orientation2d
-        flips = np.array(
-            [
-                -1 if vertical == VerticalAxisOrientation.UP else 1,
-                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
-            ]
-        )
-        canvas_offset = (np.array(canvas_position) - viewbox_center) * flips
-
-        if ndisplay == 2:
-            world_displayed = canvas_offset / camera.zoom + world_center[-2:]
+        viewbox_position = self.canvas_to_viewbox(canvas_position, viewbox)
+        if self.dims.ndisplay == 2:
+            world_displayed = self._viewbox_to_world(viewbox_position)
         else:
-            # this import is expensive so it is deferred to here
-            # where it is actually needed
-            from scipy.spatial.transform import Rotation as R
-
-            # note that while we call napari axes "zyx", in terms of angles to
-            # rot conversion we need to treat them as normal xyz for internal
-            # consistency (zyx actually describes a different rotation order)
-            rot = R.from_euler('xyz', camera.angles, degrees=True)
-            rot_matrix = rot.as_matrix()
             # the depth is set to zero because we want the position at the
             # plane of the camera center.
             # Any modifications should be done by callers afterwards.
-            canvas_position_3d = np.array([0, *canvas_offset])
-            world_displayed = (
-                rot_matrix.T @ canvas_position_3d / camera.zoom + world_center
-            )
+            viewbox_position_3d = np.array([0.0, *viewbox_position])
+            world_displayed = self._viewbox_to_world(viewbox_position_3d)
 
         # with fewer dims than ndisplay , the leading components
         # have no dim to map onto, so we drop them
@@ -1310,7 +1328,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
-        layer.events.visible.connect(self._update_viewbox_to_world)
+        layer.events.visible.connect(self._update_viewbox_to_world_deferred)
         self._layer_help_from_mode(layer)
 
         # Update dims
