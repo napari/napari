@@ -1683,8 +1683,8 @@ class ShapeList:
             length 2 list specifying coordinate of center of rotation.
         """
         self.shapes[index].rotate(angle, center=center)
-        # The edge is re-triangulated, so its vertex and triangle counts
-        # may change.
+        # update also handles a change of the vertex and triangle counts,
+        # in case a shape type recomputes its meshes on transform.
         self.update(index)
 
     def flip(self, index, axis, center=None) -> None:
@@ -1701,8 +1701,8 @@ class ShapeList:
             length 2 list specifying coordinate of center of flip axes.
         """
         self.shapes[index].flip(axis, center=center)
-        # The edge is re-triangulated, so its vertex and triangle counts
-        # may change.
+        # update also handles a change of the vertex and triangle counts,
+        # in case a shape type recomputes its meshes on transform.
         self.update(index)
 
     def transform(self, index, transform) -> None:

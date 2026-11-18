@@ -46,6 +46,11 @@ except ImportError:
 TRIANGULATION_BACKEND = TriangulationBackend.pure_python
 
 
+def _is_orthogonal(transform: npt.NDArray) -> bool:
+    """Check if a linear transform is a rotation and/or a reflection."""
+    return np.allclose(transform @ transform.T, np.eye(transform.shape[0]))
+
+
 class Shape(ABC):
     """Base class for a single shape
 
@@ -674,14 +679,22 @@ class Shape(ABC):
         )
         self._face_vertices = self._face_vertices @ transform.T
         self.__dict__.pop('data_displayed', None)  # clear cache
-        points = self.data_displayed
-        points = remove_path_duplicates(points, closed=self._closed)
-        centers, offsets, triangles = self._triangulate_edge(
-            points, closed=self._closed
-        )
-        self._edge_vertices = centers
-        self._edge_offsets = offsets
-        self._edge_triangles = triangles
+        if _is_orthogonal(transform):
+            # Rotations and reflections preserve lengths and angles, so the
+            # edge triangulation stays valid and only needs to be moved.
+            self._edge_vertices = self._edge_vertices @ transform.T
+            self._edge_offsets = self._edge_offsets @ transform.T
+        else:
+            # Other transforms change the angles between segments, so the
+            # edge joins need to be recomputed.
+            points = self.data_displayed
+            points = remove_path_duplicates(points, closed=self._closed)
+            centers, offsets, triangles = self._triangulate_edge(
+                points, closed=self._closed
+            )
+            self._edge_vertices = centers
+            self._edge_offsets = offsets
+            self._edge_triangles = triangles
         self._bounding_box = np.array(
             [
                 np.min(self._data, axis=0),
@@ -773,9 +786,10 @@ class Shape(ABC):
         if center is None:
             self.transform(transform)
         else:
+            center = np.array(center)
             self.shift(-center)
             self.transform(transform)
-            self.shift(-center)
+            self.shift(center)
 
     def to_mask(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Convert the shape vertices to a boolean mask.
