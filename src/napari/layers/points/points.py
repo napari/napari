@@ -95,7 +95,7 @@ class Points(Layer):
     data : array (N, D)
         Coordinates for N points in D dimensions.
     ndim : int
-        Number of dimensions for shapes. When data is not None, ndim must be D.
+        Number of dimensions for points. When data is not None, ndim must be D.
         An empty points layer can be instantiated with arbitrary ndim.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
@@ -1608,6 +1608,27 @@ class Points(Layer):
         return self.border_width[self._view_indices]
 
     @property
+    def _view_size_with_border(self) -> np.ndarray:
+        """Get the sizes of the points in view, including their border
+
+        The border is drawn centered on the edge of each point, so half of it
+        extends beyond ``size``. As in the vispy layer, absolute border widths
+        are capped to the point size.
+
+        Returns
+        -------
+        view_size_with_border : (N,) np.ndarray
+            Array of sizes plus border widths for the N points in view
+        """
+        size = self._view_size
+        border_width = self._view_border_width
+        if self.border_width_is_relative:
+            border_width = border_width * size
+        else:
+            border_width = np.minimum(border_width, size)
+        return size + border_width
+
+    @property
     def _view_face_color(self) -> np.ndarray:
         """Get the face colors of the points in view
 
@@ -1701,7 +1722,11 @@ class Points(Layer):
             # Without this implementation, point hover and selection (and anything depending
             # on self.get_value()) won't be aware of the real extent of points, causing
             # unexpected behaviour. See #3734 for details.
-            sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
+            sizes = (
+                np.expand_dims(self._view_size_with_border, axis=1)
+                / scale_ratio
+                / 2
+            )
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= sizes,
@@ -1763,7 +1788,11 @@ class Points(Layer):
             self.scale[self._slice_input.displayed] / self.scale[-1]
         )
         # find the points the click intersects
-        sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
+        sizes = (
+            np.expand_dims(self._view_size_with_border, axis=1)
+            / scale_ratio
+            / 2
+        )
         distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
             distances <= sizes,

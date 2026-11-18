@@ -23,9 +23,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-
-# This cannot be condition to TYPE_CHECKING or the stubgen fails
-# with undefined Context.
 from pydantic import Field, PrivateAttr, field_validator
 from typing_extensions import deprecated
 
@@ -82,8 +79,12 @@ from napari.types import (
     PathOrPaths,
     SampleData,
 )
-from napari.utils._register import create_func as create_add_method
+from napari.utils._register import create_add_method
 from napari.utils.action_manager import action_manager
+from napari.utils.camera_orientations import (
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
@@ -212,7 +213,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
-    _viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    __viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    _needs_viewbox_to_world_update: bool = PrivateAttr(default=True)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -296,16 +298,35 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
+        # initialize the affine
         self._update_viewbox_to_world()
-        self.scene.camera.events.center.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.zoom.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.angles.connect(self._update_viewbox_to_world)
-        self.canvas.events.size.connect(self._update_viewbox_to_world)
-        self.canvas.grid.events.connect(self._update_viewbox_to_world)
-        self.dims.events.ndisplay.connect(self._update_viewbox_to_world)
-        self.layers.events.inserted.connect(self._update_viewbox_to_world)
-        self.layers.events.removed.connect(self._update_viewbox_to_world)
-        self.layers.events.reordered.connect(self._update_viewbox_to_world)
+
+        self.scene.camera.events.center.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.zoom.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.angles.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.orientation.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.canvas.events.size.connect(self._update_viewbox_to_world_deferred)
+        self.canvas.grid.events.connect(self._update_viewbox_to_world_deferred)
+        self.dims.events.ndisplay.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.inserted.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.removed.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.reordered.connect(
+            self._update_viewbox_to_world_deferred
+        )
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -1058,8 +1079,28 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             viewbox_position, dtype=float
         ) + self._viewbox_origin(viewbox)
 
-    def _update_viewbox_to_world(self, event=None) -> None:
-        """Recompute the persistent viewbox-local -> world affine."""
+    @property
+    def _viewbox_to_world(self) -> Affine:
+        """Viewbox to world affine transform.
+
+        This affine describe the non-projective component of the transform
+        between a viewbox's scene and the global world coordinates.
+
+        The projective component is handled by canvas_to_world separately,
+        since it's not reversible and requires custom handling in the two
+        directions.
+        """
+        if self._needs_viewbox_to_world_update:
+            # deferred calculation to only when needed
+            self._update_viewbox_to_world()
+        return self.__viewbox_to_world
+
+    def _update_viewbox_to_world_deferred(self, event=None) -> None:
+        """Defer recomputation of the persistent viewbox -> world affine."""
+        self._needs_viewbox_to_world_update = True
+
+    def _update_viewbox_to_world(self) -> None:
+        """Update the persisstent viewbox -> world affine."""
         from scipy.spatial.transform import Rotation as R
 
         ndisplay = self.dims.ndisplay
@@ -1069,10 +1110,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         )
         half = viewbox_size / 2
 
+        # Orientation flips. Only x and y matter, not z, because in 3D we
+        # project onto the camera-center plane.
+        vertical, horizontal = self.scene.camera.orientation2d
+        flip_map = np.diag(
+            [
+                1,
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
+            ]
+        )
+
         if ndisplay == 2:
-            center = np.asarray(self.scene.camera.center[-2:], dtype=float)
-            linear_matrix = np.eye(2) / zoom
-            translate = center - half / zoom
+            center = np.asarray(self.scene.camera.center[1:], dtype=float)
+            linear_matrix = flip_map[1:, 1:] / zoom
+            translate = center - linear_matrix @ half
         else:
             # note that while we call napari axes "zyx", in terms of angles to
             # rot conversion we need to treat them as normal xyz for internal
@@ -1085,19 +1137,23 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             center = np.asarray(
                 self.scene.camera.center[-ndisplay:], dtype=float
             )
-            linear_matrix = rot_matrix.T / zoom
-            translate = center - rot_matrix.T @ np.array([0.0, *half]) / zoom
+            linear_matrix = (rot_matrix.T / zoom) @ flip_map
+            translate = center - linear_matrix @ np.array([0.0, *half])
 
-        affine = self._viewbox_to_world
+        # get the Affine object, which is our own fancy transform machinery
+        affine = self.__viewbox_to_world
         if affine.ndim != ndisplay:
             affine_matrix = np.eye(ndisplay + 1)
             affine_matrix[:-1, :-1] = linear_matrix
             affine_matrix[:-1, -1] = translate
-            self._viewbox_to_world = Affine(affine_matrix=affine_matrix)
+            self.__viewbox_to_world = Affine(affine_matrix=affine_matrix)
         else:
             affine.linear_matrix = linear_matrix
             affine.translate = translate
+
         affine.name = 'viewbox_to_world'
+
+        self._needs_viewbox_to_world_update = False
 
     def canvas_to_world(
         self,
@@ -1249,7 +1305,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
-        layer.events.visible.connect(self._update_viewbox_to_world)
+        layer.events.visible.connect(self._update_viewbox_to_world_deferred)
         self._layer_help_from_mode(layer)
 
         # Update dims
@@ -2080,6 +2136,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             ) from exc
         return layer if isinstance(layer, list) else [layer]
 
+    add_labels = create_add_method(Labels)
+    add_points = create_add_method(Points)
+    add_shapes = create_add_method(Shapes)
+    add_surface = create_add_method(Surface)
+    add_tracks = create_add_method(Tracks)
+    add_vectors = create_add_method(Vectors)
+
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
@@ -2242,15 +2305,3 @@ def valid_add_kwargs() -> dict[str, set[str]]:
         params = inspect.signature(getattr(ViewerModel, meth)).parameters
         valid[meth[4:]] = set(params) - {'self', 'kwargs'}
     return valid
-
-
-for _layer in (
-    layers.Labels,
-    layers.Points,
-    layers.Shapes,
-    layers.Surface,
-    layers.Tracks,
-    layers.Vectors,
-):
-    func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]
