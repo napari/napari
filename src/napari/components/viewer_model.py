@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Union,
     cast,
 )
@@ -32,6 +33,7 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
+    update_status_from_cursor,
 )
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
@@ -93,6 +95,7 @@ from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
+from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
@@ -172,8 +175,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
         List of contained layers.
-    mouse_over_canvas: bool
-        Indicating whether the mouse cursor is on the viewer canvas.
     scene : napari.components.scene.Scene
         The scene model, controlling the camera and scene overlays.
 
@@ -204,9 +205,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    # To check if mouse is over canvas to avoid race conditions between
-    # different events systems
-    mouse_over_canvas: bool = False
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -214,6 +212,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    __viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    _needs_viewbox_to_world_update: bool = PrivateAttr(default=True)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -281,7 +281,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
-        self.cursor.events.position.connect(self.update_status_from_cursor)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
@@ -289,12 +288,43 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
+        self.mouse_move_callbacks.append(update_status_from_cursor)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
+
+        # initialize the affine
+        self._update_viewbox_to_world()
+
+        self.scene.camera.events.center.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.zoom.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.angles.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.orientation.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.canvas.events.size.connect(self._update_viewbox_to_world_deferred)
+        self.canvas.grid.events.connect(self._update_viewbox_to_world_deferred)
+        self.dims.events.ndisplay.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.inserted.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.removed.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.reordered.connect(
+            self._update_viewbox_to_world_deferred
+        )
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -825,7 +855,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
-            self.update_status_from_cursor()
 
     def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
         """Combine layerlist axis labels onto the current dims labels.
@@ -894,7 +923,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _calc_status_from_cursor(
         self,
-    ) -> tuple[str | Dict, str] | None:
+        world_position: tuple[float, ...],
+        view_direction: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
+        | None,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int],
+    ) -> tuple[str | dict, str]:
         """Calculate coordinates and status info from cursor position.
 
         General logic:
@@ -902,22 +936,25 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         - restrict info to only selected layers, if any
         - if only one is shown, show more detailed info
         """
-        if not self.mouse_over_canvas:
-            return None
+        if view_direction is None:
+            viewbox_size = self.canvas.viewbox_size(self.layers)
+            viewbox_position = tuple(np.array(canvas_position) % viewbox_size)
+            view_direction = self.scene.camera.calculate_nd_view_direction(
+                ndim=self.dims.ndim,
+                dims_displayed=self.dims.displayed,
+                canvas_position=viewbox_position,
+                canvas_size=viewbox_size,
+            )
 
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
-        layers_in_viewbox: list[Layer] = []
-        if self.cursor.viewbox is not None:
-            layers_in_viewbox = [
-                self.layers[idx]
-                for idx in sorted(
-                    self.canvas.grid.contents_at(
-                        self.cursor.viewbox, self.layers
-                    ),
-                    reverse=self.canvas.grid.stride > 0,
-                )
-            ]
+        layers_in_viewbox: list[Layer] = [
+            self.layers[idx]
+            for idx in sorted(
+                self.canvas.grid.contents_at(viewbox, self.layers),
+                reverse=self.canvas.grid.stride > 0,
+            )
+        ]
         valid_layers = [
             layer
             for layer in layers_in_viewbox
@@ -930,8 +967,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if len(valid_layers) == 1:
             if self.tooltip.visible:
                 tooltip_text = valid_layers[0]._get_tooltip_text(
-                    np.asarray(self.cursor.position),
-                    view_direction=self.cursor._view_direction,
+                    np.asarray(world_position),
+                    view_direction=view_direction,
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
@@ -939,8 +976,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 tooltip_text = ''
 
             status = valid_layers[0].get_status(
-                self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                world_position,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -955,8 +992,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         coords = ''
         for layer in valid_layers:
             status = layer.get_status(
-                self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                world_position,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -972,19 +1009,183 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         status_str = f'{coords} » {values}'
         return status_str, ''
 
+    @deprecated(
+        'update_status_from_cursor will be removed. Use a mouse callback isntead.'
+    )
     def update_status_from_cursor(self):
-        """Update the status and tooltip from the cursor position."""
-        status = self._calc_status_from_cursor()
-        if status is not None:
-            self.status, self.tooltip.text = status
+        """Update the status and tooltip from the cursor position.
+
+        .. deprecated: 0.11.0:
+            update_status_from_cursor will be removed; use a mouse callback instead.
+        """
+        # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
+        self.status, self.tooltip.text = self._calc_status_from_cursor(
+            self.cursor.position,
+            self.cursor._view_direction,
+            (0, 0),
+            self.cursor.viewbox or (0, 0),
+        )
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
+
+    def _viewbox_origin(self, viewbox: tuple[int, int] = (0, 0)) -> np.ndarray:
+        """Origin of a grid viewbox in global canvas pixels.
+
+        Parameters
+        ----------
+        viewbox : tuple of int
+            (row, col) coordinates of the grid viewbox.
+
+        Returns
+        -------
+        np.ndarray
+            (y, x) offset of the top-left corner of the viewbox, including
+            grid spacing. Zero when the grid is disabled.
+        """
+        if not self.canvas.grid.enabled:
+            return np.zeros(2)
+        viewbox_size = np.array(
+            self.canvas.viewbox_size(self.layers), dtype=float
+        )
+        spacing = float(
+            self.canvas.grid._compute_canvas_spacing(
+                self.canvas.size, self.layers
+            )
+        )
+        step = viewbox_size + spacing
+        return step * np.asarray(viewbox, dtype=float)
+
+    def canvas_to_viewbox(
+        self,
+        canvas_position: np.ndarray | tuple[int, int],
+        viewbox: tuple[int, int] = (0, 0),
+    ) -> np.ndarray:
+        """Convert global canvas pixels to viewbox-local pixels.
+
+        Parameters
+        ----------
+        canvas_position : tuple or array
+            (y, x) position in global canvas pixels. A batch of shape
+            ``(n_points, 2)`` is also accepted.
+        viewbox : tuple of int
+            (row, col) coordinates of the grid viewbox.
+
+        Returns
+        -------
+        np.ndarray
+            (y, x) position relative to the top-left corner of the viewbox.
+        """
+        return np.asarray(canvas_position, dtype=float) - self._viewbox_origin(
+            viewbox
+        )
+
+    def viewbox_to_canvas(
+        self,
+        viewbox_position: np.ndarray | tuple[int, int],
+        viewbox: tuple[int, int] = (0, 0),
+    ) -> np.ndarray:
+        """Convert viewbox-local pixels to global canvas pixels.
+
+        Inverse of :meth:`canvas_to_viewbox`.
+
+        Parameters
+        ----------
+        viewbox_position : tuple or array
+            (y, x) position relative to the top-left corner of the viewbox.
+            A batch of shape ``(n_points, 2)`` is also accepted.
+        viewbox : tuple of int
+            (row, col) coordinates of the grid viewbox.
+
+        Returns
+        -------
+        np.ndarray
+            (y, x) position in global canvas pixels.
+        """
+        return np.asarray(
+            viewbox_position, dtype=float
+        ) + self._viewbox_origin(viewbox)
+
+    @property
+    def _viewbox_to_world(self) -> Affine:
+        """Viewbox to world affine transform.
+
+        This affine describe the non-projective component of the transform
+        between a viewbox's scene and the global world coordinates.
+
+        The projective component is handled by canvas_to_world separately,
+        since it's not reversible and requires custom handling in the two
+        directions.
+        """
+        if self._needs_viewbox_to_world_update:
+            # deferred calculation to only when needed
+            self._update_viewbox_to_world()
+        return self.__viewbox_to_world
+
+    def _update_viewbox_to_world_deferred(self, event=None) -> None:
+        """Defer recomputation of the persistent viewbox -> world affine."""
+        self._needs_viewbox_to_world_update = True
+
+    def _update_viewbox_to_world(self) -> None:
+        """Update the persisstent viewbox -> world affine."""
+        from scipy.spatial.transform import Rotation as R
+
+        ndisplay = self.dims.ndisplay
+        zoom = float(self.scene.camera.zoom)
+        viewbox_size = np.array(
+            self.canvas.viewbox_size(self.layers), dtype=float
+        )
+        half = viewbox_size / 2
+
+        # Orientation flips. Only x and y matter, not z, because in 3D we
+        # project onto the camera-center plane.
+        vertical, horizontal = self.scene.camera.orientation2d
+        flip_map = np.diag(
+            [
+                1,
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
+            ]
+        )
+
+        if ndisplay == 2:
+            center = np.asarray(self.scene.camera.center[1:], dtype=float)
+            linear_matrix = flip_map[1:, 1:] / zoom
+            translate = center - linear_matrix @ half
+        else:
+            # note that while we call napari axes "zyx", in terms of angles to
+            # rot conversion we need to treat them as normal xyz for internal
+            # consistency (zyx actually describes a different rotation order)
+            rot_matrix = R.from_euler(
+                'xyz',
+                np.asarray(self.scene.camera.angles, dtype=float),
+                degrees=True,
+            ).as_matrix()
+            center = np.asarray(
+                self.scene.camera.center[-ndisplay:], dtype=float
+            )
+            linear_matrix = (rot_matrix.T / zoom) @ flip_map
+            translate = center - linear_matrix @ np.array([0.0, *half])
+
+        # get the Affine object, which is our own fancy transform machinery
+        affine = self.__viewbox_to_world
+        if affine.ndim != ndisplay:
+            affine_matrix = np.eye(ndisplay + 1)
+            affine_matrix[:-1, :-1] = linear_matrix
+            affine_matrix[:-1, -1] = translate
+            self.__viewbox_to_world = Affine(affine_matrix=affine_matrix)
+        else:
+            affine.linear_matrix = linear_matrix
+            affine.translate = translate
+
+        affine.name = 'viewbox_to_world'
+
+        self._needs_viewbox_to_world_update = False
 
     def canvas_to_world(
         self,
         canvas_position: tuple[int, int],
-        viewbox: tuple[int, int] | None = None,
-    ) -> np.ndarray:
+        viewbox: tuple[int, int] = (0, 0),
+    ) -> tuple[float, ...]:
         """Convert canvas pixel position to world coordinates.
 
         The position is calculated on a plane parallel to the screen and passing
@@ -995,61 +1196,23 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         canvas_position : tuple of int
             (y, x) position in canvas pixels.
         viewbox : tuple of int
-            (col, row) coordinates of the grid viewbox relative to which
-            to calculate the transformation. If None, use the first viewbox
-            or the whole canvas if the grid is disabled.
+            (row, col) coordinates of the grid viewbox relative to which
+            to calculate the transformation.
 
         Returns
         -------
         world_position : np.ndarray
             Canvas position (on the canvas plane) converted to world coordinates.
         """
-        ndisplay = self.dims.ndisplay
-        camera = self.scene.camera
-
-        if viewbox is None:
-            viewbox = (0, 0)
-        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
-        spacing = (
-            self.canvas.grid._compute_canvas_spacing(
-                self.canvas.size, self.layers
-            )
-            if self.canvas.grid.enabled
-            else 0
-        )
-        viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
-        world_center = np.array(camera.center)
-
-        # account for orientation flip. Only x and y matter, not depth, because
-        # in 3D we poject onto the origin camera plane.
-        vertical, horizontal = camera.orientation2d
-        flips = np.array(
-            [
-                -1 if vertical == VerticalAxisOrientation.UP else 1,
-                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
-            ]
-        )
-        canvas_offset = (np.array(canvas_position) - viewbox_center) * flips
-
-        if ndisplay == 2:
-            world_displayed = canvas_offset / camera.zoom + world_center[-2:]
+        viewbox_position = self.canvas_to_viewbox(canvas_position, viewbox)
+        if self.dims.ndisplay == 2:
+            world_displayed = self._viewbox_to_world(viewbox_position)
         else:
-            # this import is expensive so it is deferred to here
-            # where it is actually needed
-            from scipy.spatial.transform import Rotation as R
-
-            # note that while we call napari axes "zyx", in terms of angles to
-            # rot conversion we need to treat them as normal xyz for internal
-            # consistency (zyx actually describes a different rotation order)
-            rot = R.from_euler('xyz', camera.angles, degrees=True)
-            rot_matrix = rot.as_matrix()
             # the depth is set to zero because we want the position at the
             # plane of the camera center.
             # Any modifications should be done by callers afterwards.
-            canvas_position_3d = np.array([0, *canvas_offset])
-            world_displayed = (
-                rot_matrix.T @ canvas_position_3d / camera.zoom + world_center
-            )
+            viewbox_position_3d = np.array([0.0, *viewbox_position])
+            world_displayed = self._viewbox_to_world(viewbox_position_3d)
 
         # with fewer dims than ndisplay , the leading components
         # have no dim to map onto, so we drop them
@@ -1060,7 +1223,74 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         position_world = list(self.dims.point)
         for i, d in enumerate(displayed):
             position_world[d] = world_displayed[i]
-        return np.array(position_world)
+        return tuple(position_world)
+
+    def world_to_canvas(
+        self,
+        world_positions: np.ndarray,
+        viewbox: tuple[int, int] = (0, 0),
+    ) -> np.ndarray:
+        """Convert world coordinates to canvas pixel position.
+
+        Inverse of canvas_to_world. Coordinates behind the camera return
+        NaN.
+
+        Parameters
+        ----------
+        world_positions : array
+            Full nD world coordinates, shape ``(ndim,)`` for a single
+            point or ``(n_points, ndim)`` for a batch. Non-displayed
+            dims are ignored.
+        viewbox : tuple of int
+            (row, col) coordinates of the grid viewbox relative to which
+            to calculate the transformation.
+
+        Returns
+        -------
+        canvas_position : np.ndarray
+            (y, x) position in canvas pixels (NaN if behind the camera).
+            Shape ``(2,)`` for a single point, ``(n_points, 2)`` for a batch.
+        """
+
+        world_positions = np.asarray(world_positions, dtype=float)
+
+        ndisplay = self.dims.ndisplay
+        camera = self.scene.camera
+
+        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
+        # TODO: account for thick slicing somehow?
+        world_displayed = world_positions[..., list(self.dims.displayed)]
+        viewbox_coords = self._viewbox_to_world.inverse(world_displayed)
+
+        if ndisplay == 2:
+            return self.viewbox_to_canvas(viewbox_coords, viewbox)
+
+        # 3D: inverse-affine viewbox position, plus perspective divide
+        depth = viewbox_coords[..., 0] / float(camera.zoom)
+        ortho = viewbox_coords[..., 1:]
+        viewbox_center = viewbox_size / 2
+
+        if camera.perspective == 0:
+            return self.viewbox_to_canvas(ortho, viewbox)
+
+        h = float(viewbox_size[0])
+        dist_world = (h / camera.zoom) / (
+            2 * np.tan(np.radians(max(float(camera.perspective), 0.01)) / 2)
+        )
+        denom = dist_world - depth
+        valid = np.asarray(denom > 0)
+        factor = np.full(np.shape(denom), np.nan, dtype=float)
+        np.divide(
+            dist_world,
+            denom,
+            out=factor,
+            where=valid,
+        )
+
+        return self.viewbox_to_canvas(
+            viewbox_center + (ortho - viewbox_center) * factor[..., None],
+            viewbox,
+        )
 
     @property
     def experimental(self):
@@ -1103,6 +1333,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
+        layer.events.visible.connect(self._update_viewbox_to_world_deferred)
         self._layer_help_from_mode(layer)
 
         # Update dims
