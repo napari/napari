@@ -742,11 +742,16 @@ class EventEmitter:
                 cb()
         except Exception as e:  # noqa: BLE001
             # dead Qt object with living python pointer. not importing Qt
-            # here... but this error is consistent across backends
-            if (
-                isinstance(e, RuntimeError)
-                and 'C++' in str(e)
-                and str(e).endswith(('has been deleted', 'already deleted.'))
+            # here... but this error is consistent across backends, except
+            # for PySide6 when emitting a signal of the dead object.
+            if isinstance(e, RuntimeError) and (
+                str(e) == 'Signal source has been deleted'
+                or (
+                    'C++' in str(e)
+                    and str(e).endswith(
+                        ('has been deleted', 'already deleted.')
+                    )
+                )
             ):
                 self.disconnect(cb)
                 return

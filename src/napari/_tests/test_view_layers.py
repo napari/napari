@@ -258,3 +258,15 @@ def test_imshow_with_viewer(qtbot, make_napari_viewer):
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     viewer.close()
+
+
+def test_imshow_keeps_existing_viewer_dims(make_napari_viewer):
+    data = np.zeros((8, 16, 16))
+    viewer = make_napari_viewer()
+    viewer.add_image(data)
+    viewer.dims.ndisplay = 3
+    viewer.dims.order = (2, 0, 1)
+    napari.imshow(data, viewer=viewer, show=False)
+    assert viewer.dims.ndisplay == 3
+    assert viewer.dims.order == (2, 0, 1)
+    viewer.close()
