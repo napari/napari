@@ -674,6 +674,22 @@ def test_set_text_then_set_visible_updates_checkbox(
     assert ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
 
+@pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
+def test_text_set_scaling_updates_checkbox(qtbot, layer_type_with_data):
+    layer = layer_type_with_data.type(layer_type_with_data.data)
+    ctrl = create_qt_layer_controls(layer)
+    qtbot.addWidget(ctrl)
+    assert not ctrl._text_visibility_control.text_scaling_checkbox.isChecked()
+
+    layer.text.scaling = True
+
+    assert ctrl._text_visibility_control.text_scaling_checkbox.isChecked()
+
+    layer.text.scaling = False
+
+    assert not ctrl._text_visibility_control.text_scaling_checkbox.isChecked()
+
+
 @pytest.mark.parametrize(('ndim', 'editable_after'), [(2, False), (3, True)])
 def test_set_3d_display_with_points(qtbot, ndim, editable_after):
     """Interactivity only works for 2D points layers rendered in 2D and not
