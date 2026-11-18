@@ -28,18 +28,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
     from typing import TypeAlias
 
+    from napari.types import Matrix2D, Vector1D
     from napari.utils.transforms._units import UnitsLike
 
-    # TODO: use ``Vector1D`` and ``Matrix2D`` from ``napari.types``
-    # instead of ``_Vector1D`` and ``_Matrix2D`` once #9782 is merged.
-    # A 1D vector of numbers, e.g. a per-axis ``scale`` or ``translate``.
-    _Vector1D: TypeAlias = (
-        Sequence[float] | np.ndarray[tuple[int], np.dtype[np.number]]
-    )
     # A 2D array of numbers, e.g. an ``affine_matrix``.
     _Array2D: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.number]]
-    # A 2D matrix of numbers, e.g. a ``linear_matrix`` or ``rotate`` matrix.
-    _Matrix2D: TypeAlias = Sequence[Sequence[float]] | _Array2D
 
 
 class Transform:
@@ -139,18 +132,19 @@ _T = TypeVar('_T', bound=Transform)
 
 
 # ``_T`` narrows the element type for callers, e.g. ``TransformChain[Affine]``.
-class TransformChain(Transform, EventedList[Transform], Generic[_T]):
+class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __init__(self, transforms: Iterable[_T] | None = None) -> None:
         if transforms is None:
             transforms = []
-        # The two bases have incompatible ``__init__`` signatures and do not
-        # chain to each other via ``super()``, so call both explicitly.
-        EventedList.__init__(
-            self,
+        super().__init__(
             data=transforms,
-            basetype=Transform,
+            # the runtime check can only use the bound of ``_T``
+            basetype=Transform,  # pyrefly: ignore[bad-argument-type]
             lookup={str: lambda x: x.name},
         )
+        # The above super().__init__() will not call Transform.__init__().
+        # For that to work every __init__() called using super() needs to
+        # in turn call super().__init__(). So we call it explicitly here.
         Transform.__init__(self)
         for tr in self:
             if hasattr(tr, 'changed'):
@@ -159,9 +153,7 @@ class TransformChain(Transform, EventedList[Transform], Generic[_T]):
     def __call__(self, coords: npt.ArrayLike) -> npt.ArrayLike:
         return tz.pipe(coords, *self)
 
-    def __newlike__(
-        self, iterable: Iterable[Transform]
-    ) -> TransformChain[Transform]:
+    def __newlike__(self, iterable: Iterable[_T]) -> TransformChain[_T]:
         return TransformChain(iterable)
 
     @overload
@@ -178,7 +170,7 @@ class TransformChain(Transform, EventedList[Transform], Generic[_T]):
             self._cache_dict[f'getitem_{key}'] = super().__getitem__(key)
         return self._cache_dict[f'getitem_{key}']
 
-    def __setitem__(self, key: int, value: Transform) -> None:
+    def __setitem__(self, key: int, value: _T) -> None:
         val = self[key]
         super().__setitem__(key, value)
         if hasattr(val, 'changed'):
@@ -288,8 +280,8 @@ class ScaleTranslate(Transform):
 
     def __init__(
         self,
-        scale: _Vector1D = (1.0,),
-        translate: _Vector1D = (0.0,),
+        scale: Vector1D = (1.0,),
+        translate: Vector1D = (0.0,),
         *,
         name: str | None = None,
     ) -> None:
@@ -311,7 +303,24 @@ class ScaleTranslate(Transform):
         self.scale = np.array(scale_list)
         self.translate = np.array(translate_list)
 
-    def __call__(self, coords: npt.ArrayLike) -> npt.NDArray[np.number]:
+    @overload
+    def __call__(
+        self, coords: Vector1D
+    ) -> np.ndarray[tuple[int], np.dtype[np.number]]: ...
+
+    @overload
+    def __call__(
+        self, coords: Matrix2D
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.number]]: ...
+
+    @overload
+    def __call__(
+        self, coords: npt.ArrayLike
+    ) -> np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.number]]: ...
+
+    def __call__(
+        self, coords: npt.ArrayLike
+    ) -> np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.number]]:
         coords = np.asarray(coords)
         append_first_axis = coords.ndim == 1
         if append_first_axis:
@@ -338,6 +347,12 @@ class ScaleTranslate(Transform):
     def inverse(self) -> ScaleTranslate:
         """Return the inverse transform."""
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
+
+    @overload
+    def compose(self, transform: ScaleTranslate) -> ScaleTranslate: ...
+
+    @overload
+    def compose(self, transform: Transform) -> TransformChain: ...
 
     def compose(self, transform: Transform) -> Transform:
         """Return the composite of this transform and the provided one."""
@@ -457,19 +472,19 @@ class Affine(Transform):
 
     def __init__(
         self,
-        scale: _Vector1D = (1.0, 1.0),
-        translate: _Vector1D | None = (
+        scale: Vector1D = (1.0, 1.0),
+        translate: Vector1D | None = (
             0.0,
             0.0,
         ),
         *,
         affine_matrix: _Array2D | None = None,
         axis_labels: Sequence[str] | None = None,
-        linear_matrix: _Matrix2D | None = None,
+        linear_matrix: Matrix2D | None = None,
         name: str | None = None,
         ndim: int | None = None,
-        rotate: float | np.number | _Vector1D | _Matrix2D | None = None,
-        shear: _Vector1D | _Matrix2D | None = None,
+        rotate: float | np.number | Vector1D | Matrix2D | None = None,
+        shear: Vector1D | Matrix2D | None = None,
         units: UnitsLike = None,
     ) -> None:
         super().__init__(name=name)
@@ -510,7 +525,24 @@ class Affine(Transform):
         self.axis_labels = axis_labels
         self.units = units
 
-    def __call__(self, coords: npt.ArrayLike) -> npt.NDArray[np.floating]:
+    @overload
+    def __call__(
+        self, coords: Vector1D
+    ) -> np.ndarray[tuple[int], np.dtype[np.floating]]: ...
+
+    @overload
+    def __call__(
+        self, coords: Matrix2D
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]: ...
+
+    @overload
+    def __call__(
+        self, coords: npt.ArrayLike
+    ) -> np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.floating]]: ...
+
+    def __call__(
+        self, coords: npt.ArrayLike
+    ) -> np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.floating]]:
         coords = np.asarray(coords)
         append_first_axis = coords.ndim == 1
         if append_first_axis:
@@ -570,7 +602,7 @@ class Affine(Transform):
         return self._cache_dict['decompose_linear_matrix'][1]
 
     @scale.setter
-    def scale(self, scale: _Vector1D) -> None:
+    def scale(self, scale: Vector1D) -> None:
         """Set the scale of the transform."""
         if self._is_diagonal:
             scale = scale_to_vector(scale, ndim=self.ndim)
@@ -593,7 +625,7 @@ class Affine(Transform):
         return self._translate
 
     @translate.setter
-    def translate(self, translate: _Vector1D) -> None:
+    def translate(self, translate: Vector1D) -> None:
         """Set the translation of the transform."""
         self._translate = translate_to_vector(translate, ndim=self.ndim)
         self._clean_cache()
@@ -612,9 +644,7 @@ class Affine(Transform):
         return self._cache_dict['decompose_linear_matrix'][0]
 
     @rotate.setter
-    def rotate(
-        self, rotate: float | np.number | _Vector1D | _Matrix2D
-    ) -> None:
+    def rotate(self, rotate: float | np.number | Vector1D | Matrix2D) -> None:
         """Set the rotation of the transform."""
         self._linear_matrix = compose_linear_matrix(
             rotate, self.scale, self._shear_cache
@@ -635,7 +665,7 @@ class Affine(Transform):
         return self._cache_dict['decompose_linear_matrix'][2]
 
     @shear.setter
-    def shear(self, shear: _Vector1D | _Matrix2D) -> None:
+    def shear(self, shear: Vector1D | Matrix2D) -> None:
         """Set the shear of the transform."""
         shear = np.asarray(shear)
         if shear.ndim == 2:
@@ -714,7 +744,7 @@ class Affine(Transform):
     def compose(self, transform: Affine) -> Affine: ...
 
     @overload
-    def compose(self, transform: Transform) -> Transform: ...
+    def compose(self, transform: Transform) -> TransformChain: ...
 
     def compose(self, transform: Transform) -> Transform:
         """Return the composite of this transform and the provided one."""
@@ -870,12 +900,12 @@ class CompositeAffine(Affine):
 
     def __init__(
         self,
-        scale: _Vector1D = (1, 1),
-        translate: _Vector1D | None = (0, 0),
+        scale: Vector1D = (1, 1),
+        translate: Vector1D | None = (0, 0),
         *,
         axis_labels: Sequence[str] | None = None,
-        rotate: float | np.number | _Vector1D | _Matrix2D | None = None,
-        shear: _Vector1D | _Matrix2D | None = None,
+        rotate: float | np.number | Vector1D | Matrix2D | None = None,
+        shear: Vector1D | Matrix2D | None = None,
         ndim: int | None = None,
         name: str | None = None,
         units: UnitsLike = None,
@@ -906,7 +936,7 @@ class CompositeAffine(Affine):
         return self._scale
 
     @scale.setter
-    def scale(self, scale: _Vector1D) -> None:
+    def scale(self, scale: Vector1D) -> None:
         """Set the scale of the transform."""
         self._scale = scale_to_vector(scale, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
@@ -918,9 +948,7 @@ class CompositeAffine(Affine):
         return self._rotate
 
     @rotate.setter
-    def rotate(
-        self, rotate: float | np.number | _Vector1D | _Matrix2D
-    ) -> None:
+    def rotate(self, rotate: float | np.number | Vector1D | Matrix2D) -> None:
         """Set the rotation of the transform."""
         self._rotate = rotate_to_matrix(rotate, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
@@ -941,7 +969,7 @@ class CompositeAffine(Affine):
         )
 
     @shear.setter
-    def shear(self, shear: _Vector1D | _Matrix2D) -> None:
+    def shear(self, shear: Vector1D | Matrix2D) -> None:
         """Set the shear of the transform."""
         self._shear = shear_to_matrix(shear, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
