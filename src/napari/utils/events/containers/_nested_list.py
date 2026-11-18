@@ -150,7 +150,7 @@ class NestableEventedList(EventedList[_T]):
     # def remove(self, value: T): ...
 
     @overload
-    def __getitem__(  # pyrefly: ignore [bad-override]
+    def __getitem__(  # pyrefly: ignore[bad-override]
         self, key: int
     ) -> _T | NestableEventedList[_T]: ...  # pragma: no cover
 
@@ -247,19 +247,19 @@ class NestableEventedList(EventedList[_T]):
         # potentially different emitter
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                event.index = self.index(event.source)  # pyrefly: ignore [missing-attribute]
+                event.index = self.index(event.source)  # pyrefly:ignore[missing-attribute]
 
         emitter(event)
 
     @overload
     def _non_negative_index(
         self, parent_index: ParentIndex, dest_index: int
-    ) -> int: ...
+    ) -> int: ...  # pragma: no cover
 
     @overload
     def _non_negative_index(
         self, parent_index: ParentIndex, dest_index: slice
-    ) -> slice: ...
+    ) -> slice: ...  # pragma: no cover
 
     def _non_negative_index(
         self, parent_index: ParentIndex, dest_index: Index
@@ -439,7 +439,7 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(  # pyrefly: ignore [bad-override]
+    def _iter_indices(  # pyrefly: ignore[bad-override]
         self,
         start: int = 0,
         stop: int | None = None,
