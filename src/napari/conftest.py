@@ -636,7 +636,13 @@ def pytest_generate_tests(metafunc) -> None:
         metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
 
-def pytest_collection_modifyitems(session, config, items) -> None:
+# used to store the section of a test in pytest.Item.stash
+_TEST_SECTION_KEY = pytest.StashKey[str]()
+
+
+def pytest_collection_modifyitems(
+    session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+) -> None:
     test_subset = os.environ.get('NAPARI_TEST_SUBSET')
 
     test_order_prefix = [
@@ -647,6 +653,13 @@ def pytest_collection_modifyitems(session, config, items) -> None:
         os.path.join('napari', 'plugins'),
         os.path.join('napari', '_vispy'),
         os.path.join('napari', '_qt'),
+        # Slowest `_qt` folders in separate sections after the rest of `_qt`,
+        # so failures there stop the run early. The last matching prefix wins.
+        os.path.join('napari', '_qt', '_qapp_model'),
+        os.path.join('napari', '_qt', '_tests'),
+        # `test_trace_on_start` starts napari in a subprocess, which on macOS
+        # may leave the test app inactive; run it after focus-dependent tests.
+        os.path.join('napari', '_qt', 'perf'),
         os.path.join('napari', 'qt'),
         os.path.join('napari', '_tests'),
         os.path.join('napari', '_tests', 'test_examples.py'),
@@ -669,8 +682,45 @@ def pytest_collection_modifyitems(session, config, items) -> None:
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
                 index = i
+        item.stash[_TEST_SECTION_KEY] = (
+            test_order_prefix[index] if index >= 0 else '<other>'
+        )
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_protocol(
+    item: pytest.Item, nextitem: pytest.Item | None
+) -> Generator[None, object, object]:
+    """Stop the run once a test section that had failures is finished.
+
+    ``pytest_collection_modifyitems`` groups tests into sections ordered
+    from low-level to high-level code. Failures in an early section usually
+    cascade into later ones, so running them only wastes CI time. When the
+    ``CI`` environment variable is set to ``1`` (or ``true``, as set by
+    GitHub Actions), stop after the last test of a section that had
+    failures, even if the ``--maxfail`` limit is not reached.
+    """
+    result = yield
+    if nextitem is None or os.environ.get('CI', '').lower() not in {
+        '1',
+        'true',
+    }:
+        return result
+    session = item.session
+    section = item.stash.get(_TEST_SECTION_KEY, None)
+    if nextitem.stash.get(_TEST_SECTION_KEY, None) == section:
+        return result
+    # `item` was the last test of its section. A failure in an earlier
+    # section would already have stopped the run, so any failure counted
+    # so far happened in this section.
+    if session.testsfailed and not session.shouldfail:
+        session.shouldfail = (
+            f'stopping after {session.testsfailed} failure(s) '
+            f'in test section {section!r}'
+        )
+    return result
 
 
 @pytest.fixture
