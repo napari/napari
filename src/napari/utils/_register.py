@@ -99,13 +99,16 @@ def create_add_method(
         cls_name=cls_name,
     )
 
-    execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
+    execdict: dict[str, Any] = {
+        cls_name: cls,
+        'napari': sys.modules.get('napari'),
+    }
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
     func = cast('Callable[Concatenate[ViewerModel, P], L]', execdict[name])
 
     func.__doc__ = doc
-    func.__signature__ = sig.replace(  # pyrefly: ignore [missing-attribute]
+    func.__signature__ = sig.replace(
         parameters=[
             Parameter('self', Parameter.POSITIONAL_OR_KEYWORD),
             *list(sig.parameters.values()),
