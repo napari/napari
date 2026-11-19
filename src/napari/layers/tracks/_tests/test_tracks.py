@@ -23,7 +23,7 @@ def test_empty_tracks():
 
 
 @pytest.mark.parametrize(
-    'data, expected_shape',
+    ('data', 'expected_shape'),
     [
         (np.empty((0, 4)), (0, 4)),
         ([], (0, 4)),
