@@ -3220,7 +3220,7 @@ class Shapes(Layer):
             dims_displayed=dims_displayed,
         )
         if intersection is not None:
-            return intersection[0], None
+            return intersection
 
         return None, None
 
