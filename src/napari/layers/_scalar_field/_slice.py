@@ -19,8 +19,9 @@ if TYPE_CHECKING:
 
     from numpy.typing import DTypeLike
 
-    _ThumbnailCache: TypeAlias = Callable[
-        [tuple, Callable[[], np.ndarray]], np.ndarray
+    # (data, axis, mode) -> projected data, e.g. _ImageSliceRequest._project_slice
+    _Projector: TypeAlias = Callable[
+        [np.ndarray, tuple[int, ...], Any], np.ndarray
     ]
 
 
@@ -181,6 +182,45 @@ class _ScalarFieldSliceResponse:
         )
 
 
+def _read_projected(
+    data: Any,
+    project: _Projector,
+    index: tuple[slice | int, ...],
+    mode: Any,
+    axis: tuple[int, ...],
+) -> np.ndarray:
+    """Read ``data[index]`` and project ``axis``."""
+    array = np.asarray(data[index])
+    return array if mode == 'none' else project(array, axis, mode)
+
+
+class _ThumbnailPlaneCache:
+    """The projected plane of the last-read thumbnail level from ``data``."""
+
+    def __init__(self, data: Any, project: _Projector) -> None:
+        self._data = data
+        self._project = project
+        self._entry: tuple[tuple, np.ndarray] | None = None
+
+    def __call__(
+        self,
+        level: int,
+        index: tuple[slice | int, ...],
+        mode: Any,
+        axis: tuple[int, ...],
+    ) -> np.ndarray:
+        key = (level, index, mode, axis)
+        # read the entry once, so another thread can't swap it mid-call
+        entry = self._entry
+        if entry is not None and entry[0] == key:
+            return entry[1]
+        plane = _read_projected(
+            self._data[level], self._project, index, mode, axis
+        )
+        self._entry = (key, plane)
+        return plane
+
+
 @dataclass(frozen=True)
 class _ScalarFieldSliceRequest:
     """A callable that stores all the input data needed to slice an image layer.
@@ -198,10 +238,9 @@ class _ScalarFieldSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The original data source, including all levels for multiscale data.
-    thumbnail_cache : callable
-        The layer's cache of the multiscale thumbnail plane, replaced
-        whenever ``data`` is reassigned. Used during execution, not request
-        construction.
+    thumbnail_plane_cache : _ThumbnailPlaneCache
+        Reads the multiscale thumbnail plane, cached. Used during
+        execution, not request construction.
     dtype : DTypeLike
         The dtype of the layer's data.
     data_slice : _ThickNDSlice
@@ -214,7 +253,7 @@ class _ScalarFieldSliceRequest:
 
     slice_input: _SliceInput
     data: Any = field(repr=False)
-    thumbnail_cache: _ThumbnailCache = field(repr=False)
+    thumbnail_plane_cache: _ThumbnailPlaneCache = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
@@ -247,16 +286,18 @@ class _ScalarFieldSliceRequest:
         """Return the thumbnail level at the dims point, projected but uncropped.
 
         Only the displayed dims remain, at full extent and in index order, so
-        callers crop and transpose it. It is cached on its indices, so pan and
+        callers crop and transpose it. ``thumbnail_plane_cache`` keeps it, so pan and
         zoom don't read it again.
         """
         # volumes are too large to keep in the cache
         assert self._thumbnail_level_is_plane()
         level = self.thumbnail_level
         data_slice = self._thick_slice_at_level(level)
-        return self.thumbnail_cache(
-            (level, self._indices(data_slice), self.projection_mode),
-            lambda: self._project_thick_slice(self.data[level], data_slice),
+        return self.thumbnail_plane_cache(
+            level,
+            self._indices(data_slice),
+            self.projection_mode,
+            tuple(self.slice_input.not_displayed),
         )
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
@@ -384,16 +425,12 @@ class _ScalarFieldSliceRequest:
         ``disp_slice`` optionally crops the displayed dimensions to the
         visible tile.
         """
-        data = np.asarray(data[self._indices(data_slice, disp_slice)])
-
-        if self.projection_mode == 'none':
-            # early return with only the dims point being used
-            return data
-
-        return self._project_slice(
-            data=data,
-            axis=tuple(self.slice_input.not_displayed),
-            mode=self.projection_mode,
+        return _read_projected(
+            data,
+            self._project_slice,
+            self._indices(data_slice, disp_slice),
+            self.projection_mode,
+            tuple(self.slice_input.not_displayed),
         )
 
     def _indices(

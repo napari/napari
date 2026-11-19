@@ -13,6 +13,7 @@ from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
+    _ThumbnailPlaneCache,
 )
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
@@ -42,10 +43,9 @@ from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from napari.components import Dims
-    from napari.layers._scalar_field._slice import _ThumbnailCache
 
     PixelValue: TypeAlias = (
         np.number
@@ -55,30 +55,6 @@ if TYPE_CHECKING:
 
 
 __all__ = ('ScalarFieldBase',)
-
-
-def _make_thumbnail_cache() -> _ThumbnailCache:
-    """Return a one-entry cache for the multiscale thumbnail plane.
-
-    The returned ``cache(key, read)`` returns the stored value if ``key``
-    equals the stored key, otherwise it calls ``read()`` and stores the
-    result. Pan and zoom only change the displayed tile, not the plane, so
-    they hit. Keys contain slices, which are only hashable from Python 3.12,
-    so they are compared with ``==`` rather than hashed.
-    """
-    entry: tuple[tuple, np.ndarray] | None = None
-
-    def _cached(key: tuple, read: Callable[[], np.ndarray]) -> np.ndarray:
-        nonlocal entry
-        # read the shared entry once, so another thread can't swap it mid-call
-        last = entry
-        if last is not None and last[0] == key:
-            return last[1]
-        value = read()
-        entry = (key, value)
-        return value
-
-    return _cached
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -216,7 +192,6 @@ class ScalarFieldBase(Layer, ABC):
 
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
-    _thumbnail_cache: _ThumbnailCache
     _slicing_state: ScalarFieldSlicingState
 
     def __init__(
@@ -342,7 +317,6 @@ class ScalarFieldBase(Layer, ABC):
         self.corner_pixels[1][displayed_axes] = (
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
-        self._reset_thumbnail_level_data()
 
         self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
@@ -402,7 +376,7 @@ class ScalarFieldBase(Layer, ABC):
         # note, we don't support changing from/to multiscale after construction
         self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
         self._reset_data_level()
-        self._reset_thumbnail_level_data()
+        self._slicing_state._reset_thumbnail_plane_cache()
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
@@ -574,19 +548,6 @@ class ScalarFieldBase(Layer, ABC):
             self.corner_pixels = corners
             if level_changed:
                 self.refresh(extent=False, thumbnail=False)
-
-    def _reset_thumbnail_level_data(self) -> None:
-        """Set ``_thumbnail_level`` and ``_thumbnail_cache`` for the current data.
-
-        Called once during ``__init__`` and again whenever ``data`` is replaced.
-        Only multiscale slicing uses the cache: a single-scale image is
-        always its own thumbnail.
-        """
-        data = self._data
-        self._thumbnail_level = (
-            len(data) - 1 if isinstance(data, MultiScaleData) else 0
-        )
-        self._thumbnail_cache = _make_thumbnail_cache()
 
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
@@ -890,6 +851,13 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             rgb=len(self.layer.data.shape) != self.ndim,
             dtype=self.layer._slice_dtype(),
         )
+        self._reset_thumbnail_plane_cache()
+
+    def _reset_thumbnail_plane_cache(self) -> None:
+        """Drop the cached thumbnail plane. Call it when ``data`` changes."""
+        self._thumbnail_plane_cache = _ThumbnailPlaneCache(
+            self.layer.data, self._slice_request_class._project_slice
+        )
 
     def _set_view_slice(self) -> None:
         if (
@@ -976,7 +944,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         return self._slice_request_class(
             slice_input=slice_input,
             data=data,
-            thumbnail_cache=self.layer._thumbnail_cache,
+            thumbnail_plane_cache=self._thumbnail_plane_cache,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
@@ -985,7 +953,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             corner_pixels=self.layer.corner_pixels,
             rgb=len(self.layer.data.shape) != self.ndim,
             data_level=data_level,
-            thumbnail_level=self.layer._thumbnail_level,
+            thumbnail_level=len(self.layer.level_shapes) - 1,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
         )
