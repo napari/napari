@@ -21,7 +21,6 @@ from typing import (
     Union,
     cast,
 )
-from warnings import deprecated
 from weakref import WeakValueDictionary
 
 from qtpy.QtCore import (
@@ -46,6 +45,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from typing_extensions import deprecated
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
