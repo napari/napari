@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import inspect
 import warnings
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any, ClassVar, NotRequired, TypedDict, Union
+from typing import TYPE_CHECKING, Any, ClassVar, NotRequired, TypedDict
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -29,6 +31,9 @@ from napari.utils.events.event import (
 from napari.utils.migrations import RenamedProperty
 from napari.utils.misc import pick_equality_operator
 
+if TYPE_CHECKING:
+    from types import TracebackType
+
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
 # it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
@@ -52,7 +57,13 @@ class EventedMetaclass(ModelMetaclass):
     when each instance of an ``EventedModel`` is instantiated).
     """
 
-    def __new__(mcs, name, bases, namespace, **kwargs):
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> type[EventedModel]:
         cls: type[EventedModel] = super().__new__(
             mcs, name, bases, namespace, **kwargs
         )
@@ -70,7 +81,9 @@ class EventedMetaclass(ModelMetaclass):
             # passed to json.dumps ... but it needn't return a string.
             if hasattr(field_type, '_json_encode'):
                 encoder = field_type._json_encode
-                cls.model_config['json_encoders'][field_type] = encoder
+                json_encoders = cls.model_config.get('json_encoders') or {}
+                json_encoders[field_type] = encoder
+                cls.model_config['json_encoders'] = json_encoders
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
@@ -112,7 +125,7 @@ class EventedMetaclass(ModelMetaclass):
 
 
 def _update_dependents_from_property_code(
-    cls: type['EventedModel'],
+    cls: type[EventedModel],
     prop_name: str,
     prop: property,
     deps: dict[str, set[str]],
@@ -124,6 +137,9 @@ def _update_dependents_from_property_code(
     """
     if isinstance(prop, RenamedProperty):
         deps.setdefault(prop.new_name.split('.')[0], set()).add(prop_name)
+    if prop.fget is None:
+        # a property without a getter has no code to inspect
+        return
     for name in inspect.unwrap(prop.fget).__code__.co_names:
         if name in cls.model_fields:
             deps.setdefault(name, set()).add(prop_name)
@@ -137,7 +153,7 @@ def _update_dependents_from_property_code(
             )
 
 
-def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
+def _get_field_dependents(cls: type[EventedModel]) -> dict[str, set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
     Dependencies will be guessed by inspecting the code of each property
@@ -248,7 +264,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    model_config = NapariConfigDict(
+    model_config: ClassVar[NapariConfigDict] = NapariConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration
@@ -279,7 +295,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             for name, prop in self.__properties__.items()
         }
 
-        self._events.add(**(dict.fromkeys(field_events) | property_events))
+        # auto_connect is passed by name so pyrefly does not match the
+        # unpacked emitters against it
+        self._events.add(
+            auto_connect=None,
+            **(dict.fromkeys(field_events) | property_events),
+        )
 
         # while seemingly redundant, this next line is very important to maintain
         # correct sources; see https://github.com/napari/napari/pull/4138
@@ -302,9 +323,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def _check_if_differ(self, name: str, old_value: Any) -> tuple[bool, Any]:
         """
-        Check new value of a field and emit event if it is different from the old one.
+        Check whether the current value of a field differs from ``old_value``.
 
-        Returns True if data changed, else False. Return current value.
+        Returns a ``(changed, current_value)`` tuple.
         """
         new_value = getattr(self, name, object())
         # Equal-valued children still have distinct event emitters, so replacing
@@ -459,7 +480,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 setattr(self, name, value)
 
     def update(
-        self, values: Union['EventedModel', dict], recurse: bool = True
+        self,
+        values: EventedModel | dict[str, Any],
+        recurse: bool = True,
     ) -> None:
         """Update a model in place.
 
@@ -497,7 +520,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         We override the pydantic approach (which just checks
         ``self.model_dump() == other.model_dump()``) to accommodate more complicated types
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
-        is constructed in ``EqualityMetaclass.__new__``
+        is constructed in ``EventedMetaclass.__new__``
         """
         if self is other:
             return True
@@ -584,7 +607,7 @@ def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
 
 
 class ComparisonDelayer:
-    def __init__(self, target: EventedModel):
+    def __init__(self, target: EventedModel) -> None:
         self._target = target
 
     def __enter__(self) -> None:
@@ -644,7 +667,7 @@ def _property_to_event_emitter(
 
     non_direct = [d for d in dependencies if '.' in d]
     if non_direct:
-        if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
+        if prop.fget is not None and hasattr(prop.fget, '__deprecated__'):
             return DependentWarningEmitter(
                 type_name=type_name,
                 property_name=type_name,
@@ -657,7 +680,7 @@ def _property_to_event_emitter(
             sources_list=non_direct,
         )
 
-    if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
+    if prop.fget is not None and hasattr(prop.fget, '__deprecated__'):
         return WarningEmitter(
             type_name=type_name, **_get_deprecated_params(prop.fget)
         )
