@@ -12,7 +12,6 @@ from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
-    from concurrent.futures import Future
     from typing import Protocol
 
     from app_model.types import KeyBinding
@@ -22,7 +21,7 @@ if TYPE_CHECKING:
     from napari.utils.key_bindings import Keymap, KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable, /) -> object: ...
+        def connect(self, callback: Callable[..., Any], /) -> object: ...
 
     class Button(Protocol):
         clicked: SignalInstance
@@ -37,13 +36,13 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
-    command: Callable
+    command: Callable[..., Any]
     description: str
     keymapprovider: type[KeymapProvider] | None  # subclass, or None if unbound
     repeatable: bool = False  # deprecated, ignored: auto-repeat is the default
 
     @cached_property
-    def injected(self) -> Callable[..., Future]:
+    def injected(self) -> Callable[..., Any]:
         """command with napari objects injected.
 
         This will inject things like the current viewer, or currently selected
@@ -102,7 +101,7 @@ class ActionManager:
     def register_action(
         self,
         name: str,
-        command: Callable,
+        command: Callable[..., Any],
         description: str,
         keymapprovider: type[KeymapProvider] | None,
         repeatable: bool = False,
@@ -339,14 +338,14 @@ class ActionManager:
 
     def _get_layer_shortcuts(
         self, layers: Iterable[type[KeymapProvider]]
-    ) -> dict:
+    ) -> dict[type[KeymapProvider], dict[str, str]]:
         """
         Get shortcuts filtered by the given layers.
 
         Parameters
         ----------
-        layers : list of layers
-            Layers to use for shortcuts filtering.
+        layers : iterable of type[KeymapProvider]
+            Layer classes to use for shortcuts filtering.
 
         Returns
         -------
@@ -367,14 +366,16 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_provider_actions(self, provider: type[KeymapProvider]) -> dict:
+    def _get_provider_actions(
+        self, provider: type[KeymapProvider]
+    ) -> dict[str, Action]:
         """
         Get actions filtered by the given provider.
 
         Parameters
         ----------
-        provider : KeymapProvider
-            Provider to use for actions filtering.
+        provider : type[KeymapProvider]
+            KeymapProvider subclass to use for actions filtering.
 
         Returns
         -------
@@ -394,8 +395,8 @@ class ActionManager:
 
         Parameters
         ----------
-        active_keymap : KeymapProvider
-            The active keymap provider.
+        active_keymap : Keymap
+            Mapping of key bindings to the functions they trigger.
 
         Returns
         -------

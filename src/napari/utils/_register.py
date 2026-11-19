@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import os
 import sys
-from collections.abc import Callable
 from inspect import Parameter, getdoc, signature
-from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, cast
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
@@ -107,7 +106,8 @@ def create_add_method(
     }
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
-    func = cast('Callable[Concatenate[ViewerModel, P], L]', execdict[name])
+    # set __doc__ and __signature__ while func is still untyped, cast at return
+    func = execdict[name]
 
     func.__doc__ = doc
     func.__signature__ = sig.replace(
@@ -129,4 +129,4 @@ def create_add_method(
                 func
             )
 
-    return func
+    return cast('Callable[Concatenate[ViewerModel, P], L]', func)
