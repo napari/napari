@@ -681,11 +681,13 @@ class _QtMainWindow(QMainWindow):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
 
-    def _show_notification_in_main_thread(self, notification: Notification):
+    def _show_notification_in_main_thread(
+        self, notification: Notification
+    ) -> None:
         """Show notification in the main thread."""
         self._show_notification.emit(notification)
 
-    def _show_notification_impl(self, notification: Notification):
+    def _show_notification_impl(self, notification: Notification) -> None:
         """Show notification in the main thread."""
         NapariQtNotification.from_notification(
             notification, parent=self._qt_viewer.canvas.native

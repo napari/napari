@@ -397,7 +397,7 @@ class NapariQtNotification(QDialog):
         )
 
     @classmethod
-    def show_notification(cls, notification: Notification):
+    def show_notification(cls, notification: Notification) -> None:
         from napari._qt.qt_main_window import _QtMainWindow
         from napari.settings import get_settings
 
