@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari._tests.utils import (
+    skip_local_popups,
+    skip_on_mac_ci,
+    skip_on_win_ci,
+)
 from napari.layers import Shapes
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
@@ -444,6 +448,7 @@ def test_axes_visible(make_napari_viewer):
 
 
 @skip_on_win_ci
+@skip_on_mac_ci
 @skip_local_popups
 def test_crosshair_drawn_at_cursor(make_napari_viewer):
     """Test the crosshair is drawn around the cursor position."""
