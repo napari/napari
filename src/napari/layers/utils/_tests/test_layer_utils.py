@@ -8,6 +8,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
+    _resize_to_thumbnail,
     _unique_element,
     calc_data_range,
     coerce_current_properties,
@@ -35,6 +36,88 @@ data_dask_1d_rgb = da.random.random(size=(5_000_000, 3), chunks=(50_000, 3))
 data_dask_plane = da.random.random(
     size=(100_000, 100_000), chunks=(1000, 1000)
 )
+
+
+@pytest.mark.parametrize(
+    ('image_shape', 'thumbnail_shape', 'expected_shape'),
+    [
+        # Downsampling preserves the aspect ratio.
+        ((64, 64), (32, 32), (32, 32)),
+        ((64, 3), (32, 32), (32, 2)),
+        ((64, 5), (32, 32), (32, 2)),
+        ((17, 43), (32, 32), (13, 32)),
+        ((249, 548), (32, 32), (15, 32)),
+        # Fractional sizes are rounded to the nearest integer (halves to even).
+        ((63, 65), (32, 32), (31, 32)),
+        # Single-pixel dimensions are preserved rather than dropped.
+        ((1, 2048), (32, 32), (1, 32)),
+        ((2048, 1), (32, 32), (32, 1)),
+        # Small images are upscaled to fit the thumbnail.
+        ((1, 1), (32, 32), (32, 32)),
+        ((3, 4), (32, 32), (24, 32)),
+        ((7, 11), (1, 2), (1, 2)),
+        # Extra (e.g. channel) dimensions are left untouched.
+        ((45, 60, 3), (32, 32), (24, 32, 3)),
+        ((39, 21, 4), (32, 32), (32, 17, 4)),
+    ],
+)
+def test_resize_to_thumbnail_shape(
+    image_shape, thumbnail_shape, expected_shape
+):
+    image = np.arange(np.prod(image_shape), dtype=np.uint64).reshape(
+        image_shape
+    )
+    result = _resize_to_thumbnail(image, thumbnail_shape)
+    assert result.shape == expected_shape
+
+
+@pytest.mark.parametrize(
+    ('image', 'thumbnail_shape', 'expected'),
+    [
+        (np.arange(16).reshape(4, 4), (2, 2), [[0, 3], [12, 15]]),
+        (
+            np.arange(35).reshape(5, 7),
+            (3, 4),
+            [[0, 2, 4, 6], [14, 16, 18, 20], [28, 30, 32, 34]],
+        ),
+    ],
+)
+def test_resize_to_thumbnail_samples_corners(image, thumbnail_shape, expected):
+    """Output samples include the input's first and last rows and columns."""
+    np.testing.assert_array_equal(
+        _resize_to_thumbnail(image, thumbnail_shape), expected
+    )
+
+
+def test_resize_to_thumbnail_channels_sampled_independently() -> None:
+    """Sampling of the first two dimensions is independent of channels."""
+    image = np.arange(17 * 43 * 2).reshape(17, 43, 2)
+    result = _resize_to_thumbnail(image, (32, 32))
+    for channel in range(image.shape[-1]):
+        np.testing.assert_array_equal(
+            result[..., channel],
+            _resize_to_thumbnail(image[..., channel], (32, 32)),
+        )
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    [
+        np.uint8,
+        np.uint16,
+        np.float16,
+        np.float32,
+        np.dtype(np.uint64).newbyteorder('S'),
+        np.dtype(np.float32).newbyteorder('S'),
+    ],
+)
+def test_resize_to_thumbnail_preserves_dtype(dtype) -> None:
+    """The input dtype is kept, with non-native byte orders normalized."""
+    dtype = np.dtype(dtype)
+    image = np.arange(17 * 43).reshape(17, 43).astype(dtype)
+    result = _resize_to_thumbnail(image, (32, 32))
+    assert result.dtype == dtype.newbyteorder('=')
+    assert result.dtype.isnative
 
 
 def _make_chunked(shape, chunks):
@@ -166,13 +249,96 @@ def test_calc_data_range():
     np.testing.assert_array_equal(clim, (0, 255))
 
 
+def test_calc_data_range_percentiles_ignore_outliers():
+    data = np.arange(101, dtype=float)  # 0, 1, ..., 100
+    data[-1] = 60_000  # one outlier
+    assert calc_data_range(data) == (0, 60_000)
+    assert calc_data_range(data, percentiles=(1, 99)) == (1, 99)
+
+
+@pytest.mark.parametrize('shape', [(20, 30), (5, 20, 30)])
+def test_calc_data_range_percentiles_0_100_is_min_max(shape):
+    data = np.arange(np.prod(shape), dtype=float).reshape(shape)
+    assert calc_data_range(data, percentiles=(0, 100)) == calc_data_range(data)
+
+
+def test_calc_data_range_percentiles_ignore_non_finite():
+    data = np.array([np.nan, np.inf, -np.inf, *range(101)], dtype=float)
+    assert calc_data_range(data, percentiles=(1, 99)) == (1, 99)
+    # no finite values at all: same fallback as without percentiles
+    all_nan = np.full(10, np.nan)
+    assert calc_data_range(all_nan, percentiles=(1, 99)) == (0, 1)
+
+
+def test_calc_data_range_percentiles_uint8():
+    """uint8 data always uses the full (0, 255) range, as without percentiles."""
+    data = np.full((10, 10), 20, dtype=np.uint8)
+    np.testing.assert_array_equal(
+        calc_data_range(data, percentiles=(1, 99)), (0, 255)
+    )
+
+
+@pytest.mark.parametrize('dtype', [float, np.uint8])
+@pytest.mark.parametrize(
+    'percentiles', [(99, 1), (50, 50), (-1, 99), (1, 101)]
+)
+def test_calc_data_range_invalid_percentiles(percentiles, dtype):
+    with pytest.raises(ValueError, match='percentiles'):
+        calc_data_range(
+            np.zeros((10, 10), dtype=dtype), percentiles=percentiles
+        )
+
+
+def test_calc_data_range_percentiles_bool():
+    data = np.eye(4, dtype=bool)
+    assert calc_data_range(data, percentiles=(1, 99)) == (0, 1)
+
+
+@pytest.mark.parametrize(
+    ('data', 'expected'),
+    [
+        # one -30_000 among 30_000s: the low percentile is interpolated
+        (
+            np.array([-30_000] + [30_000] * 99, dtype=np.int16),
+            (29_400, 30_000),
+        ),
+        (np.array([-60_000, 60_000], dtype=np.float16), (-58_800, 58_800)),
+    ],
+    ids=['int16', 'float16'],
+)
+def test_calc_data_range_percentiles_no_overflow(data, expected):
+    """The percentile interpolation must not overflow in small dtypes."""
+    np.testing.assert_allclose(
+        calc_data_range(data, percentiles=(1, 99)), expected
+    )
+
+
+def test_calc_data_range_percentiles_pooled_samples():
+    """For large data, percentiles are computed on all the samples together."""
+    data = da.arange(20_000_000, dtype=float, chunks=1_000_000)
+    center = 10_000_000
+    # the samples used for large 1D data: start, middle and end
+    samples = np.concatenate(
+        [
+            np.arange(0, 4096),
+            np.arange(center - 2048, center + 2048),
+            np.arange(20_000_000 - 4096, 20_000_000),
+        ]
+    )
+    expected = np.percentile(samples, (1, 99))
+    np.testing.assert_allclose(
+        calc_data_range(data, percentiles=(1, 99)), expected
+    )
+
+
+@pytest.mark.parametrize('percentiles', [None, (1, 99)])
 @pytest.mark.parametrize(
     'data',
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
 )
-def test_calc_data_range_fast(data):
+def test_calc_data_range_fast(data, percentiles):
     now = time.monotonic()
-    val = calc_data_range(data)
+    val = calc_data_range(data, percentiles=percentiles)
     assert len(val) > 0
     elapsed = time.monotonic() - now
     assert elapsed < 5, 'test took too long, computation was likely not lazy'
