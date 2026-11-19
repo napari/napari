@@ -104,7 +104,7 @@ jobs:
             coverage: cov
           # test with no numba and on macOS intel
           - python: "3.14"
-            platform: macos-15-intel
+            platform: macos-26-intel
             backend: pyqt6_no_numba
             coverage: cov
             timeout-minutes: 60
