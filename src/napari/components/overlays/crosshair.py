@@ -10,6 +10,8 @@ class CrosshairOverlay(SceneOverlay):
 
     Attributes
     ----------
+    position : tuple of floats
+        Position of the crosshair in world coordinates.
     color : ColorValue or 3-tuple of ColorValue or None
         Color of the crosshair lines. A single color is used for all lines.
         Three colors are used for each displayed axis, in the same order
@@ -29,6 +31,7 @@ class CrosshairOverlay(SceneOverlay):
         alpha values of the overlay get mixed with the visuals below.
     """
 
+    position: tuple[float, ...] = (0.0, 0.0)
     # left_to_right so that 3 colors are not parsed as a single ColorValue
     color: tuple[ColorValue, ColorValue, ColorValue] | ColorValue | None = (
         Field(default=None, union_mode='left_to_right')

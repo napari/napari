@@ -3,7 +3,7 @@ import pytest
 
 from napari.layers import Image
 from napari.layers.utils.interactivity_utils import (
-    orient_plane_normal_around_cursor,
+    reorient_plane_normal,
 )
 
 
@@ -29,7 +29,7 @@ def test_orient_plane_normal_around_cursor(make_napari_viewer, layer):
     layer.translate = [1] * layer._ndim
 
     # orient plane normal
-    orient_plane_normal_around_cursor(layer=layer, plane_normal=(1, 0, 1))
+    reorient_plane_normal(layer=layer, plane_normal=(1, 0, 1))
 
     # check that plane normal has been updated
     assert np.allclose(

@@ -97,7 +97,7 @@ if TYPE_CHECKING:
 
     import numpy as np
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+    from qtpy.QtGui import QCursor, QHideEvent, QImage, QShowEvent
 
     from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
@@ -194,20 +194,17 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        with contextlib.suppress(IndexError):
-            viewer.cursor.events.position.disconnect(
-                viewer.update_status_from_cursor
-            )
-
+        self._status_locked = False
         self.status_thread = StatusChecker(viewer, parent=self)
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
         )
-        viewer.cursor.events.position.connect(
-            self.status_thread.trigger_status_update
-        )
+        # if active layer changes, update the status as appropriate
         settings.appearance.events.update_status_based_on_layer.connect(
             self._toggle_status_thread
+        )
+        viewer.layers.selection.events.active.connect(
+            self.status_thread.refresh_status
         )
 
         self._command_palette = QCommandPalette(self)
@@ -255,9 +252,9 @@ class _QtMainWindow(QMainWindow):
         super().hideEvent(event)
 
     def set_status_and_tooltip(
-        self, status_and_tooltip: tuple[str | dict, str] | None
+        self, status_and_tooltip: tuple[str | dict, str]
     ):
-        if status_and_tooltip is None:
+        if self._status_locked:
             return
         self._qt_viewer.viewer.status = status_and_tooltip[0]
         self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
@@ -326,6 +323,24 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
+        # catch enter/leave events for the canvas and update status accordingly
+        if (
+            hasattr(self, '_qt_viewer')
+            and source is self._qt_viewer.canvas._scene_canvas.native
+        ):
+            if event.type() == QEvent.Type.Leave:
+                # Lock the status to "ready" until we come back in.
+                # We have to shortcut it with an instance attribute because
+                # the thread checker might report the status late, when the
+                # mouse is already out, overriding our status
+                self.set_status_and_tooltip(('Ready', ''))
+                self._status_locked = True
+            if (
+                event.type() in (QEvent.Type.MouseMove, QEvent.Type.Enter)
+                and self._qt_viewer.viewer.layers
+            ):
+                # only update status when on the canvas and there are layers
+                self._status_locked = False
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
@@ -1931,6 +1946,20 @@ class Window:
         )
         if dial.exec():
             update_save_history(dial.selectedFiles()[0])
+
+    @property
+    def cursor_style_override(self) -> Qt.CursorShape | QCursor | None:
+        """Override cursor style."""
+        return self._cursor_style_override
+
+    @cursor_style_override.setter
+    def cursor_style_override(
+        self, value: Qt.CursorShape | QCursor | None
+    ) -> None:
+        if value is None:
+            value = Qt.CursorShape.ArrowCursor
+        self._qt_window.setCursor(value)
+        self._cursor_style_override = value
 
 
 def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
