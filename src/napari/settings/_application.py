@@ -48,6 +48,18 @@ class DaskSettings(EventedModel):
         le=MAX_CACHE,
         title='Cache size (GB)',
     )
+
+
+class DaskAutochunkSettings(EventedModel):
+    override: bool = Field(
+        False,
+        title='Override',
+        description=(
+            'Override the "array.chunk-size" dask setting with the chunk '
+            'size below. Disabled by default, so napari does not change the '
+            'dask configuration.'
+        ),
+    )
     chunk_size: int = Field(
         _DEFAULT_CHUNK_SIZE,
         ge=1,
@@ -247,6 +259,12 @@ class ApplicationSettings(EventedModel):
         default=DaskSettings(),
         title='Dask cache',
         description='Settings for dask cache (does not work with distributed arrays)',
+    )
+
+    dask_autochunk: DaskAutochunkSettings = Field(
+        default=DaskAutochunkSettings(),
+        title='Dask autochunk size',
+        description='Override the size of the chunks that dask creates when it chunks arrays automatically.',
     )
 
     new_labels_dtype: LabelDTypes = Field(

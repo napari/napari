@@ -44,7 +44,7 @@ from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
-from napari.settings._application import DaskSettings
+from napari.settings._application import DaskAutochunkSettings, DaskSettings
 from napari.utils import config, perf, resize_dask_cache
 from napari.utils.action_manager import action_manager
 from napari.utils.geometry import get_center_bbox
@@ -256,6 +256,14 @@ class QtViewer(QSplitter):
             self._update_dask_cache_settings
         )
 
+        self._update_dask_autochunk_settings(
+            settings.application.dask_autochunk
+        )
+
+        settings.application.dask_autochunk.events.connect(
+            self._update_dask_autochunk_settings
+        )
+
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
@@ -283,10 +291,7 @@ class QtViewer(QSplitter):
     def _update_dask_cache_settings(
         dask_setting: DaskSettings | Event | None = None,
     ) -> None:
-        """Update dask cache and chunk size to match settings.
-
-        The chunk size is only applied when the dask settings are enabled.
-        """
+        """Update dask cache to match settings."""
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
@@ -296,12 +301,27 @@ class QtViewer(QSplitter):
         size = dask_setting.cache
         resize_dask_cache(int(int(enabled) * size * 1e9))
 
-        if enabled:
-            from dask import config as dask_config
+    @staticmethod
+    def _update_dask_autochunk_settings(
+        autochunk_setting: DaskAutochunkSettings | Event | None = None,
+    ) -> None:
+        """Update the dask autochunk size to match settings.
 
-            dask_config.set(
-                {'array.chunk-size': f'{dask_setting.chunk_size}MiB'}
-            )
+        The dask configuration is only changed when the override is enabled.
+        """
+        if not autochunk_setting:
+            return
+        if not isinstance(autochunk_setting, DaskAutochunkSettings):
+            autochunk_setting = get_settings().application.dask_autochunk
+
+        if not autochunk_setting.override:
+            return
+
+        from dask import config as dask_config
+
+        dask_config.set(
+            {'array.chunk-size': f'{autochunk_setting.chunk_size}MiB'}
+        )
 
     @property
     def controls(self) -> QtLayerControlsContainer:

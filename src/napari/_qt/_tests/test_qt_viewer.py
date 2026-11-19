@@ -1411,48 +1411,51 @@ def test_dask_cache():
 
 
 @pytest.mark.usefixtures('qt_viewer')
-def test_dask_chunk_size():
+def test_dask_autochunk_size_override():
     da = pytest.importorskip('dask.array')
     dask_config = pytest.importorskip('dask.config')
-    dask_settings = get_settings().application.dask
-    initial_chunk_size = dask_settings.chunk_size
+    autochunk = get_settings().application.dask_autochunk
+    initial_override = autochunk.override
+    initial_chunk_size = autochunk.chunk_size
 
-    try:
-        # check that changing the chunk size setting updates the dask config
-        dask_settings.chunk_size = 64
-        assert dask_config.get('array.chunk-size') == '64MiB'
+    # restores the dask config at the end of the test
+    with dask_config.set({'array.chunk-size': '128MiB'}):
+        try:
+            # check that the override and the chunk size update the dask config
+            autochunk.override = True
+            autochunk.chunk_size = 64
+            assert dask_config.get('array.chunk-size') == '64MiB'
 
-        # and that dask actually uses it when it chunks an array automatically
-        arr = da.zeros((2048, 2048, 64), dtype=np.float64, chunks='auto')
-        chunk_nbytes = np.prod(arr.chunksize) * arr.dtype.itemsize
-        assert chunk_nbytes <= 64 * 2**20
-    finally:
-        dask_settings.chunk_size = initial_chunk_size
-
-    assert dask_config.get('array.chunk-size') == f'{initial_chunk_size}MiB'
+            # and that dask uses it when it chunks an array automatically
+            arr = da.zeros((2048, 2048, 64), dtype=np.float64, chunks='auto')
+            chunk_nbytes = np.prod(arr.chunksize) * arr.dtype.itemsize
+            assert chunk_nbytes <= 64 * 2**20
+        finally:
+            autochunk.override = initial_override
+            autochunk.chunk_size = initial_chunk_size
 
 
 @pytest.mark.usefixtures('qt_viewer')
-def test_dask_chunk_size_not_applied_when_disabled():
+def test_dask_autochunk_size_not_overridden_by_default():
     dask_config = pytest.importorskip('dask.config')
-    dask_settings = get_settings().application.dask
-    initial_enabled = dask_settings.enabled
-    initial_chunk_size = dask_settings.chunk_size
+    autochunk = get_settings().application.dask_autochunk
+    initial_override = autochunk.override
+    initial_chunk_size = autochunk.chunk_size
 
     # a chunk size set by the user in their own code
     with dask_config.set({'array.chunk-size': '10MiB'}):
         try:
-            # when disabled, napari should not touch the dask config
-            dask_settings.enabled = False
-            dask_settings.chunk_size = 64
+            # without the override, napari should not touch the dask config
+            autochunk.override = False
+            autochunk.chunk_size = 64
             assert dask_config.get('array.chunk-size') == '10MiB'
 
-            # enabling them again applies the chunk size setting
-            dask_settings.enabled = True
+            # enabling the override applies the chunk size setting
+            autochunk.override = True
             assert dask_config.get('array.chunk-size') == '64MiB'
         finally:
-            dask_settings.enabled = initial_enabled
-            dask_settings.chunk_size = initial_chunk_size
+            autochunk.override = initial_override
+            autochunk.chunk_size = initial_chunk_size
 
 
 @pytest.mark.show_qt_viewer
