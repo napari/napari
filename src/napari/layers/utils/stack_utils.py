@@ -8,7 +8,9 @@ import numpy as np
 import pint
 
 from napari.layers import Image
-from napari.layers.image._image_utils import guess_multiscale
+from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.image._image_utils import guess_multiscale, guess_rgb
+from napari.utils._xarray_utils import _check_xarray
 from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
@@ -16,6 +18,42 @@ if TYPE_CHECKING:
     from napari.types import FullLayerData
 
 logger = logging.getLogger(__name__)
+
+
+def _zarr_to_dask(array):
+    if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
+        import dask.array as da
+
+        logger.info(
+            'zarr array cannot be sliced lazily, converted to dask array.'
+        )
+        return da.from_zarr(array)
+    return array
+
+
+def _prepare_rgb_channels(data, channel_axis: int):
+    """Return channel-last RGB data and the axis, if any, to split."""
+    pyramid = isinstance(data, (list, tuple, MultiScaleData))
+    shape = list((data[0] if pyramid else data).shape)
+    components = shape.pop(channel_axis)
+    # Keep splitting stacks whose individual slices are already RGB images.
+    if (
+        len(shape) < 2
+        or components not in (3, 4)
+        or guess_rgb(tuple(shape), min_side_len=0)
+    ):
+        return data, channel_axis
+
+    def move_channel_last(array):
+        if channel_axis in (-1, array.ndim - 1):
+            return array
+        if _check_xarray(array).has_dims:
+            return array.transpose(..., array.dims[channel_axis])
+        return np.moveaxis(_zarr_to_dask(array), channel_axis, -1)
+
+    if pyramid:
+        return [move_channel_last(level) for level in data], None
+    return move_channel_last(data), None
 
 
 def slice_from_axis(array, *, axis, element):
@@ -38,16 +76,7 @@ def slice_from_axis(array, *, axis, element):
     sliced : NumPy or other array
         The sliced output array, which has one less dimension than the input.
     """
-    # Check if array is a zarr array and wrap it with dask
-    # to keep lazy behavior and avoid loading into memory
-    if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
-        import dask.array as da
-
-        array = da.from_zarr(array)
-        logger.info(
-            'zarr array cannot be sliced lazily, converted to dask array.'
-        )
-
+    array = _zarr_to_dask(array)
     slices = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
@@ -55,7 +84,7 @@ def slice_from_axis(array, *, axis, element):
 
 def split_channels(
     data: np.ndarray,
-    channel_axis: int,
+    channel_axis: int | None,
     **kwargs,
 ) -> list[FullLayerData]:
     """Split the data array into separate arrays along an axis.
@@ -75,8 +104,9 @@ def split_channels(
     Parameters
     ----------
     data : array or list of array
-    channel_axis : int
-        Axis to split the image along.
+    channel_axis : int or None
+        Axis to split the image along. None keeps a single image and applies
+        the parameters for its one layer.
     **kwargs : dict
         Keyword arguments will override the default image meta keys
         returned in each layer data tuple.
@@ -92,7 +122,11 @@ def split_channels(
         multiscale, data = guess_multiscale(data)
         kwargs['multiscale'] = multiscale
 
-    n_channels = (data[0] if multiscale else data).shape[channel_axis]
+    n_channels = (
+        1
+        if channel_axis is None
+        else (data[0] if multiscale else data).shape[channel_axis]
+    )
     # Use original blending mode or for multichannel use translucent for first channel then additive
     kwargs['blending'] = kwargs.get('blending') or ['translucent_no_depth'] + [
         'additive'
@@ -148,7 +182,9 @@ def split_channels(
 
     layerdata_list = []
     for i in range(n_channels):
-        if multiscale:
+        if channel_axis is None:
+            image = data
+        elif multiscale:
             image = [
                 slice_from_axis(data[j], axis=channel_axis, element=i)
                 for j in range(len(data))
