@@ -138,18 +138,9 @@ def get_dtype(layer):
     Returns
     -------
     dtype
-        dtype of Layer data
+        dtype of Layer data (of level 0 if multiscale)
     """
-    layer_data = layer.data
-    if not isinstance(layer_data, list):
-        layer_data = [layer_data]
-    layer_data_level = layer_data[0]
-    if hasattr(layer_data_level, 'dtype'):
-        layer_dtype = layer_data_level[0].dtype
-    else:
-        layer_dtype = type(layer_data_level)
-
-    return layer_dtype
+    return layer.data.dtype
 
 
 def first_nonzero_coordinate(data, start_point, end_point):
