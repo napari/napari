@@ -25,7 +25,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QElidingLabel, ensure_main_thread
+from superqt import QElidingLabel
 from superqt.utils import CodeSyntaxHighlight
 
 from napari._qt.qt_resources import QColoredSVGIcon
@@ -397,7 +397,6 @@ class NapariQtNotification(QDialog):
         )
 
     @classmethod
-    @ensure_main_thread
     def show_notification(cls, notification: Notification):
         from napari._qt.qt_main_window import _QtMainWindow
         from napari.settings import get_settings

@@ -21,6 +21,7 @@ from typing import (
     Union,
     cast,
 )
+from warnings import deprecated
 from weakref import WeakValueDictionary
 
 from qtpy.QtCore import (
@@ -671,7 +672,11 @@ class _QtMainWindow(QMainWindow):
         self.menuBar().setVisible(not self._toggle_menubar_visibility)
         return self._toggle_menubar_visibility
 
+    @staticmethod
     @Slot(Notification)
+    @deprecated(
+        '_QtMainWindow.show_notification is deprecated, use NapariQtNotification.show_notification instead, will be removed in spring 2027'
+    )
     def show_notification(notification: Notification):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
