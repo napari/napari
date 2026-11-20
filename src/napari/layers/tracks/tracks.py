@@ -2,7 +2,9 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import TYPE_CHECKING, Any, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 import numpy as np
@@ -14,7 +16,14 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import numpy.typing as npt
     import pandas as pd
+    import pint
+
+    from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+    from napari.utils.transforms import Affine
 
 
 class Tracks(Layer):
@@ -66,7 +75,7 @@ class Tracks(Layer):
         case of track splitting, or more than one (the track has multiple
         parents, but only one child) in the case of track merging.
         See examples/tracks_3d_with_graph.py
-    head_length : float
+    head_length : int
         Length of the positive (forward in time) tails in units of time.
     hide_completed_tracks : bool
         If True, tracks that have completed before the current time point are not
@@ -94,7 +103,7 @@ class Tracks(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    tail_length : float
+    tail_length : int
         Length of the positive (backward in time) tails in units of time.
     tail_width : float
         Width of the track tails in pixels.
@@ -110,37 +119,48 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
-    _slicing_state: '_TracksSlicingState'
+    _slicing_state: _TracksSlicingState
 
     def __init__(
         self,
-        data,
+        data: npt.ArrayLike | None,
         *,
-        affine=None,
-        axis_labels=None,
-        blending='additive',
-        cache=True,
-        color_by='track_id',
-        colormap='turbo',
-        colormaps_dict=None,
-        experimental_clipping_planes=None,
-        features=None,
-        graph=None,
+        affine: npt.ArrayLike | Affine | None = None,
+        axis_labels: Sequence[str] | None = None,
+        blending: str = 'additive',
+        cache: bool = True,
+        color_by: str = 'track_id',
+        colormap: str = 'turbo',
+        colormaps_dict: dict[str, Colormap] | None = None,
+        experimental_clipping_planes: dict
+        | ClippingPlane
+        | list[ClippingPlane | dict]
+        | ClippingPlaneList
+        | None = None,
+        features: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        graph: dict[int, int | list[int]] | None = None,
         head_length: int = 0,
         hide_completed_tracks: bool = False,
-        metadata=None,
-        name=None,
-        opacity=1.0,
-        projection_mode='none',
-        properties=None,
-        rotate=None,
-        scale=None,
-        shear=None,
+        metadata: dict | None = None,
+        name: str | None = None,
+        opacity: float = 1.0,
+        projection_mode: str = 'none',
+        properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        rotate: float
+        | Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        scale: Sequence[float] | npt.NDArray | None = None,
+        shear: Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
         tail_length: int = 30,
-        tail_width: int = 2,
-        translate=None,
-        units=None,
-        visible=True,
+        tail_width: float = 2,
+        translate: Sequence[float] | npt.NDArray | None = None,
+        units: Sequence[str | pint.Unit | None] | None = None,
+        visible: bool = True,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
@@ -276,7 +296,7 @@ class Tracks(Layer):
     def _set_view_slice(self) -> None:
         raise NotImplementedError
 
-    def _get_value(self, position) -> int | None:
+    def _get_value(self, position: npt.ArrayLike) -> int | None:
         """Value of the data at a position in data coordinates.
 
         Use a kd-tree to lookup the ID of the nearest tree.
@@ -344,17 +364,17 @@ class Tracks(Layer):
         self.thumbnail = colormapped.astype(np.uint8)
 
     @property
-    def _view_data(self):
+    def _view_data(self) -> np.ndarray | None:
         """return a view of the data"""
         return self._slicing_state._view_data
 
     @property
-    def _view_graph(self):
+    def _view_graph(self) -> np.ndarray | None:
         """return a view of the graph"""
         return self._slicing_state._view_graph
 
     @property
-    def current_time(self) -> int | None:
+    def current_time(self) -> float | None:
         """current time according to the first dimension"""
         # TODO(arl): get the correct index here
         time_step = self._data_slice.point[0]
@@ -400,7 +420,7 @@ class Tracks(Layer):
         self._reset_editable()
 
     @property
-    def features(self) -> 'pd.DataFrame':
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -420,7 +440,7 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
@@ -479,7 +499,7 @@ class Tracks(Layer):
 
     @property
     def tail_length(self) -> int:
-        """float: Width for all vectors in pixels."""
+        """int: Length of the tails backward in time, in units of time."""
         return self._tail_length
 
     @tail_length.setter
@@ -581,7 +601,7 @@ class Tracks(Layer):
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = self._manager.vertex_properties(self.color_by)
 
-        def _norm(p):
+        def _norm(p: np.ndarray) -> np.ndarray:
             return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
 
         if self.color_by in self.colormaps_dict:
@@ -639,7 +659,9 @@ class Tracks(Layer):
         return self._manager.graph_times
 
     @property
-    def track_labels(self) -> tuple:
+    def track_labels(
+        self,
+    ) -> tuple[None, tuple[None, None]] | tuple[list[str], np.ndarray | None]:
         """return track labels at the current time"""
         assert self.current_time is not None
         labels, positions = self._manager.track_labels(self.current_time)
@@ -662,7 +684,7 @@ class Tracks(Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_TracksSlicingState':
+    ) -> _TracksSlicingState:
         return _TracksSlicingState(layer=self, data=data, cache=cache)
 
 
@@ -673,7 +695,7 @@ class _TracksSlicingState(_LayerSlicingState):
         self, layer: Tracks, data: LayerDataType, cache: bool
     ) -> None:
         super().__init__(layer=layer, data=data, cache=cache)
-        self._current_displayed_dims: Optional[list[int]] = None
+        self._current_displayed_dims: list[int] | None = None
 
     def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
@@ -686,7 +708,9 @@ class _TracksSlicingState(_LayerSlicingState):
             # fire the events to update the shaders
             self.slice_done()
 
-    def _pad_display_data(self, vertices):
+    def _pad_display_data(
+        self, vertices: np.ndarray | None
+    ) -> np.ndarray | None:
         """pad display data when moving between 2d and 3d"""
         if vertices is None:
             return None
@@ -701,11 +725,11 @@ class _TracksSlicingState(_LayerSlicingState):
         return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
     @property
-    def _view_data(self):
+    def _view_data(self) -> np.ndarray | None:
         """return a view of the data"""
         return self._pad_display_data(self.layer._manager.track_vertices)
 
     @property
-    def _view_graph(self):
+    def _view_graph(self) -> np.ndarray | None:
         """return a view of the graph"""
         return self._pad_display_data(self.layer._manager.graph_vertices)
