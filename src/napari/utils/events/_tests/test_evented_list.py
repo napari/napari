@@ -345,6 +345,12 @@ def test_setting_nested_slice():
     assert tuple(ne_list[1, 1, 1]) == (9, 10, 1112)
 
 
+def test_deleting_nested_slice():
+    ne_list = NestableEventedList([0, [10, 11, 12], 2])
+    del ne_list[1, :]
+    assert list(ne_list[1]) == []
+
+
 NESTED_POS_INDICES = [
     # indices           2       (2, 1)
     # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
