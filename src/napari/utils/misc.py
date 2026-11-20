@@ -441,26 +441,6 @@ def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
     return operator.eq
 
 
-def _is_array_type(array: npt.ArrayLike, type_name: str) -> bool:
-    """Checks if an array-like instance or class is of the type described by a short name.
-
-    This is useful when you want to check the type of array-like quickly without
-    importing its package, which might take a long time.
-
-    Parameters
-    ----------
-    array
-        The array-like object.
-    type_name : str
-        The short name of the type to test against (e.g. 'numpy.ndarray', 'xarray.DataArray').
-
-    Returns
-    -------
-    True if the array is associated with the type name.
-    """
-    return type_name in _arraylike_short_names(array)
-
-
 def dir_hash(
     path: str | Path,
     include_paths: bool = True,
