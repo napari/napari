@@ -232,7 +232,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     assert viewer.dims.ndisplay == 2
 
 
-def check_view_transform_consistency(layer, viewer, transf_dict):
+def check_view_transform_consistency(layer, qt_viewer, transf_dict):
     """Check layer transforms have been applied to the view.
 
     Note this check only works for non-multiscale data.
@@ -241,8 +241,8 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
     ----------
     layer : napari.layers.Layer
         Layer model.
-    viewer : napari.Viewer
-        Viewer, including Qt elements
+    qt_viewer : napari._qt.qt_viewer.QtViewer
+        Qt viewer that shows the layer.
     transf_dict : dict
         Dictionary of transform properties with keys referring to the name of
         the transform property (i.e. `scale`, `translate`) and the value
@@ -252,10 +252,12 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         return
 
     # Get an handle on visual layer:
-    vis_lyr = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    vis_lyr = qt_viewer.canvas.layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
-        disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D
+        disp_dims = list(
+            qt_viewer.viewer.dims.displayed
+        )  # dimensions displayed in 2D
         # values of visual layer
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 

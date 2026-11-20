@@ -14,9 +14,10 @@ from napari.utils.events.event import WarningEmitter
 @skip_on_win_ci
 @skip_local_popups
 @pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_add_all_layers(make_napari_viewer, Layer, data, ndim):
+@pytest.mark.show_qt_viewer
+def test_add_all_layers(qt_viewer, Layer, data, ndim):
     """Make sure that all layers can show in the viewer."""
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
     viewer.layers.append(Layer(data))
 
 
@@ -60,10 +61,12 @@ def test_layer_multiple_viewers(make_napari_viewer):
     assert layer.opacity == 0.6
 
 
-def test_adding_removing_layer(make_napari_viewer):
+def test_adding_removing_layer(qt_viewer):
     """Test adding and removing a layer."""
     np.random.seed(0)
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
+    # The layer list and layer controls also connect to the layer events
+    _ = qt_viewer.layers, qt_viewer.controls
 
     # Create layer
     data = np.random.random((2, 6, 30, 40))
@@ -100,11 +103,11 @@ def test_adding_removing_layer(make_napari_viewer):
 
 
 @pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_add_remove_layer_external_callbacks(
-    make_napari_viewer, Layer, data, ndim
-):
+def test_add_remove_layer_external_callbacks(qt_viewer, Layer, data, ndim):
     """Test external callbacks for layer emmitters preserved."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
+    # The layer list and layer controls also connect to the layer events
+    _ = qt_viewer.layers, qt_viewer.controls
 
     layer = Layer(data)
     # Check layer has been correctly created

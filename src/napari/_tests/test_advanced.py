@@ -2,15 +2,14 @@ import numpy as np
 import pytest
 
 
-def test_4D_5D_images(make_napari_viewer):
+def test_4D_5D_images(qt_viewer):
     """Test adding 4D followed by 5D image layers to the viewer.
 
     Initially only 2 sliders should be present, then a third slider should be
     created.
     """
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    viewer = qt_viewer.viewer
 
     # add 4D image data
     data = np.random.random((2, 6, 30, 40))
@@ -18,8 +17,8 @@ def test_4D_5D_images(make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 2
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 2
 
     # now add 5D image data - check an extra slider has been created
     data = np.random.random((4, 4, 5, 30, 40))
@@ -27,15 +26,14 @@ def test_4D_5D_images(make_napari_viewer):
     assert np.array_equal(viewer.layers[1].data, data)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 3
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 3
 
 
-def test_5D_image_3D_rendering(make_napari_viewer):
+def test_5D_image_3D_rendering(qt_viewer):
     """Test 3D rendering of a 5D image."""
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    viewer = qt_viewer.viewer
 
     # add 4D image data
     data = np.random.random((2, 10, 12, 13, 14))
@@ -45,23 +43,22 @@ def test_5D_image_3D_rendering(make_napari_viewer):
     assert viewer.dims.ndim == 5
     assert viewer.dims.ndisplay == 2
     assert viewer.layers[0]._data_view.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 3
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 3
 
     # switch to 3D rendering
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
     assert viewer.layers[0]._data_view.ndim == 3
-    assert np.sum(view.dims._displayed_sliders) == 2
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 2
 
 
-def test_change_image_dims(make_napari_viewer):
+def test_change_image_dims(qt_viewer):
     """Test changing the dims and shape of an image layer in place and checking
     the numbers of sliders and their ranges changes appropriately.
     """
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    viewer = qt_viewer.viewer
 
     # add 3D image data
     data = np.random.random((10, 30, 40))
@@ -69,43 +66,42 @@ def test_change_image_dims(make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 1
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 1
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[0]
     assert np.array_equal(viewer.layers[0].data, data[0])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[:6]
     assert np.array_equal(viewer.layers[0].data, data[:6])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 1
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 1
 
     # change the shape of the data
     viewer.layers[0].data = data[:3]
     assert np.array_equal(viewer.layers[0].data, data[:3])
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 1
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 1
 
 
-def test_range_one_image(make_napari_viewer):
+def test_range_one_image(qt_viewer):
     """Test adding an image with a range one dimensions.
 
     There should be no slider shown for the axis corresponding to the range
     one dimension.
     """
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    viewer = qt_viewer.viewer
 
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
@@ -113,8 +109,8 @@ def test_range_one_image(make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
 
     # now add 5D points data - check extra sliders have been created
     points = np.floor(5 * np.random.random((1000, 5))).astype(int)
@@ -123,19 +119,18 @@ def test_range_one_image(make_napari_viewer):
     assert np.array_equal(viewer.layers[1].data, points)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 3
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 3
 
 
-def test_range_one_images_and_points(make_napari_viewer):
+def test_range_one_images_and_points(qt_viewer):
     """Test adding images with range one dimensions and points.
 
     Initially no sliders should be present as the images have range one
     dimensions. On adding the points the sliders should be displayed.
     """
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    viewer = qt_viewer.viewer
 
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
@@ -143,8 +138,8 @@ def test_range_one_images_and_points(make_napari_viewer):
     assert np.array_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
 
     # now add 5D points data - check extra sliders have been created
     points = np.floor(5 * np.random.random((1000, 5))).astype(int)
@@ -153,8 +148,8 @@ def test_range_one_images_and_points(make_napari_viewer):
     assert np.array_equal(viewer.layers[1].data, points)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 3
+    assert qt_viewer.dims.nsliders == viewer.dims.ndim
+    assert np.sum(qt_viewer.dims._displayed_sliders) == 3
 
 
 @pytest.mark.enable_console
@@ -276,16 +271,15 @@ def test_changing_display_surface(make_napari_viewer):
         viewer.dims.set_point(0, s)
 
 
-def test_labels_undo_redo(make_napari_viewer):
+def test_labels_undo_redo(viewer_model):
     """Test undoing/redoing on the labels layer."""
-    viewer = make_napari_viewer()
 
     data = np.zeros((50, 50), dtype=np.uint8)
     data[:5, :5] = 1
     data[5:10, 5:10] = 2
     data[25:, 25:] = 3
 
-    labels = viewer.add_labels(data)
+    labels = viewer_model.add_labels(data)
 
     l1 = labels.data.copy()
 
@@ -320,9 +314,11 @@ def test_labels_undo_redo(make_napari_viewer):
     assert np.array_equal(l2, labels.data)
 
 
-def test_labels_brush_size(make_napari_viewer):
+def test_labels_brush_size(qt_viewer):
     """Test changing labels brush size."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
+    # The labels controls react to brush size changes
+    _ = qt_viewer.controls
 
     data = np.zeros((50, 50), dtype=np.uint8)
     labels = viewer.add_labels(data)

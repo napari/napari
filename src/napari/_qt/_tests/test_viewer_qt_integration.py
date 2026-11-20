@@ -174,10 +174,10 @@ def test_welcome_widget_visibility(make_napari_viewer):
     assert not view2._welcome_widget.isVisible()
 
 
-def test_welcome_screen_property_setter(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_welcome_screen_property_setter(qt_viewer):
     """Toggling the show_welcome_screen property correctly updates the widget."""
-    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
-    view = viewer.window._qt_viewer
+    view = qt_viewer
 
     assert not view._welcome_widget.isVisible()
 
@@ -188,9 +188,9 @@ def test_welcome_screen_property_setter(make_napari_viewer):
     assert not view._welcome_widget.isVisible()
 
 
-def test_welcome_widget_shows_random_tip(make_napari_viewer):
-    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
-    view = viewer.window._qt_viewer
+def test_welcome_widget_shows_random_tip(qt_viewer):
+    view = qt_viewer
+    view.show_welcome_screen = True
     welcome = view._welcome_widget
     tips = ('first tip', 'second tip')
     chosen_tips = iter(tips)
@@ -210,9 +210,10 @@ def test_welcome_widget_shows_random_tip(make_napari_viewer):
         assert welcome._tip_label.text() == 'Did you know?<br>second tip'
 
 
-def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
-    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
-    welcome = viewer.window._qt_viewer._welcome_widget
+@pytest.mark.show_qt_viewer
+def test_welcome_widget_refreshes_tip_on_shortcut_change(qt_viewer):
+    qt_viewer.show_welcome_screen = True
+    welcome = qt_viewer._welcome_widget
     assert welcome.isVisible()
     welcome._current_tip = (
         'Open files with {napari.window.file.open_files_dialog}.'
@@ -277,9 +278,9 @@ def test_welcome_widget_defers_refresh_while_hidden(qtbot, viewer_model):
         )
 
 
-def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
-    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
-    qt_viewer = viewer.window._qt_viewer
+def test_welcome_widget_delegates_drag_and_drop_to_viewer(qt_viewer):
+    viewer = qt_viewer.viewer
+    qt_viewer.show_welcome_screen = True
     welcome = qt_viewer._welcome_widget
 
     drag_event = MagicMock()
@@ -315,10 +316,10 @@ def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
     assert welcome.property('drag') is False
 
 
+@pytest.mark.show_qt_viewer
 @skip_local_popups
-def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
-    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
-    qt_viewer = viewer.window._qt_viewer
+def test_canvas_hover_state_comes_from_canvas(qtbot, qt_viewer):
+    viewer = qt_viewer.viewer
 
     qtbot.waitUntil(qt_viewer.isVisible)
 
@@ -539,25 +540,27 @@ def test_shortcut_passing(make_napari_viewer):
     assert layer.mode == 'erase'
 
 
-def test_points_2d_to_3d(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_points_2d_to_3d(qt_viewer):
     """See https://github.com/napari/napari/issues/6925"""
-    # this requires a full viewer cause some issues are caused only by
+    # this requires a Qt viewer cause some issues are caused only by
     # qt processing events
-    viewer = make_napari_viewer(ndisplay=2, show=True)
+    viewer = qt_viewer.viewer
     viewer.add_points()
     QApplication.processEvents()
     viewer.dims.ndisplay = 3
     QApplication.processEvents()
 
 
-def test_surface_mixed_dim(make_napari_viewer):
+def test_surface_mixed_dim(qt_viewer):
     """Test that adding a layer that changes the world ndim
     when ndisplay=3 before the mouse cursor has been updated
     doesn't raise an error.
 
     See PR: https://github.com/napari/napari/pull/3881
     """
-    viewer = make_napari_viewer(ndisplay=3)
+    viewer = qt_viewer.viewer
+    viewer.dims.ndisplay = 3
 
     verts = np.array([[0, 0, 0], [0, 20, 10], [10, 0, -10], [10, 10, -10]])
     faces = np.array([[0, 1, 2], [1, 2, 3]])

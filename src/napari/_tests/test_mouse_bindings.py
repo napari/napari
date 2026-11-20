@@ -15,14 +15,14 @@ from napari.layers.base._base_mouse_bindings import (
 
 
 @skip_on_win_ci
-def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
+def test_viewer_mouse_bindings(qtbot, qt_viewer):
     """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     if os.getenv('CI'):
-        viewer.show()
+        qt_viewer.show()
 
     mock_press = Mock()
     mock_drag = Mock()
@@ -99,14 +99,14 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
 
 
 @skip_on_win_ci
-def test_layer_mouse_bindings(qtbot, make_napari_viewer):
+def test_layer_mouse_bindings(qtbot, qt_viewer):
     """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     if os.getenv('CI'):
-        viewer.show()
+        qt_viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     viewer.layers.selection.add(layer)
@@ -185,14 +185,14 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
 
 
 @skip_on_win_ci
-def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
+def test_unselected_layer_mouse_bindings(qtbot, qt_viewer):
     """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     if os.getenv('CI'):
-        viewer.show()
+        qt_viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     viewer.layers.selection.remove(layer)
