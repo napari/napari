@@ -7,6 +7,8 @@ from napari._app_model.context._context import (
     create_context,
     get_context,
 )
+from napari.components import LayerList
+from napari.layers import Points
 
 
 def test_simple_mapping():
@@ -53,3 +55,11 @@ def test_context_integration():
     assert ctx['b'].call_count == 2
     assert mapping2['b'] == 2
     assert ctx['b'].call_count == 2
+
+
+def test_layerlist_context_emits_once_per_namespace():
+    layers = LayerList()
+    changed = Mock()
+    layers._ctx.changed.connect(changed)
+    layers.append(Points())
+    assert changed.call_count == 2  # one per namespace: layers, selection
