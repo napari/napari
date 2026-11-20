@@ -181,6 +181,21 @@ def test_set_color_direct(color):
     np.testing.assert_almost_equal(cm.colors, expected_colors)
 
 
+def test_set_color_direct_no_items():
+    """Setting a color before any items exist applies it to new items.
+
+    See https://github.com/napari/napari/issues/5791
+    """
+    cm = ColorManager()
+    cm._set_color('red', n_colors=0, properties={}, current_properties={})
+    assert len(cm.colors) == 0
+    np.testing.assert_allclose(cm.current_color, [1, 0, 0, 1])
+
+    cm._add()
+    cm._add()
+    np.testing.assert_allclose(cm.colors, [[1, 0, 0, 1], [1, 0, 0, 1]])
+
+
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
     n_colors = 10
