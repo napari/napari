@@ -56,6 +56,9 @@ class Tracks(Layer):
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
+    fade_to : float
+        Minimum opacity at the end of the tail/head (between 0.0 and 1.0).
+        0.0 fades completely to transparent, 1.0 keeps constant opacity.
     features : Dataframe-like
         Features table where each row corresponds to a point and each column
         is a feature.
@@ -124,6 +127,7 @@ class Tracks(Layer):
         colormap='turbo',
         colormaps_dict=None,
         experimental_clipping_planes=None,
+        fade_to: float = 0.0,
         features=None,
         graph=None,
         head_length: int = 0,
@@ -182,6 +186,7 @@ class Tracks(Layer):
             rebuild_tracks=Event,
             rebuild_graph=Event,
             hide_completed_tracks=Event,
+            fade_to=Event,
         )
 
         # track manager deals with data slicing, graph building and properties
@@ -203,6 +208,7 @@ class Tracks(Layer):
         self.tail_width = tail_width
         self.tail_length = tail_length
         self.head_length = head_length
+        self.fade_to = fade_to
         self.hide_completed_tracks = hide_completed_tracks
         self.display_id = False
         self.display_tail = True
@@ -267,6 +273,7 @@ class Tracks(Layer):
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
+                'fade_to': self.fade_to,
                 'features': self.features,
                 'hide_completed_tracks': self.hide_completed_tracks,
             }
@@ -476,6 +483,21 @@ class Tracks(Layer):
     def hide_completed_tracks(self, hide_completed_tracks: bool) -> None:
         self._hide_completed_tracks: bool = hide_completed_tracks
         self.events.hide_completed_tracks()
+
+    @property
+    def fade_to(self) -> float:
+        """float: Minimum opacity at the end of the tail/head (between 0.0 and 1.0)."""
+        return self._fade_to
+
+    @fade_to.setter
+    def fade_to(self, fade_to: float) -> None:
+        fade_to = float(fade_to)
+        if not (0.0 <= fade_to <= 1.0):
+            raise ValueError(
+                f'fade_to must be between 0.0 and 1.0, got {fade_to}'
+            )
+        self._fade_to: float = fade_to
+        self.events.fade_to()
 
     @property
     def tail_length(self) -> int:

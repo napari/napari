@@ -155,3 +155,21 @@ def test_update_max_head_length(null_data, properties, qtbot):
         controls._head_length_slider_control.head_length_slider.maximum()
         == layer._max_length
     )
+
+
+def test_fade_to_slider(null_data, properties, qtbot):
+    """Check updating of the fade_to slider."""
+    layer = Tracks(null_data, properties=properties, fade_to=0.2)
+    controls = QtTracksControls(layer)
+    qtbot.addWidget(controls)
+
+    assert layer.fade_to == 0.2
+    assert controls._fade_to_slider_control.fade_to_slider.value() == 0.2
+
+    # update from layer model
+    layer.fade_to = 0.8
+    assert controls._fade_to_slider_control.fade_to_slider.value() == 0.8
+
+    # update from qt controls
+    controls._fade_to_slider_control.fade_to_slider.setValue(0.5)
+    assert layer.fade_to == 0.5

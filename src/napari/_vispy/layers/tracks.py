@@ -23,6 +23,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.layer.events.tail_width.connect(self._on_appearance_change)
         self.layer.events.tail_length.connect(self._on_appearance_change)
         self.layer.events.head_length.connect(self._on_appearance_change)
+        self.layer.events.fade_to.connect(self._on_appearance_change)
         self.layer.events.display_id.connect(self._on_appearance_change)
         self.layer.events.display_tail.connect(self._on_appearance_change)
         self.layer.events.display_graph.connect(self._on_appearance_change)
@@ -69,12 +70,14 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.head_length = self.layer.head_length
+        self.node.tracks_filter.fade_to = self.layer.fade_to
         self.node.tracks_filter.hide_completed_tracks = (
             self.layer.hide_completed_tracks
         )
         self.node.graph_filter.use_fade = self.layer.use_fade
         self.node.graph_filter.tail_length = self.layer.tail_length
         self.node.graph_filter.head_length = self.layer.head_length
+        self.node.graph_filter.fade_to = self.layer.fade_to
         self.node.graph_filter.hide_completed_tracks = (
             self.layer.hide_completed_tracks
         )
@@ -98,6 +101,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
+        self.node.tracks_filter.fade_to = self.layer.fade_to
         self.node.tracks_filter.vertex_time = self.layer.track_times
         self.node.tracks_filter.hide_completed_tracks = (
             self.layer.hide_completed_tracks
@@ -129,6 +133,7 @@ class VispyTracksLayer(VispyBaseLayer):
         # vertex time buffer must change only if data is updated, otherwise vispy buffers might be of different lengths
         self.node.graph_filter.use_fade = self.layer.use_fade
         self.node.graph_filter.tail_length = self.layer.tail_length
+        self.node.graph_filter.fade_to = self.layer.fade_to
         self.node.graph_filter.vertex_time = self.layer.graph_times
 
         self.node._subvisuals[2].set_data(

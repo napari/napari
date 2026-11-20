@@ -26,3 +26,20 @@ def test_tracks_graph_cleanup():
 
     assert visual.node._subvisuals[2]._pos is None
     assert visual.node._subvisuals[2]._connect is None
+
+
+def test_tracks_fade_to_propagation():
+    """Test propagation of fade_to property to shader filter."""
+    tracks_data = [
+        [1, 0, 10, 10],
+        [1, 1, 20, 20],
+    ]
+    layer = Tracks(tracks_data, fade_to=0.3)
+    visual = VispyTracksLayer(layer, font_info=FontInfo())
+
+    assert visual.node.tracks_filter.fade_to == 0.3
+    assert visual.node.graph_filter.fade_to == 0.3
+
+    layer.fade_to = 0.7
+    assert visual.node.tracks_filter.fade_to == 0.7
+    assert visual.node.graph_filter.fade_to == 0.7

@@ -204,6 +204,41 @@ def test_tracks_length_change():
     assert layer._max_length == track_length
 
 
+def test_tracks_fade_to():
+    """Test fade_to property and events of tracks"""
+    data = np.zeros((10, 4))
+    # default value
+    layer = Tracks(data)
+    assert layer.fade_to == 0.0
+
+    # initialized value
+    layer = Tracks(data, fade_to=0.4)
+    assert layer.fade_to == 0.4
+
+    # setter and event
+    events = []
+    layer.events.fade_to.connect(lambda e: events.append(e))
+    layer.fade_to = 0.75
+    assert layer.fade_to == 0.75
+    assert len(events) == 1
+
+    # invalid values
+    with pytest.raises(
+        ValueError, match=r'fade_to must be between 0\.0 and 1\.0'
+    ):
+        layer.fade_to = -0.1
+
+    with pytest.raises(
+        ValueError, match=r'fade_to must be between 0\.0 and 1\.0'
+    ):
+        layer.fade_to = 1.1
+
+    # layer state
+    state = layer._get_state()
+    assert 'fade_to' in state
+    assert state['fade_to'] == 0.75
+
+
 def test_fast_points_lookup() -> None:
     # creates sorted points
     time_points = np.asarray([0, 1, 3, 5, 10])

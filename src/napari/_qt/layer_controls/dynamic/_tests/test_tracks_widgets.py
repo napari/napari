@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.dynamic.widgets._tracks import (
     QtColormapComboBoxControl,
     QtColorPropertiesComboBoxControl,
+    QtFadeToSliderControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
     QtHideCompletedTracksCheckBoxControl,
@@ -218,3 +219,24 @@ class TestQtTailDisplayCheckBoxControl:
 
         tracks.display_tail = True
         assert control.tail_checkbox.isChecked() is True
+
+
+class TestQtFadeToSliderControl:
+    def test_init(self, qt_wrap: QtWrap, tracks_data) -> None:
+        tracks = Tracks(**tracks_data)
+        control = QtFadeToSliderControl([tracks])
+        qt_wrap.add_control(control)
+
+    def test_fade_to(self, qt_wrap: QtWrap, tracks_data) -> None:
+        tracks = Tracks(**tracks_data)
+        control = QtFadeToSliderControl([tracks])
+        qt_wrap.add_control(control)
+
+        assert tracks.fade_to == 0.0
+        assert control.fade_to_slider.value() == 0.0
+
+        control.fade_to_slider.setValue(0.5)
+        assert tracks.fade_to == 0.5
+
+        tracks.fade_to = 0.8
+        assert control.fade_to_slider.value() == 0.8
