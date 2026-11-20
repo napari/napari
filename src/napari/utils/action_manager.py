@@ -11,18 +11,17 @@ from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from concurrent.futures import Future
+    from collections.abc import Callable, Iterable
     from typing import Protocol
 
     from app_model.types import KeyBinding
     from qtpy.QtWidgets import QAbstractButton
 
     from napari.utils.events import Event
-    from napari.utils.key_bindings import KeymapProvider
+    from napari.utils.key_bindings import Keymap, KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable, /) -> object: ...
+        def connect(self, callback: Callable[..., Any], /) -> object: ...
 
     class Button(Protocol):
         clicked: SignalInstance
@@ -37,13 +36,13 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
-    command: Callable
+    command: Callable[..., Any]
     description: str
     keymapprovider: type[KeymapProvider] | None  # subclass, or None if unbound
     repeatable: bool = False  # deprecated, ignored: auto-repeat is the default
 
     @cached_property
-    def injected(self) -> Callable[..., Future]:
+    def injected(self) -> Callable[..., Any]:
         """command with napari objects injected.
 
         This will inject things like the current viewer, or currently selected
@@ -90,10 +89,10 @@ class ActionManager:
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shortcut_changed=None)
 
-    def _debug(self, val) -> None:
+    def _debug(self, val: bool) -> None:
         self._tooltip_include_action_name = val
 
-    def _validate_action_name(self, name) -> None:
+    def _validate_action_name(self, name: str) -> None:
         if len(name.split(':')) != 2:
             raise ValueError(
                 f'Action names need to be in the form `package:name`, got {name!r}'
@@ -102,7 +101,7 @@ class ActionManager:
     def register_action(
         self,
         name: str,
-        command: Callable,
+        command: Callable[..., Any],
         description: str,
         keymapprovider: type[KeymapProvider] | None,
         repeatable: bool = False,
@@ -198,7 +197,7 @@ class ActionManager:
         self,
         name: str,
         button: Button | QAbstractButton,
-        extra_tooltip_text='',
+        extra_tooltip_text: str = '',
     ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
@@ -319,7 +318,9 @@ class ActionManager:
         self._emit_shortcut_change(name)
         return shortcuts
 
-    def _emit_shortcut_change(self, name: str, shortcut='') -> None:
+    def _emit_shortcut_change(
+        self, name: str, shortcut: KeyBinding | str = ''
+    ) -> None:
         tt = self._build_tooltip(name) if name in self._actions else ''
         self.events.shortcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
@@ -335,14 +336,16 @@ class ActionManager:
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
         return ttip
 
-    def _get_layer_shortcuts(self, layers) -> dict:
+    def _get_layer_shortcuts(
+        self, layers: Iterable[type[KeymapProvider]]
+    ) -> dict[type[KeymapProvider], dict[str, str]]:
         """
         Get shortcuts filtered by the given layers.
 
         Parameters
         ----------
-        layers : list of layers
-            Layers to use for shortcuts filtering.
+        layers : iterable of type[KeymapProvider]
+            Layer classes to use for shortcuts filtering.
 
         Returns
         -------
@@ -363,14 +366,16 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_provider_actions(self, provider) -> dict:
+    def _get_provider_actions(
+        self, provider: type[KeymapProvider]
+    ) -> dict[str, Action]:
         """
         Get actions filtered by the given provider.
 
         Parameters
         ----------
-        provider : KeymapProvider
-            Provider to use for actions filtering.
+        provider : type[KeymapProvider]
+            KeymapProvider subclass to use for actions filtering.
 
         Returns
         -------
@@ -384,21 +389,25 @@ class ActionManager:
             if action and provider == action.keymapprovider
         }
 
-    def _get_active_shortcuts(self, active_keymap) -> dict[str, str]:
+    def _get_active_shortcuts(self, active_keymap: Keymap) -> dict[str, str]:
         """
         Get active shortcuts for the given active keymap.
 
         Parameters
         ----------
-        active_keymap : KeymapProvider
-            The active keymap provider.
+        active_keymap : Keymap
+            Mapping of key bindings to the functions they trigger.
 
         Returns
         -------
         dict
             Dictionary of shortcuts to descriptions.
         """
-        active_func_names = [i[1].__name__ for i in active_keymap.items()]
+        active_func_names = [
+            func.__name__
+            for func in active_keymap.values()
+            if func is not Ellipsis
+        ]
         active_shortcuts = {}
         for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
