@@ -6,7 +6,7 @@ import napari
 from napari.layers.base._base_constants import Mode
 from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
-    orient_plane_normal_around_cursor,
+    reorient_plane_normal,
 )
 from napari.layers.utils.layer_utils import (
     register_layer_action,
@@ -42,17 +42,17 @@ def auto_contrast_once(layer: Image) -> None:
 #       of `Selection[Layer]`...
 @register_image_action('Orient plane normal along z-axis')
 def orient_plane_normal_along_z(layer: Image) -> None:
-    orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
+    reorient_plane_normal(layer, plane_normal=(1, 0, 0))
 
 
 @register_image_action('Orient plane normal along y-axis')
 def orient_plane_normal_along_y(layer: Image) -> None:
-    orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
+    reorient_plane_normal(layer, plane_normal=(0, 1, 0))
 
 
 @register_image_action('Orient plane normal along x-axis')
 def orient_plane_normal_along_x(layer: Image) -> None:
-    orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
+    reorient_plane_normal(layer, plane_normal=(0, 0, 1))
 
 
 @register_image_action(

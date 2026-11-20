@@ -28,7 +28,7 @@ from napari.layers.shapes.shape_types import (
 from napari.utils.geometry import (
     inside_triangles,
     intersect_line_with_triangles,
-    line_in_triangles_3d,
+    iter_all_triangle_intersections,
 )
 
 
@@ -1967,7 +1967,7 @@ class ShapeList:
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
-        meshes. Looks only at displayed shapes.
+        meshes. Looks only at displayed shapes. Yields nothing if no shapes are hit.
 
         Parameters
         ----------
@@ -1979,38 +1979,19 @@ class ShapeList:
             the scene. This should be in the same coordinate system as
             the vertices.
 
-        Returns
-        -------
-        shape : int | None
-            Index of shape if any that is at the coordinates. Returns `None`
-            if no shape is found.
-        intersection_point : Optional[np.ndarray]
-            The point where the ray intersects the mesh face. If there was
-            no intersection, returns None.
+        Yields
+        ------
+        shape : int
+            Index of shape hit by the ray cast.
+        intersection_point : np.ndarray
+            The point where the ray intersects the mesh face.
         """
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        inside = line_in_triangles_3d(
-            line_point=ray_position,
-            line_direction=ray_direction,
-            triangles=triangles,
-        )
-        # intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if not np.any(inside):
-            return None, None
-
-        intersection_points = self._triangle_intersection(
-            triangle_indices=inside,
-            ray_position=ray_position,
-            ray_direction=ray_direction,
-        )
-        start_to_intersection = intersection_points - ray_position
-        distances = np.linalg.norm(start_to_intersection, axis=1)
-        closest_shape_index = np.argmin(distances)
-        shape = self._mesh.displayed_triangles_to_shape_index[inside][
-            closest_shape_index
-        ]
-        intersection = intersection_points[closest_shape_index]
-        return shape, intersection
+        for triangle_idx, intersection in iter_all_triangle_intersections(
+            ray_position, ray_direction, triangles
+        ):
+            shape = self._mesh.displayed_triangles_to_shape_index[triangle_idx]
+            yield shape, intersection
 
     def _triangle_intersection(
         self,

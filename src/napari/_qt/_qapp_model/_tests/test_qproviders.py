@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 from app_model.types import Action
+from qtpy.QtCore import QEvent, QPointF, Qt
+from qtpy.QtGui import QMouseEvent
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model._app import get_app_model
 from napari._qt._qapp_model.injection._qproviders import (
@@ -22,6 +25,7 @@ from napari._qt.qt_viewer import QtViewer
 from napari.components import LayerList
 from napari.layers import Shapes
 from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.mouse_event import MouseEvent
 from napari.viewer import Viewer
 
 if TYPE_CHECKING:
@@ -162,3 +166,39 @@ def test_provide_selected_layers(
     assert len(selected_layers) == 2
     assert s1 in selected_layers
     assert s3 in selected_layers
+
+
+def test_provide_last_mouse_event_in_callback(make_napari_viewer):
+    viewer: Viewer = make_napari_viewer()
+
+    canvas = viewer.window._qt_viewer.canvas.native
+    # the hover state comes from the canvas itself: a mouse move over the
+    # canvas is what fires the status update
+    QApplication.sendEvent(
+        canvas,
+        QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(10, 10),
+            QPointF(10, 10),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        ),
+    )
+
+    event = None
+
+    def do_stuff_with_mouse(mouse_event: MouseEvent) -> None:
+        nonlocal event
+        event = mouse_event
+
+    action = Action(
+        id='some.command.do_stuff_with_mouse',
+        title='do some stuff with the mouse event',
+        callback=do_stuff_with_mouse,
+    )
+    app = get_app_model()
+    app.register_action(action)
+    app.commands.execute_command('some.command.do_stuff_with_mouse')
+    assert isinstance(event, MouseEvent)
+    assert event.canvas_position == (10, 10)
