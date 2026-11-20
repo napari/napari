@@ -277,7 +277,7 @@ class PreferencesDialog(QDialog):
             if not is_backend_available(backend):
                 item.setEnabled(False)
                 if not widget.itemText(i).endswith(' (unavailable)'):
-                    item.setText(f"{widget.itemText(i)} (unavailable)")
+                    item.setText(f'{widget.itemText(i)} (unavailable)')
             else:
                 item.setEnabled(True)
                 if widget.itemText(i).endswith(' (unavailable)'):
