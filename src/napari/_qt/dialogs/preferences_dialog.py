@@ -222,6 +222,10 @@ class PreferencesDialog(QDialog):
         form = WidgetBuilder().create_form(schema, self.ui_schema)
         # set state values for widget
         form.widget.state = values
+        if 'triangulation_backend' in getattr(form.widget, 'widgets', {}):
+            self._configure_triangulation_backend_widget(
+                form.widget.widgets['triangulation_backend']
+            )
         # make settings follow state of the form widget
         form.widget.on_changed.connect(
             lambda d: getattr(schema_object, name.lower()).update(d)
@@ -250,6 +254,34 @@ class PreferencesDialog(QDialog):
                         )
                     )
         return form
+
+    def _configure_triangulation_backend_widget(self, widget) -> None:
+        """Disable and annotate unavailable triangulation backends in the combobox."""
+        from napari.utils.triangulation_backend import (
+            TriangulationBackend,
+            is_backend_available,
+        )
+
+        model = widget.model()
+        if model is None:
+            return
+        for i in range(widget.count()):
+            data = widget.itemData(i)
+            try:
+                backend = TriangulationBackend(data)
+            except ValueError:
+                continue
+            item = model.item(i)
+            if item is None:
+                continue
+            if not is_backend_available(backend):
+                item.setEnabled(False)
+                if not widget.itemText(i).endswith(' (unavailable)'):
+                    item.setText(f"{widget.itemText(i)} (unavailable)")
+            else:
+                item.setEnabled(True)
+                if widget.itemText(i).endswith(' (unavailable)'):
+                    item.setText(widget.itemText(i)[:-14])
 
     def _get_page_dict(
         self,
