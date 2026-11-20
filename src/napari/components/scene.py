@@ -8,6 +8,7 @@ from napari.components.overlays import (
     CrosshairOverlay,
     SceneAxesOverlay,
     SceneOverlay,
+    ViewerBoundingBoxOverlay,
 )
 from napari.utils.events import EventedDictNamespace, EventedModel
 
@@ -36,6 +37,7 @@ class Scene(EventedModel):
         default_factory=lambda: EventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
+                'bounding_box': ViewerBoundingBoxOverlay(),
                 'crosshair': CrosshairOverlay(),
                 'coordinate_grid': CoordinateGridOverlay(),
             }
