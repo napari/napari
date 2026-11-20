@@ -64,7 +64,10 @@ from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
-from napari.layers.utils.stack_utils import split_channels
+from napari.layers.utils.stack_utils import (
+    _prepare_rgb_channels,
+    split_channels,
+)
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins import _npe2
 from napari.plugins.utils import get_preferred_reader
@@ -1261,14 +1264,15 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
         channel_axis : int, optional
-            Axis to expand image along. If provided, each channel in the data
-            will be added as an individual image layer. In channel_axis mode,
-            other parameters MAY be provided as lists. The Nth value of the list
-            will be applied to the Nth channel in the data. If a single value
-            is provided, it will be broadcast to all Layers.
-            All parameters except data, rgb, and multiscale can be provided as
-            list of values. If a list is provided, it must be the same length as
-            the axis that is being expanded as channels.
+            Axis containing the image channels. By default, each channel is
+            added as a separate layer. Layer parameters may be provided as a
+            list with one value per channel, or as a single value for all layers.
+
+            .. versionchanged:: 0.11.0
+                With ``rgb=True``, an axis of length 3 or 4 can supply the color
+                components of a single layer. For example, use ``channel_axis=0``
+                for a (3, Y, X) image. If splitting along the axis already yields
+                RGB or RGBA images, each is added as a separate layer.
         affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
@@ -1470,6 +1474,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
             return layer
 
+        if rgb is True:
+            data, channel_axis = _prepare_rgb_channels(data, channel_axis)
         layerdata_list = split_channels(data, channel_axis, **kwargs)  # pyrefly: ignore [bad-argument-type]
 
         layer_list = [
