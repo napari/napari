@@ -1,5 +1,7 @@
 import os
+import subprocess
 import sys
+import textwrap
 import warnings
 from collections import defaultdict
 from unittest.mock import Mock
@@ -38,6 +40,49 @@ def test_windows_grouping_overwrite(qapp):
     assert get_app_id() == 'custom_string'
     set_app_id(' ')
     assert get_app_id() == ' '
+
+
+@pytest.mark.parametrize('existing_app', [False, True])
+def test_get_qapp_enables_opengl_context_sharing(existing_app):
+    """Check startup order without reusing pytest's application or GL state."""
+    code = textwrap.dedent(
+        """
+        import sys
+
+        from packaging.version import parse as parse_version
+        from qtpy.QtCore import Qt, qVersion
+        from qtpy.QtWidgets import QApplication
+
+        from napari._qt import qt_event_loop
+
+        flag = Qt.ApplicationAttribute.AA_ShareOpenGLContexts
+        supports_late_sharing = parse_version(qVersion()) >= parse_version(
+            '6.10'
+        )
+        assert QApplication.instance() is None
+        assert not QApplication.testAttribute(flag)
+        existing_app = QApplication([]) if sys.argv[1] == 'True' else None
+
+        class CheckedApplication(QApplication):
+            def __init__(self, *args):
+                assert QApplication.testAttribute(flag)
+                super().__init__(*args)
+
+        qt_event_loop.QApplication = CheckedApplication
+        app = qt_event_loop.get_qapp(ipy_interactive=False)
+
+        expected_sharing = existing_app is None or supports_late_sharing
+        assert QApplication.testAttribute(flag) is expected_sharing
+        assert app is QApplication.instance()
+        if existing_app is not None:
+            assert app is existing_app
+        """
+    )
+    subprocess.run(
+        [sys.executable, '-c', code, str(existing_app)],
+        check=True,
+        timeout=60,
+    )
 
 
 def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
