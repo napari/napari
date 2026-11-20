@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
+from napari.utils.shortcuts import _normalize_action_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -64,6 +65,9 @@ class ActionManager:
     Thus when a shortcut is bound; this should be capable of updating the
     buttons tooltip menus etc to show the shortcuts, descriptions...
 
+    Action IDs use dotted names such as ``napari.reset_view``. Legacy
+    ``package:name`` IDs are accepted and stored as ``package.name``.
+
     In most cases this should also allow to bind non existing shortcuts,
     actions, buttons, in which case they will be bound only once the actions are
     registered.
@@ -72,7 +76,7 @@ class ActionManager:
     >>> def callback(qtv, number):
     ...     qtv.dims[number] +=1
 
-    >>> action_manager.register_action('bump one', callback,
+    >>> action_manager.register_action('example.bump_one', callback,
     ...     'Add one to dims',
     ...     None)
 
@@ -94,9 +98,9 @@ class ActionManager:
         self._tooltip_include_action_name = val
 
     def _validate_action_name(self, name) -> None:
-        if len(name.split(':')) != 2:
+        if ':' in name or '.' not in name:
             raise ValueError(
-                f'Action names need to be in the form `package:name`, got {name!r}'
+                f'Action names need to be in the form `package.name`, got {name!r}'
             )
 
     def register_action(
@@ -111,7 +115,7 @@ class ActionManager:
         Register an action for future usage
 
         An action is generally a callback associated with
-         - a name (unique), usually `packagename:name`
+         - a name (unique), usually `packagename.name`
          - a description
          - A keymap provider (easier for focus and backward compatibility).
 
@@ -166,6 +170,7 @@ class ActionManager:
                 DeprecationWarning,
                 stacklevel=2,
             )
+        name = _normalize_action_name(name)
         self._validate_action_name(name)
         self._actions[name] = Action(
             command, description, keymapprovider, repeatable
@@ -206,7 +211,7 @@ class ActionManager:
         Parameters
         ----------
         name : str
-            name of the corresponding action in the form ``packagename:name``
+            name of the corresponding action in the form ``packagename.name``
         button : Button
             A object providing Button interface (like QPushButton) that, when
             clicked, should trigger the action. The tooltip will be set to the
@@ -225,6 +230,7 @@ class ActionManager:
         Note: this method cannot be used with generator functions,
         see https://github.com/napari/napari/issues/4164 for details.
         """
+        name = _normalize_action_name(name)
         self._validate_action_name(name)
 
         if (action := self._actions.get(name)) and isgeneratorfunction(
@@ -261,7 +267,7 @@ class ActionManager:
         Parameters
         ----------
         name : str
-            name of the corresponding action in the form ``packagename:name``
+            name of the corresponding action in the form ``packagename.name``
         shortcut : KeyBinding | str
             Shortcut to assign to this action use dash as separator. See
             `Shortcut` for known modifiers.
@@ -272,6 +278,7 @@ class ActionManager:
         corresponding name is registered, in which case the effect will be
         delayed until the corresponding action is registered.
         """
+        name = _normalize_action_name(name)
         self._validate_action_name(name)
         if shortcut in self._shortcuts[name]:
             return
@@ -286,7 +293,7 @@ class ActionManager:
         Parameters
         ----------
         name : str
-            name of the action in the form `packagename:name` to unbind.
+            name of the action in the form `packagename.name` to unbind.
 
         Returns
         -------
@@ -301,6 +308,7 @@ class ActionManager:
             this warning will be emitted.
 
         """
+        name = _normalize_action_name(name)
         action = self._actions.get(name, None)
         if action is None:
             warnings.warn(
@@ -410,6 +418,7 @@ class ActionManager:
 
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""
+        name = _normalize_action_name(name)
         return self._actions[name].injected()
 
 

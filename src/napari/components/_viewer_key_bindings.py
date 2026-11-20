@@ -30,7 +30,7 @@ def register_viewer_action(
 
     def _inner(func: Callable) -> Callable:
         action_manager.register_action(
-            name=f'napari:{func.__name__}',
+            name=f'napari.{func.__name__}',
             command=func,
             description=description,
             keymapprovider=ViewerModel,

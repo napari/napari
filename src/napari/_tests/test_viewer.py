@@ -34,7 +34,7 @@ def _get_provider_actions(type_):
 def _assert_shortcuts_exist_for_each_action(type_):
     actions = _get_provider_actions(type_)
     shortcuts = {
-        name.partition(':')[-1] for name in get_settings().shortcuts.shortcuts
+        name.rpartition('.')[-1] for name in get_settings().shortcuts.shortcuts
     }
     shortcuts.update(func.__name__ for func in type_.class_keymap.values())
     for action in actions:

@@ -75,7 +75,7 @@ class QtLayerButtons(QFrame):
         self.viewer = viewer
 
         self.deleteButton = QtViewerPushButton(
-            'delete_button', action='napari:delete_selected_layers'
+            'delete_button', action='napari.delete_selected_layers'
         )
 
         self.newPointsButton = QtViewerPushButton(
@@ -265,7 +265,7 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
 
         self.consoleButton = QtViewerPushButton(
-            'console', action='napari:toggle_console_visibility'
+            'console', action='napari.toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
 
@@ -276,23 +276,23 @@ class QtViewerButtons(QFrame):
             enabled=not kernel_is_running,
         )
 
-        rdb = QtViewerPushButton('roll', action='napari:roll_axes')
+        rdb = QtViewerPushButton('roll', action='napari.roll_axes')
         self.rollDimsButton = rdb
         rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
         self.transposeDimsButton = QtViewerPushButton(
             'transpose',
-            action='napari:transpose_axes',
+            action='napari.transpose_axes',
             extra_tooltip_text='\nAlt/option-click to rotate visible axes',
         )
         self.transposeDimsButton.installEventFilter(self)
 
         self.resetViewButton = QtViewerPushButton(
-            'home', action='napari:reset_view'
+            'home', action='napari.reset_view'
         )
         gvb = QtViewerPushButton(
-            'grid_view_button', action='napari:toggle_grid'
+            'grid_view_button', action='napari.toggle_grid'
         )
         self.gridViewButton = gvb
         gvb.setCheckable(True)
@@ -304,7 +304,7 @@ class QtViewerButtons(QFrame):
         )
 
         ndb = QtViewerPushButton(
-            'ndisplay_button', action='napari:toggle_ndisplay'
+            'ndisplay_button', action='napari.toggle_ndisplay'
         )
         self.ndisplayButton = ndb
         ndb.setCheckable(True)
@@ -335,7 +335,7 @@ class QtViewerButtons(QFrame):
             and qobject == self.transposeDimsButton
             and event.type() == QEvent.Type.MouseButtonPress
         ):
-            action_manager.trigger('napari:rotate_layers')
+            action_manager.trigger('napari.rotate_layers')
             return True
         return False
 

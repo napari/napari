@@ -132,7 +132,7 @@ def register_layer_action(
 
     def _inner(func: TFunc) -> TFunc:
         nonlocal shortcuts
-        name = 'napari:' + func.__name__
+        name = 'napari.' + func.__name__
 
         action_manager.register_action(
             name=name,
