@@ -127,6 +127,7 @@ class Viewer(ViewerModel):
         *,
         scale_factor: float = 1,
         flash: bool = False,
+        margin: float = 0,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -147,6 +148,11 @@ class Viewer(ViewerModel):
 
         Upscaling will be done using the interpolation mode set on each layer.
 
+        The scene axes (``viewer.axes``) are drawn at the world origin, which
+        is often at the edge of the data, so they can be cut in the exported
+        figure. To show axes in a figure, use the canvas axes
+        (``viewer.canvas.overlays['axes']``), or add a ``margin``.
+
         Parameters
         ----------
         path : str, optional
@@ -161,6 +167,10 @@ class Viewer(ViewerModel):
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured. By default, False.
+        margin : float in [0, 1)
+            Blank space around the data, as a fraction of the exported image.
+            For example, 0.1 leaves 5% of blank space on each side. The data
+            keeps the same resolution, so the image is larger. By default, 0.
 
         Returns
         -------
@@ -172,6 +182,7 @@ class Viewer(ViewerModel):
             path=path,
             scale=scale_factor,
             flash=flash,
+            margin=margin,
         )
 
     def export_rois(

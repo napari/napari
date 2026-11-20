@@ -248,6 +248,25 @@ def test_export_figure(
 
 
 @pytest.mark.show_qt_viewer
+def test_export_figure_margin(
+    qt_viewer: QtViewer,
+    viewer_model: ViewerModel,
+    qtbot: QtBot,
+) -> None:
+    viewer_model.add_image(np.ones((250, 250)))
+
+    img = qt_viewer.export_figure(flash=False, margin=0.2)
+    # the data keeps its resolution, so the image is 250 / 0.8 = 312.5 pixels
+    np.testing.assert_allclose(img.shape, (313, 313, 4), atol=1)
+    # the data (white) is in the center, with blank space around it
+    assert (img[156, 156] == [255, 255, 255, 255]).all()
+    assert not (img[0, 0] == [255, 255, 255, 255]).all()
+
+    with pytest.raises(ValueError, match='margin'):
+        qt_viewer.export_figure(flash=False, margin=1)
+
+
+@pytest.mark.show_qt_viewer
 def test_export_figure_3d(
     qt_viewer: QtViewer,
     viewer_model: ViewerModel,

@@ -1756,6 +1756,7 @@ class Window:
         path: str | None = None,
         scale: float = 1,
         flash=True,
+        margin: float = 0,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -1775,6 +1776,9 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
+        margin : float in [0, 1)
+            Blank space around the data, as a fraction of the exported image.
+            By default, 0.
 
         Returns
         -------
@@ -1782,7 +1786,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        return self._qt_viewer.export_figure(path, scale, flash)
+        return self._qt_viewer.export_figure(path, scale, flash, margin)
 
     def export_rois(
         self,
