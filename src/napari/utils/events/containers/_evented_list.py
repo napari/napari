@@ -278,8 +278,7 @@ class EventedList(TypedMutableSequence[_T]):
             are not ``int`` or ``slice``.
         """
         logger.debug(
-            'move_multiple(sources={sources}, dest_index={dest_index})',
-            extra={'sources': sources, 'dest_index': dest_index},
+            'move_multiple(sources=%s, dest_index=%s)', sources, dest_index
         )
 
         # calling list here makes sure that there are no index errors up front

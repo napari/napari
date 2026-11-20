@@ -162,8 +162,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
             moving_indices = data.node_indices()
 
             logger.debug(
-                'dropMimeData: indices {ind} ➡ {idx}',
-                extra={'ind': moving_indices, 'idx': dest_idx},
+                'dropMimeData: indices %s ➡ %s', moving_indices, dest_idx
             )
 
             if len(moving_indices) == 1:

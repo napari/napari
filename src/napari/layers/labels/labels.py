@@ -799,7 +799,7 @@ class Labels(ScalarFieldBase):
         dtype_lims = get_dtype_limits(layer_dtype)
         if dtype_lims[0] > label or dtype_lims[1] < label:
             raise WrongSelectedLabelError(
-                dtype=layer_dtype,  # pyrefly: ignore [bad-argument-type]
+                dtype=layer_dtype,
                 value=label,
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
