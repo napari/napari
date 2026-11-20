@@ -6,6 +6,7 @@ may be inconsistent with the backend used.
 """
 
 import sys
+import warnings
 from enum import StrEnum
 
 
@@ -60,6 +61,44 @@ def get_backend() -> TriangulationBackend:
     return shape.TRIANGULATION_BACKEND
 
 
+def is_backend_available(backend: TriangulationBackend) -> bool:
+    """Check whether a triangulation backend is available.
+
+    Parameters
+    ----------
+    backend : TriangulationBackend
+        The backend to check.
+
+    Returns
+    -------
+    bool
+        True if the backend is available, False otherwise.
+    """
+    if backend in {
+        TriangulationBackend.fastest_available,
+        TriangulationBackend.pure_python,
+    }:
+        return True
+
+    from napari.layers.shapes import _shapes_utils
+    from napari.layers.shapes._accelerated_triangulate_dispatch import (
+        _accelerated_triangulate_numba,
+    )
+    from napari.layers.shapes._shapes_models import shape
+
+    available = {
+        TriangulationBackend.bermuda: shape.bermuda is not None,
+        TriangulationBackend.partsegcore: (
+            shape.partsegcore_triangulate is not None
+        ),
+        TriangulationBackend.triangle: (
+            _shapes_utils.triangulate is not None or 'triangle' in sys.modules
+        ),
+        TriangulationBackend.numba: _accelerated_triangulate_numba is not None,
+    }
+    return bool(available.get(backend, True))
+
+
 def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
     """Set the triangulation backend to use.
 
@@ -67,6 +106,8 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
     ----------
     backend : TriangulationBackend
         The triangulation backend to use.
+        If an optional backend is unavailable, warn and select
+        ``fastest_available`` instead.
 
     Returns
     -------
@@ -78,6 +119,14 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
         _set_warmup,
     )
     from napari.layers.shapes._shapes_models import shape
+
+    if not is_backend_available(backend):
+        warnings.warn(
+            f"Triangulation backend '{backend}' is not available. "
+            'Using the fastest available backend instead.',
+            stacklevel=2,
+        )
+        backend = TriangulationBackend.fastest_available
 
     bermuda_loaded = 'bermuda' in sys.modules
     partsegcore_loaded = 'PartSegCore_compiled_backend' in sys.modules
