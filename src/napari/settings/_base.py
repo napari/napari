@@ -103,7 +103,9 @@ class EventedSettings(BaseSettings, EventedModel):
                 self._connect(attr, f'{path}.')
 
             extra = getattr(field, 'json_schema_extra', None)
-            if extra is not None and extra.get('requires_restart', False):
+            if isinstance(extra, dict) and extra.get(
+                'requires_restart', False
+            ):
                 emitter = getattr(model.events, name)
                 emitter.connect(self._warn_restart)
 
