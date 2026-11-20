@@ -390,7 +390,7 @@ def _toggle_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'colorbar'):
             raise NotImplementedError(
-                'Colorbar is only implemented for Images and Surfaces'
+                'Colorbar is only implemented for Images, Surfaces and Tracks'
             )
         layer.colorbar.visible = not layer.colorbar.visible
 
