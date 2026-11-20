@@ -1,11 +1,11 @@
 """Text label model."""
 
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays.base import CanvasOverlay
+from napari.components.overlays.base import TiledCanvasOverlay
 from napari.utils.color import ColorValue
 
 
-class _BaseTextOverlay(CanvasOverlay):
+class _BaseTextOverlay(TiledCanvasOverlay):
     """Label model to display arbitrary text in the canvas
 
     Attributes
