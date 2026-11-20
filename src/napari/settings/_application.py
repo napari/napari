@@ -35,6 +35,8 @@ GridHeight = Annotated[int, Field(ge=-1), NotEqual(0)]
 GridSpacing = Annotated[float, Field(ge=0, le=MAX_GRID_SPACING)]
 
 _DEFAULT_MEM_FRACTION = 0.25
+# same as the dask default for "array.chunk-size" (128MiB)
+_DEFAULT_CHUNK_SIZE = 128
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
 
 
@@ -45,6 +47,27 @@ class DaskSettings(EventedModel):
         ge=0,
         le=MAX_CACHE,
         title='Cache size (GB)',
+    )
+
+
+class DaskAutochunkSettings(EventedModel):
+    override: bool = Field(
+        False,
+        title='Override',
+        description=(
+            'Override the "array.chunk-size" dask setting with the chunk '
+            'size below. Disabled by default, so napari does not change the '
+            'dask configuration.'
+        ),
+    )
+    chunk_size: int = Field(
+        _DEFAULT_CHUNK_SIZE,
+        ge=1,
+        title='Chunk size (MiB)',
+        description=(
+            'Target size of the chunks that dask creates when it chunks '
+            'arrays automatically (the "array.chunk-size" dask setting).'
+        ),
     )
 
 
@@ -236,6 +259,12 @@ class ApplicationSettings(EventedModel):
         default=DaskSettings(),
         title='Dask cache',
         description='Settings for dask cache (does not work with distributed arrays)',
+    )
+
+    dask_autochunk: DaskAutochunkSettings = Field(
+        default=DaskAutochunkSettings(),
+        title='Dask autochunk size',
+        description='Override the size of the chunks that dask creates when it chunks arrays automatically.',
     )
 
     new_labels_dtype: LabelDTypes = Field(
