@@ -301,6 +301,7 @@ class _QtMainWindow(QMainWindow):
             # when we close the MainWindow, remove it from the instance list
             with contextlib.suppress(ValueError):
                 _QtMainWindow._instances.remove(self)
+            self._window._teardown()
 
         return res
 
@@ -1885,16 +1886,15 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        self._qt_viewer.close()
+        del self._qt_window
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        # Someone is closing us twice? Only try to delete self._qt_window
+        # Someone is closing us twice? Only try to close self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
-            self._teardown()
-            self._qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
