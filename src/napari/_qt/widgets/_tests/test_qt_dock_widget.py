@@ -226,6 +226,28 @@ def test_float_from_bottom_clears_vertical_titlebar_feature(
     assert not dw.title.vertical  # horizontal bar on the floating window
 
 
+def test_float_button_respects_dock_widget_floatable(make_napari_viewer):
+    """The custom title bar must honor the DockWidgetFloatable feature."""
+    viewer = make_napari_viewer()
+    dw = viewer.window.add_dock_widget(
+        QPushButton('button'), name='test', area='right'
+    )
+
+    assert not dw.title.float_button.isHidden()
+
+    movable = QDockWidget.DockWidgetFeature.DockWidgetMovable
+    dw.setFeatures(movable)
+    assert dw.title.float_button.isHidden()
+    # Even if activated programmatically, a non-floatable dock must stay put.
+    dw.title.float_button.click()
+    assert not dw.isFloating()
+
+    dw.setFeatures(movable | QDockWidget.DockWidgetFeature.DockWidgetFloatable)
+    assert not dw.title.float_button.isHidden()
+    dw.title.float_button.click()
+    assert dw.isFloating()
+
+
 def test_dock_area_change_updates_custom_title_bar(make_napari_viewer):
     viewer = make_napari_viewer()
     widg = QPushButton('button')
