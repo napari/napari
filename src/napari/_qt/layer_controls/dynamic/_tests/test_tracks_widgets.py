@@ -189,13 +189,13 @@ class TestQtTailWidthSliderControl:
         control = QtTailWidthSliderControl([tracks])
         qt_wrap.add_control(control)
 
-        assert tracks.tail_width == 2.0
+        assert tracks.width == 2.0
         assert control.tail_width_slider.value() == 2.0
 
         control.tail_width_slider.setValue(5)
-        assert tracks.tail_width == 5
+        assert tracks.width == 5
 
-        tracks.tail_width = 10
+        tracks.width = 10
         assert control.tail_width_slider.value() == 10
 
 

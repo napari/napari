@@ -341,7 +341,7 @@ viewer.add_tracks(
     graph=track_graph,
     name='tracks',
     opacity=0.7,
-    tail_width=3,
+    width=3,
     tail_length=3,
     scale=LAYER_SCALE,
     units=LAYER_UNITS,

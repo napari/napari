@@ -204,6 +204,23 @@ def test_tracks_length_change():
     assert layer._max_length == track_length
 
 
+def test_tracks_tail_width_deprecated():
+    """Test that the old `tail_width` name still works with a warning."""
+    with pytest.warns(FutureWarning, match='tail_width'):
+        layer = Tracks(data_array_2dt, tail_width=5)
+    assert layer.width == 5
+
+    with pytest.warns(FutureWarning, match='tail_width'):
+        layer.tail_width = 7
+    assert layer.width == 7
+
+    events = []
+    with pytest.warns(FutureWarning, match='tail_width'):
+        layer.events.tail_width.connect(events.append)
+    layer.width = 3
+    assert len(events) == 1
+
+
 def test_fast_points_lookup() -> None:
     # creates sorted points
     time_points = np.asarray([0, 1, 3, 5, 10])
