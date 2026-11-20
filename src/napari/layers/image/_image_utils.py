@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy as np
 
@@ -42,7 +42,7 @@ def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
 
 
 def guess_multiscale(
-    data: MultiScaleData | list | tuple,
+    data: LayerDataProtocol | Sequence[LayerDataProtocol],
 ) -> tuple[bool, LayerDataProtocol | Sequence[LayerDataProtocol]]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
@@ -93,7 +93,8 @@ def guess_multiscale(
             f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}'
         )
 
-    return True, MultiScaleData(data)
+    # the checks above leave only a sequence of arrays
+    return True, MultiScaleData(cast('Sequence[LayerDataProtocol]', data))
 
 
 def guess_labels(data: Any) -> Literal['labels', 'image']:
