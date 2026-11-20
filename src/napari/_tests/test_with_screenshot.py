@@ -291,6 +291,7 @@ def test_grid_mode(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+@pytest.mark.slow
 def test_changing_image_attenuation(make_napari_viewer):
     """Test changing attenuation value changes rendering."""
     data = np.zeros((100, 10, 10))
