@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import warnings
+from enum import Enum
 from functools import reduce
 from itertools import count
 from operator import ior
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING
 from weakref import ReferenceType, ref
 
 from qtpy.QtCore import QCoreApplication, QEvent, QSize, Qt
@@ -31,8 +32,13 @@ if TYPE_CHECKING:
     from napari._qt.qt_viewer import QtViewer
 
 counter = count()
-# default of the deprecated shortcut argument, Any keeps the checker quiet
-_sentinel: Any = object()
+
+
+class _Sentinel(Enum):
+    """Default of the deprecated ``shortcut`` argument."""
+
+    NOT_GIVEN = object()
+
 
 _SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
 
@@ -73,21 +79,25 @@ class QtViewerDockWidget(QDockWidget):
             The shortcut parameter is deprecated since version 0.4.8, please use
             the action and shortcut manager APIs. The new action manager and
             shortcut API allow user configuration and localisation.
+    object_name : str, optional
+        Qt object name of the dock widget. By default, ``name`` is used.
     add_vertical_stretch : bool, optional
         Whether to add stretch to the bottom of vertical widgets (pushing
         widgets up towards the top of the allotted area, instead of letting
         them distribute across the vertical space).  By default, True.
+    close_btn : bool, optional
+        Whether the title bar shows a close button. By default, True.
     """
 
     def __init__(
         self,
         qt_viewer: QtViewer,
-        widget: Union[QWidget, Widget],
+        widget: QWidget | Widget,
         *,
         name: str = '',
         area: str = 'right',
         allowed_areas: Sequence[str] | None = None,
-        shortcut: str | None = _sentinel,
+        shortcut: str | _Sentinel | None = _Sentinel.NOT_GIVEN,
         object_name: str = '',
         add_vertical_stretch: bool = True,
         close_btn: bool = True,
@@ -108,7 +118,7 @@ class QtViewerDockWidget(QDockWidget):
             raise ValueError(f'area argument must be in {list(areas.keys())}')
         self.area = area
         self.qt_area = areas[area]
-        if shortcut is not _sentinel:
+        if shortcut is not _Sentinel.NOT_GIVEN:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
                 FutureWarning,
