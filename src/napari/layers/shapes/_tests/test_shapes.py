@@ -2528,6 +2528,59 @@ def test_message_3d():
     assert isinstance(msg, dict)
 
 
+def test_get_tooltip_text_with_features():
+    """Test the tooltip shows the features of the hovered shape."""
+    data = [
+        [[0, 0], [0, 10], [10, 10], [10, 0]],
+        [[20, 20], [20, 30], [30, 30], [30, 20]],
+    ]
+    layer = Shapes(data, features={'a': [1, 2], 'b': ['x', 'y']})
+
+    assert layer._get_tooltip_text(position=(5, 5)) == 'a: 1\nb: x'
+    assert layer._get_tooltip_text(position=(25, 25)) == 'a: 2\nb: y'
+    # the cursor is not over any shape
+    assert layer._get_tooltip_text(position=(15, 15)) == ''
+
+
+def test_get_tooltip_text_without_features():
+    """Test the tooltip is empty if the layer has no features."""
+    data = [[[0, 0], [0, 10], [10, 10], [10, 0]]]
+    layer = Shapes(data)
+
+    assert layer._get_tooltip_text(position=(5, 5)) == ''
+
+
+def test_get_tooltip_text_skips_missing_features():
+    """Test missing (NaN) feature values are not shown in the tooltip."""
+    data = [[[0, 0], [0, 10], [10, 10], [10, 0]]]
+    layer = Shapes(data, features={'a': [np.nan], 'b': [3]})
+
+    assert layer._get_tooltip_text(position=(5, 5)) == 'b: 3'
+
+
+def test_get_tooltip_text_hidden_layer():
+    """Test the tooltip is empty if the layer is not visible."""
+    data = [[[0, 0], [0, 10], [10, 10], [10, 0]]]
+    layer = Shapes(data, features={'a': [1]})
+    layer.visible = False
+
+    assert layer._get_tooltip_text(position=(5, 5)) == ''
+
+
+def test_get_tooltip_text_3d():
+    """Test the tooltip is empty (and does not crash) in 3D view."""
+    data = [[[0, 0, 0], [0, 10, 0], [10, 10, 0], [10, 0, 0]]]
+    layer = Shapes(data, features={'a': [1]})
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+
+    text = layer._get_tooltip_text(
+        position=(5, 5, 5),
+        view_direction=[1, 0, 0],
+        dims_displayed=[0, 1, 2],
+    )
+    assert isinstance(text, str)
+
+
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     np.random.seed(0)
