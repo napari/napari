@@ -3,6 +3,7 @@ from itertools import cycle, islice
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
@@ -129,6 +130,20 @@ def test_current_color_coercion(curr_color, expected):
         colors=colors, current_color=curr_color, color_mode='direct'
     )
     np.testing.assert_allclose(cm.current_color, expected)
+
+
+def test_current_color_never_none():
+    cm = ColorManager()
+    np.testing.assert_allclose(cm.current_color, [0, 0, 0, 1])
+
+    # an unset current color still follows the first colors added
+    cm._add([1, 0, 0, 1])
+    np.testing.assert_allclose(cm.current_color, [1, 0, 0, 1])
+
+    for empty in (None, []):
+        with pytest.raises(ValidationError):
+            cm.current_color = empty
+    np.testing.assert_allclose(cm.current_color, [1, 0, 0, 1])
 
 
 color_str = ['red', 'red', 'red']
