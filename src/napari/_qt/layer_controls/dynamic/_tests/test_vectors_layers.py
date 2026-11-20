@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from napari._qt.layer_controls.dynamic.widgets._vectors import (
@@ -56,6 +57,37 @@ class TestQtEdgeColorFeatureControl:
 
         control.color_feature_box.setCurrentText('feature2')
         assert vectors.edge_color_mode == 'cycle'
+
+    def test_colormap_controls_follow_the_mode(
+        self, qt_wrap: QtWrap, vectors_data
+    ) -> None:
+        vectors = Vectors(vectors_data)
+        control = QtEdgeColorFeatureControl([vectors])
+        qt_wrap.add_control(control)
+
+        assert control.colormap_combobox.isHidden()
+        assert control.contrast_limits_slider.isHidden()
+
+        vectors.features = {'phase': np.array([-np.pi, np.pi])}
+        vectors.edge_color = 'phase'
+        vectors.edge_color_mode = 'colormap'
+        assert not control.colormap_combobox.isHidden()
+        assert not control.contrast_limits_slider.isHidden()
+
+        # widget -> layer
+        index = control.colormap_combobox.findData('twilight')
+        control.colormap_combobox.setCurrentIndex(index)
+        control.contrast_limits_slider.setValue((-1.0, 1.0))
+        assert vectors.edge_colormap.name == 'twilight'
+        np.testing.assert_allclose(vectors.edge_contrast_limits, (-1.0, 1.0))
+
+        # layer -> widget
+        vectors.edge_colormap = 'hsv'
+        vectors.edge_contrast_limits = (-2.0, 2.0)
+        assert control.colormap_combobox.currentData() == 'hsv'
+        np.testing.assert_allclose(
+            control.contrast_limits_slider.value(), (-2.0, 2.0)
+        )
 
 
 class TestQtWidthSpinBoxControl:

@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
+from superqt import QLabeledDoubleRangeSlider
 
+from napari._qt.layer_controls.dynamic.widgets.qt_colormap_control import (
+    QtColormapComboBox,
+)
 from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
@@ -12,6 +17,7 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -45,6 +51,14 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         Dropdown to select the feature for mapping edge_color.
     edge_feature_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the color_feature_box chooser widget.
+    colormap_combobox : qtpy.QtWidgets.QComboBox
+        Dropdown to select the colormap used in colormap mode.
+    colormap_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the colormap_combobox chooser widget.
+    contrast_limits_slider : superqt.QLabeledDoubleRangeSlider
+        Slider controlling the feature values mapped to the ends of the colormap.
+    contrast_limits_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the contrast_limits_slider widget.
     """
 
     _layers: list[Vectors]
@@ -59,6 +73,10 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
                 self._on_edge_color_mode_change
             )
             layer.events.edge_color.connect(self._on_edge_color_change)
+            layer.events.edge_colormap.connect(self._on_colormap_change)
+            layer.events.edge_contrast_limits.connect(
+                self._on_contrast_limits_change
+            )
 
         # dropdown to select the edge color mode
         self.color_mode_label = QtWrappedLabel('edge color mode:')
@@ -83,6 +101,27 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.color_feature_box.currentTextChanged.connect(
             self.change_edge_color_feature
         )
+
+        # The mapping half of colormap mode: which colormap, over which values.
+        self.colormap_label = QtWrappedLabel('edge colormap:')
+        self.colormap_combobox = QtColormapComboBox(parent)
+        self.colormap_combobox.setObjectName('colormapComboBox')
+        for name, colormap in AVAILABLE_COLORMAPS.items():
+            self.colormap_combobox.addItem(colormap._display_name, name)
+        self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
+
+        self.contrast_limits_label = QtWrappedLabel('edge contrast limits:')
+        self.contrast_limits_slider = QLabeledDoubleRangeSlider(
+            Qt.Orientation.Horizontal, parent
+        )
+        self.contrast_limits_slider.setMinimum(0)
+        self.contrast_limits_slider.setMaximum(1)
+        self.contrast_limits_slider.valueChanged.connect(
+            self.change_contrast_limits
+        )
+        self._on_colormap_change()
+        self._on_contrast_limits_change()
+        self._update_colormap_gui(self._layers[0].edge_color_mode)
 
         # vector direct color mode adjustment and widget
         self.edge_color_edit = QColorSwatchEdit(
@@ -120,6 +159,63 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             for layer in self._layers:
                 layer.edge_color_mode = mode
             self._update_edge_color_gui(mode)
+
+    def change_colormap(self, colormap: str):
+        """Change the colormap the mapped feature is rendered through.
+
+        Parameters
+        ----------
+        colormap : str
+            Display name of the colormap, as shown in the dropdown.
+        """
+        for layer in self._layers:
+            layer.edge_colormap = self.colormap_combobox.currentData()
+
+    def change_contrast_limits(self, contrast_limits: tuple[float, float]):
+        """Change the feature values mapped to the ends of the colormap.
+
+        Parameters
+        ----------
+        contrast_limits : tuple of float
+            The low and high feature value.
+        """
+        for layer in self._layers:
+            layer.edge_contrast_limits = tuple(contrast_limits)
+
+    def _on_colormap_change(self):
+        """Receive layer model colormap change event and update the dropdown."""
+        name = self._layers[0].edge_colormap.name
+        index = self.colormap_combobox.findData(name)
+        if index != -1 and index != self.colormap_combobox.currentIndex():
+            with qt_signals_blocked(self.colormap_combobox):
+                self.colormap_combobox.setCurrentIndex(index)
+
+    def _on_contrast_limits_change(self):
+        """Receive layer model contrast limits change event and update the slider.
+
+        The slider spans the mapped feature's values, widened to reach limits set
+        outside them.
+        """
+        limits = self._layers[0].edge_contrast_limits
+        if limits is None:
+            return
+        low, high = float(limits[0]), float(limits[1])
+        values = self._feature_values()
+        if values is not None and len(values):
+            low = min(low, float(np.min(values)))
+            high = max(high, float(np.max(values)))
+        if high <= low:
+            high = low + 1.0
+        with qt_signals_blocked(self.contrast_limits_slider):
+            self.contrast_limits_slider.setRange(low, high)
+            self.contrast_limits_slider.setValue(tuple(limits))
+
+    def _feature_values(self):
+        """Values of the feature currently mapped to color, or None."""
+        color_properties = self._layers[0]._edge.color_properties
+        if color_properties is None:
+            return None
+        return np.asarray(color_properties.values, dtype=float)
 
     def _on_edge_color_mode_change(self):
         """Receive layer model edge color mode change event & update dropdown."""
@@ -172,6 +268,18 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             self.edge_color_label.setHidden(False)
             self.color_feature_box.setHidden(True)
             self.edge_feature_label.setHidden(True)
+        self._update_colormap_gui(mode)
+
+    def _update_colormap_gui(self, mode: str):
+        """Show the colormap and its limits in colormap mode only."""
+        colormapped = mode == 'colormap'
+        self.colormap_combobox.setHidden(not colormapped)
+        self.colormap_label.setHidden(not colormapped)
+        self.contrast_limits_slider.setHidden(not colormapped)
+        self.contrast_limits_label.setHidden(not colormapped)
+        if colormapped:
+            self._on_colormap_change()
+            self._on_contrast_limits_change()
 
     def get_widget_controls(
         self,
@@ -180,4 +288,6 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             (self.color_mode_label, self.color_mode_combobox),
             (self.edge_color_label, self.edge_color_edit),
             (self.edge_feature_label, self.color_feature_box),
+            (self.colormap_label, self.colormap_combobox),
+            (self.contrast_limits_label, self.contrast_limits_slider),
         ]
