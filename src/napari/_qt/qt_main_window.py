@@ -602,6 +602,10 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
+        emit_closing = getattr(self._qt_viewer.viewer, '_emit_closing', None)
+        if emit_closing is not None:
+            emit_closing()
+
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
 

@@ -1,9 +1,10 @@
 import os
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
 from pydantic import ValidationError
+from qtpy.QtWidgets import QApplication, QDialog
 
 from napari import Viewer, layers
 from napari._tests.utils import (
@@ -530,3 +531,118 @@ def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
     viewer.add_image(np.random.random((2, 3, 4, 5)))
     assert viewer.dims.axis_labels == viewer.layers.axis_labels
     assert viewer.dims.axis_labels == ('-4', 'z', 'y', 'x')
+
+
+def test_close_emits_closing_once_before_layers_are_removed(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer()
+    viewer.add_points()
+    seen = []
+    viewer.events.closing.connect(
+        lambda event: seen.append(len(viewer.layers))
+    )
+
+    viewer.close()
+    viewer.close()
+
+    assert seen == [1]
+    assert len(viewer.layers) == 0
+
+
+def test_closing_handler_cannot_tear_the_viewer_down_early(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer()
+    viewer.add_points()
+    seen = []
+    viewer.events.closing.connect(lambda event: viewer.close())
+    viewer.events.closing.connect(
+        lambda event: seen.append(len(viewer.layers))
+    )
+
+    viewer.close()
+
+    assert seen == [1]
+    assert len(viewer.layers) == 0
+
+
+def test_window_close_emits_closing_and_viewer_close_still_cleans_up(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer()
+    viewer.add_points()
+    seen = []
+    viewer.events.closing.connect(
+        lambda event: seen.append(len(viewer.layers))
+    )
+
+    viewer.window._qt_window.close()
+    assert seen == [1]
+
+    viewer.close()
+    assert seen == [1]
+    assert len(viewer.layers) == 0
+
+
+def test_failing_closing_handler_does_not_stop_others_or_the_close(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer()
+    viewer.add_points()
+    seen = []
+
+    def failing_handler(event):
+        raise OSError('cleanup failed')
+
+    viewer.events.closing.connect(failing_handler)
+    viewer.events.closing.connect(seen.append)
+
+    viewer.close()
+
+    assert len(seen) == 1
+    assert len(viewer.layers) == 0
+
+
+def test_title_bar_close_emits_closing_only_when_confirmed(
+    make_napari_viewer, monkeypatch
+):
+    viewer = make_napari_viewer()
+    viewer.add_points()
+    seen = []
+    viewer.events.closing.connect(
+        lambda event: seen.append(len(viewer.layers))
+    )
+    monkeypatch.setattr(
+        get_settings().application, 'confirm_close_window', True
+    )
+    event = Mock()
+    event.spontaneous.return_value = True
+
+    with patch('napari._qt.qt_main_window.ConfirmCloseDialog') as dialog:
+        dialog.return_value.exec.return_value = QDialog.DialogCode.Rejected
+        viewer.window._qt_window.closeEvent(event)
+        assert seen == []
+        event.ignore.assert_called_once()
+
+        dialog.return_value.exec.return_value = QDialog.DialogCode.Accepted
+        viewer.window._qt_window.closeEvent(event)
+        assert seen == [1]
+
+
+def test_exit_emits_closing_once_per_viewer(make_napari_viewer, monkeypatch):
+    viewers = [make_napari_viewer() for _ in range(2)]
+    seen = []
+    for index, viewer in enumerate(viewers):
+        viewer.add_points()
+        viewer.events.closing.connect(
+            lambda event, index=index, viewer=viewer: seen.append(
+                (index, len(viewer.layers))
+            )
+        )
+    # Keep the QApplication, which the rest of the test session needs.
+    monkeypatch.setattr(QApplication, 'quit', lambda: None)
+
+    viewers[0].window._qt_window.close(quit_app=True, confirm_need=False)
+
+    assert sorted(seen) == [(0, 1), (1, 1)]
