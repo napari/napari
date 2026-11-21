@@ -1203,7 +1203,10 @@ class ShapeList:
             # there are more triangles in the shape than in the mesh
             before_array = self._mesh.triangles[: triangles_slice.start]
             after_array = self._mesh.triangles[triangles_slice.stop :]
-            after_array += new_vertices_count - prev_vertices_count
+            if new_vertices_count > prev_vertices_count:
+                # Vertex storage is only grown, never shrunk, so later
+                # shapes move only if more vertices were added.
+                after_array += new_vertices_count - prev_vertices_count
             self._mesh.triangles = np.concatenate(
                 [
                     before_array,
@@ -1350,6 +1353,12 @@ class ShapeList:
         face : bool
             Bool to indicate whether to update mesh vertices corresponding to
             faces and to update the underlying shape vertices
+
+        Notes
+        -----
+        Only vertex data is written here. If the number of vertices or
+        triangles of the shape may have changed, use ``update`` instead,
+        which also updates triangles and shifts indices of later shapes.
         """
         shape = self.shapes[index]
         if edge and face:
@@ -1391,6 +1400,7 @@ class ShapeList:
                 )
                 diff = shape.vertices_count - current_range
                 self._mesh.vertices_index[index + 1 :] += diff
+                self._clear_cache()
                 return
             if current_range > shape.vertices_count:
                 zeros_slice = slice(
@@ -1673,6 +1683,8 @@ class ShapeList:
             length 2 list specifying coordinate of center of rotation.
         """
         self.shapes[index].rotate(angle, center=center)
+        # Rotation and reflection only move the shape meshes, the
+        # triangulation is kept, so only the vertices need to be updated.
         self._update_mesh_vertices(index, edge=True, face=True)
 
     def flip(self, index, axis, center=None) -> None:
@@ -1689,6 +1701,8 @@ class ShapeList:
             length 2 list specifying coordinate of center of flip axes.
         """
         self.shapes[index].flip(axis, center=center)
+        # Rotation and reflection only move the shape meshes, the
+        # triangulation is kept, so only the vertices need to be updated.
         self._update_mesh_vertices(index, edge=True, face=True)
 
     def transform(self, index, transform) -> None:

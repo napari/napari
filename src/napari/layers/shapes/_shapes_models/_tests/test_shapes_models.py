@@ -326,6 +326,84 @@ def test_ellipse_rotate():
     )
 
 
+# polygon with a hole: the edge connecting outer and inner ring is
+# traversed twice and is not part of the polygon edge
+POLYGON_WITH_HOLE = (
+    np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+            [0, 10],
+            [0, 0],
+            [2, 5],
+            [5, 8],
+            [8, 5],
+            [5, 2],
+            [2, 5],
+        ]
+    )
+    * 1.5
+)
+
+
+def _assert_same_mesh_region(shape, expected):
+    """Check that two meshes cover the same region with the same vertices.
+
+    Triangles are not compared directly, as they are not unique: some
+    backends (bermuda) do not return them in a deterministic order, and
+    a reflection may change which diagonal splits an edge segment.
+    """
+
+    def vertices_and_area(vertices, triangles):
+        points = vertices[triangles].astype(np.float64)
+        u = points[:, 1] - points[:, 0]
+        v = points[:, 2] - points[:, 0]
+        area = np.abs(u[:, 0] * v[:, 1] - u[:, 1] * v[:, 0]).sum() / 2
+        # pure python backend may return vertices not used by any triangle
+        used = vertices[np.unique(triangles)].astype(np.float64)
+        return np.unique(used.round(3), axis=0), area
+
+    assert shape.vertices_count == expected.vertices_count
+    assert shape.triangles_count == expected.triangles_count
+    for get_mesh in (
+        lambda s: (s._face_vertices, s._face_triangles),
+        lambda s: (
+            s._edge_vertices + s.edge_width * s._edge_offsets,
+            s._edge_triangles,
+        ),
+    ):
+        vertices, area = vertices_and_area(*get_mesh(shape))
+        expected_vertices, expected_area = vertices_and_area(
+            *get_mesh(expected)
+        )
+        npt.assert_allclose(vertices, expected_vertices, atol=1e-3)
+        npt.assert_allclose(area, expected_area, rtol=1e-5)
+
+
+@pytest.mark.parametrize(
+    ('method', 'arg'), [('rotate', 15), ('flip', 0), ('flip', 1)]
+)
+def test_polygon_orthogonal_transform_moves_mesh(method, arg):
+    """Rotate and flip move the existing meshes instead of recomputing them."""
+    shape = Polygon(POLYGON_WITH_HOLE)
+    edge_triangles = shape._edge_triangles.copy()
+    face_triangles = shape._face_triangles.copy()
+
+    getattr(shape, method)(arg)
+
+    npt.assert_array_equal(shape._edge_triangles, edge_triangles)
+    npt.assert_array_equal(shape._face_triangles, face_triangles)
+    _assert_same_mesh_region(shape, Polygon(shape.data))
+
+
+def test_flip_with_center():
+    data = np.array([[0, 0], [4, 0], [4, 2]])
+    shape = Polygon(data)
+    shape.flip(0, center=[1, 1])
+    npt.assert_allclose(shape.data, [[0, 2], [4, 2], [4, 0]])
+
+
 SQUARE = [[10, 10], [10, 50], [50, 50], [50, 10]]
 
 
