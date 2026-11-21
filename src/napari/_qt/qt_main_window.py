@@ -32,7 +32,6 @@ from qtpy.QtCore import (
     QSize,
     Qt,
     Signal,
-    Slot,
 )
 from qtpy.QtGui import QImage, QShortcut
 from qtpy.QtWidgets import (
@@ -45,7 +44,6 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
-from typing_extensions import deprecated
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
@@ -671,15 +669,6 @@ class _QtMainWindow(QMainWindow):
         self._toggle_menubar_visibility = not self._toggle_menubar_visibility
         self.menuBar().setVisible(not self._toggle_menubar_visibility)
         return self._toggle_menubar_visibility
-
-    @staticmethod
-    @Slot(Notification)
-    @deprecated(
-        '_QtMainWindow.show_notification is deprecated, use NapariQtNotification.show_notification instead, will be removed in spring 2027'
-    )
-    def show_notification(notification: Notification):
-        """Show notification coming from a thread."""
-        NapariQtNotification.show_notification(notification)
 
     def _show_notification_in_main_thread(
         self, notification: Notification
