@@ -294,9 +294,9 @@ class ScaleTranslate(Transform):
                 ([0.0] * (coords_ndim - len(self.translate)), self.translate)
             )
         out = scale * coords
-        if np.can_cast(translate.dtype, out.dtype, casting='same_kind'):
+        try:
             out += translate
-        else:
+        except TypeError:
             out = out + translate
         if append_first_axis:
             out = out[0]
@@ -483,9 +483,9 @@ class Affine(Transform):
         )
         translate = translate_to_vector(self._translate, ndim=coords_ndim)
         out = coords @ padded_linear_matrix.T
-        if np.can_cast(translate.dtype, out.dtype, casting='same_kind'):
+        try:
             out += translate
-        else:
+        except TypeError:
             out = out + translate
         if append_first_axis:
             out = out[0]
