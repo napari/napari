@@ -270,14 +270,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
-        # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
-        #        the source of truth, and is now defined in world space. This exposed an existing
-        #        bug where if a field in Dims is modified by the root_validator, events won't
-        #        be fired for it. This won't happen for properties because we have dependency
-        #        checks. To fix this, we need dep checks for fields (psygnal!) and then we
-        #        can remove the following line. Note that because of this we fire double events,
-        #        but this should be ok because we have early returns when slices are unchanged.
-        self.dims.events.current_step.connect(self._update_layers)
 
         # Track previous ndisplay for per-mode camera state caching.
         self._previous_ndisplay: int = self.dims.ndisplay
