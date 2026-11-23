@@ -470,4 +470,4 @@ def is_diagonal(matrix, tol: float = 1e-8) -> bool:
     if tol == 0:
         return np.count_nonzero(non_diag) == 0
 
-    return np.max(np.abs(non_diag)) <= tol
+    return bool(np.max(np.abs(non_diag)) <= tol)
