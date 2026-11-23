@@ -1,4 +1,6 @@
+import dask.array as da
 import numpy as np
+import pytest
 from scipy import ndimage as ndi
 
 from napari.components.dims import Dims
@@ -301,10 +303,13 @@ def test_fill_nD_all():
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
 
-def test_paint_3d():
-    """Test filling label nD."""
+@pytest.mark.parametrize('use_dask', [False, True], ids=['numpy', 'dask'])
+def test_paint_3d(use_dask):
+    """Paint and erase a surface voxel in 3D."""
     data = np.zeros((21, 21, 21), dtype=np.int32)
     data[10, 10, 10] = 1
+    if use_dask:
+        data = da.from_array(data, chunks=(7, 7, 7))
     layer = Labels(data)
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
@@ -323,8 +328,9 @@ def test_paint_3d():
     )
     mouse_press_callbacks(layer, event)
     mouse_release_callbacks(layer, event)
-    np.testing.assert_array_equal(np.unique(layer.data), [0, 4])
-    num_filled = np.bincount(layer.data.ravel())[4]
+    painted = np.asarray(layer.data)
+    np.testing.assert_array_equal(np.unique(painted), [0, 4])
+    num_filled = np.count_nonzero(painted == 4)
     assert num_filled > 1
 
     layer.mode = 'erase'
@@ -340,7 +346,7 @@ def test_paint_3d():
     mouse_press_callbacks(layer, event)
     mouse_release_callbacks(layer, event)
 
-    new_num_filled = np.bincount(layer.data.ravel())[4]
+    new_num_filled = np.count_nonzero(np.asarray(layer.data) == 4)
     assert new_num_filled < num_filled
 
 
