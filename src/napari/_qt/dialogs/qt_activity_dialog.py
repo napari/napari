@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QMovie
 from qtpy.QtWidgets import (
@@ -13,6 +17,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import ensure_main_thread
 
 from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
@@ -20,6 +25,9 @@ from napari._qt.widgets.qt_progress_bar import (
 )
 from napari.resources import LOADING_GIF_PATH
 from napari.utils.progress import progress
+
+if TYPE_CHECKING:
+    from napari.utils.events import Event
 
 
 class ActivityToggleItem(QWidget):
@@ -124,7 +132,7 @@ class QtActivityDialog(QDialog):
             self.handle_progress_change
         )
 
-    def handle_progress_change(self, event):
+    def handle_progress_change(self, event: Event) -> None:
         """Handle addition and/or removal of new progress objects
 
         Parameters
@@ -132,12 +140,27 @@ class QtActivityDialog(QDialog):
         event : Event
             EventedSet `changed` event with `added` and `removed` objects
         """
-        for prog in event.removed:
-            self.close_progress_bar(prog)
+        # Set now, so tqdm does not print to the terminal.
         for prog in event.added:
-            self.make_new_pbar(prog)
+            prog.gui = True
+            prog.leave = False
+        self._update_progress_bars(event.removed, event.added)
 
-    def make_new_pbar(self, prog):
+    # Qt widgets must be changed on the main thread.
+    @ensure_main_thread
+    def _update_progress_bars(
+        self, removed: set[progress], added: set[progress]
+    ) -> None:
+        for prog in removed:
+            self.close_progress_bar(prog)
+        for prog in added:
+            # The progress may finish before or while its bar is made.
+            if prog in progress._all_instances:
+                self.make_new_pbar(prog)
+            if prog not in progress._all_instances:
+                self.close_progress_bar(prog)
+
+    def make_new_pbar(self, prog: progress) -> None:
         """Make new `QtLabeledProgressBar` for this `progress` object and add to viewer.
 
         Parameters
@@ -145,12 +168,7 @@ class QtActivityDialog(QDialog):
         prog : progress
             progress object to associated with new progress bar
         """
-        prog.gui = True
-        prog.leave = False
-
-        # make and add progress bar
         pbar = QtLabeledProgressBar(prog=prog)
-        self.add_progress_bar(pbar, nest_under=prog.nest_under)
 
         # connect progress object events to updating progress bar
         prog.events.value.connect(pbar._set_value)
@@ -170,6 +188,9 @@ class QtActivityDialog(QDialog):
             pbar.setRange(0, 0)
             prog.total = 0
         pbar.setDescription(prog.desc)
+
+        # Add the bar last: adding it can close it if the progress is done.
+        self.add_progress_bar(pbar, nest_under=prog.nest_under)
 
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to activity_dialog,in QtProgressBarGroup if needed.

@@ -1,8 +1,10 @@
 import os
 import sys
+import threading
 from contextlib import contextmanager
 
 import pytest
+from qtpy.QtWidgets import QApplication
 
 from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
@@ -62,6 +64,39 @@ def test_activity_dialog_holds_progress(make_napari_viewer):
 
     prog.close()
     assert not pbar.isVisible()
+
+
+def test_progress_in_background_thread(make_napari_viewer, qtbot, monkeypatch):
+    """Progress bar widgets are created and updated on the main thread."""
+    viewer = make_napari_viewer(show=SHOW)
+    used_on = []
+    values = []
+    set_value = QtLabeledProgressBar.setValue
+
+    def _record_thread(self, value):
+        used_on.append(threading.current_thread())
+        values.append(value)
+        set_value(self, value)
+
+    monkeypatch.setattr(QtLabeledProgressBar, 'setValue', _record_thread)
+    bar_created = threading.Event()
+
+    def _work():
+        with progress(total=3) as prog:
+            bar_created.wait(timeout=5)
+            for _ in range(3):
+                prog.update(1)
+
+    thread = threading.Thread(target=_work)
+    thread.start()
+    qtbot.waitUntil(lambda: qt_viewer_has_pbar(viewer))
+    bar_created.set()
+    thread.join()
+    QApplication.processEvents()  # run the calls queued for the main thread
+
+    # quick updates may be combined, but the last value must be shown
+    assert values[-1] == 3
+    assert set(used_on) == {threading.main_thread()}
 
 
 def test_progress_with_context(make_napari_viewer):
