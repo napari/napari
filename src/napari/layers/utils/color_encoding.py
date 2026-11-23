@@ -212,7 +212,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     @field_validator('contrast_limits', mode='before')
     @classmethod
     def _check_contrast_limits(
-        cls, contrast_limits
+        cls, contrast_limits: tuple[float, float] | None
     ) -> tuple[float, float] | None:
         if (contrast_limits is not None) and (
             contrast_limits[0] >= contrast_limits[1]

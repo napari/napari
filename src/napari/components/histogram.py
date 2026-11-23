@@ -105,7 +105,7 @@ class HistogramModel(EventedModel):
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
-    ):
+    ) -> None:
         """Initialize histogram model.
 
         Parameters

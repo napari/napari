@@ -40,7 +40,7 @@ class Overlay(EventedModel):
     order: int = 10**6
     blending: Blending
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
 

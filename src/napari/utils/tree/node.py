@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -65,7 +65,7 @@ class Node:
             item = item.parent
         return tuple(indices)
 
-    def iter_parents(self):
+    def iter_parents(self) -> Generator[Group, None, None]:
         """Iterate the parent chain, starting with nearest relatives"""
         obj = self.parent
         while obj:
@@ -78,7 +78,7 @@ class Node:
         return parents[-1] if parents else self
 
     def traverse(
-        self, leaves_only=False, with_ancestors=False
+        self, leaves_only: bool = False, with_ancestors: bool = False
     ) -> Generator[Node, None, None]:
         """Recursive all nodes and leaves of the Node.
 
@@ -87,7 +87,7 @@ class Node:
         """
         yield self
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Render ascii tree string representation of this node"""
         return '\n'.join(self._render())
 
@@ -106,7 +106,7 @@ class Node:
         """
         return self.name
 
-    def unparent(self):
+    def unparent(self) -> Self:
         """Remove this object from its parent."""
         if self.parent is not None:
             self.parent.remove(self)

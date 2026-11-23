@@ -3,6 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
+    QMainWindow,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -10,6 +11,10 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.utils import combine_widgets
+from napari._qt.widgets.qt_viewer_dock_widget import (
+    QtCustomTitleBar,
+    QtViewerDockWidget,
+)
 
 
 def test_add_dock_widget(make_napari_viewer):
@@ -244,9 +249,66 @@ def test_dock_area_change_updates_custom_title_bar(make_napari_viewer):
     )
 
 
+def test_dock_area_saved_only_when_moved(qtbot):
+    """Only areas the user chose are saved, so a widget that was never moved
+    keeps following its default (e.g. a plugin's `default_dock_area`)."""
+    from napari.settings import get_settings
+
+    positions = get_settings().application.plugin_widget_positions
+    qt_window = QMainWindow()
+    qtbot.addWidget(qt_window)
+    # the dock widget only keeps a weak reference to its viewer
+    dw = QtViewerDockWidget(QWidget(), QPushButton(), name='test')
+
+    # opening the widget does not save its area
+    qt_window.addDockWidget(dw.qt_area, dw)
+    assert 'test' not in positions
+
+    # moving the widget to another area, like a user dragging it, saves it
+    qt_window.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dw)
+    assert positions['test'] == 'left'
+
+    # moving it back to where it opened is a choice too, and is saved
+    qt_window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dw)
+    assert positions['test'] == 'right'
+
+
 def test_combine_widgets_error():
     """Check error raised when combining widgets with invalid types."""
     with pytest.raises(
         TypeError, match='"widgets" must be a QWidget, a magicgui'
     ):
         combine_widgets(['string'])
+
+
+def test_update_font_metrics_without_title(qtbot, monkeypatch):
+    """``_update_font_metrics`` is a no-op before the title label exists."""
+    dock = QDockWidget()
+    qtbot.addWidget(dock)
+    title_bar = QtCustomTitleBar(dock, 'test')
+    # simulate a font change arriving before the title label is created
+    monkeypatch.delattr(title_bar, 'title')
+    height = title_bar.minimumHeight()
+    title_bar._update_font_metrics()
+    assert title_bar.minimumHeight() == height
+
+
+def test_dock_minimum_shrinks_with_content(make_napari_viewer, qtbot):
+    """Hiding part of a docked widget must lower the dock's minimum again."""
+    viewer = make_napari_viewer(show=True)
+    widg = QWidget()
+    widg.setLayout(QVBoxLayout())
+    widg.layout().addWidget(QPushButton())
+    tall = QTextEdit()
+    tall.setMinimumHeight(300)
+    tall.hide()
+    widg.layout().addWidget(tall)
+    dw = viewer.window.add_dock_widget(widg, name='test', area='right')
+    qtbot.waitUntil(lambda: dw.minimumSizeHint().height() > 0)
+    base = dw.minimumSizeHint().height()
+
+    tall.show()
+    qtbot.waitUntil(lambda: dw.minimumSizeHint().height() >= base + 300)
+
+    tall.hide()
+    qtbot.waitUntil(lambda: dw.minimumSizeHint().height() == base)

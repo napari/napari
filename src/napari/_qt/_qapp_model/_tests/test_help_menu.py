@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import requests
 from qtpy.QtCore import QRect, Qt
-from qtpy.QtWidgets import QApplication, QLabel, QWidget
+from qtpy.QtWidgets import QLabel, QWidget
 
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
@@ -150,9 +150,11 @@ def test_tour_escape_closes_regardless_of_focus(qtbot):
     qtbot.waitUntil(lambda: tour._steps[tour._current].title == 'Only')
 
     # Escape should close the tour even when some other widget -- not the
-    # tooltip -- has keyboard focus.
+    # tooltip -- has keyboard focus. Check the window's focus widget, not
+    # QApplication.focusWidget(): the latter stays None while the app is
+    # inactive, which happens on macOS CI.
     other_widget.setFocus()
-    qtbot.waitUntil(lambda: QApplication.focusWidget() is other_widget)
+    assert window.focusWidget() is other_widget
     qtbot.keyPress(other_widget, Qt.Key.Key_Escape)
     qtbot.waitUntil(lambda: not tour._active)
 

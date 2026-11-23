@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -40,12 +42,14 @@ class Line(Shape):
         self.name = 'line'
 
     @property
-    def data(self):
+    def data(
+        self,
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float32]]:
         """(2, D) array: line vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -74,6 +78,4 @@ class Line(Shape):
         # in this case we have only 2D data (based on docstring)
         self._box = create_box(self.data_displayed)  # pyrefly: ignore [bad-argument-type]
 
-        self.slice_key = np.round(
-            self._bounding_box[:, self.dims_not_displayed]
-        ).astype('int')
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)

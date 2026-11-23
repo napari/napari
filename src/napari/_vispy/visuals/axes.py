@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh
 
@@ -9,7 +11,9 @@ from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
 
 
-def make_dashed_line(num_dashes, axis):
+def make_dashed_line(
+    num_dashes, axis
+) -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.float64]]:
     """Make a dashed line.
 
     Parameters
@@ -22,7 +26,7 @@ def make_dashed_line(num_dashes, axis):
     Returns
     -------
     np.ndarray
-        Dashed line, of shape (num_dashes, 3) with zeros in
+        Dashed line, of shape (2 * num_dashes, 3) with zeros in
         the non dashed axes and line segments in the dashed
         axis.
     """
@@ -116,21 +120,24 @@ def color_arrowheads(colors, num_segments):
     )
 
 
+# CMYRGB for 6 axes data in x, y, z, ... ordering
+AXES_COLORS = [
+    [0, 1, 1, 1],
+    [1, 0, 1, 1],
+    [1, 1, 0, 1],
+    [1, 0, 0, 1],
+    [0, 1, 0, 1],
+    [0, 0, 1, 1],
+]
+
+
 class Axes(Compound):
     def __init__(
         self,
         font_info: FontInfo,
     ) -> None:
         self._num_segments_arrowhead = 100
-        # CMYRGB for 6 axes data in x, y, z, ... ordering
-        self._default_color = [
-            [0, 1, 1, 1],
-            [1, 0, 1, 1],
-            [1, 1, 0, 1],
-            [1, 0, 0, 1],
-            [0, 1, 0, 1],
-            [0, 0, 1, 1],
-        ]
+        self._default_color = AXES_COLORS
 
         # note order is x, y, z for VisPy
         self._line_data2D = np.array(
@@ -208,7 +215,7 @@ class Axes(Compound):
         dashed,
         arrows,
         text_offset=0.3,
-    ):
+    ) -> None:
         ndisplay = len(axes)
 
         # Determine colors of axes based on reverse position

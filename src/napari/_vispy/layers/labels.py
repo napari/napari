@@ -97,7 +97,7 @@ class LabelVispyColormap(VispyColormap):
         colormap: CyclicLabelColormap,
         view_dtype: np.dtype,
         raw_dtype: np.dtype,
-    ):
+    ) -> None:
         super().__init__(
             colors=['w', 'w'], controls=None, interpolation='zero'
         )
@@ -133,7 +133,7 @@ class DirectLabelVispyColormap(VispyColormap):
         scale=1.0,
         color_map_size=255,
         multi=False,
-    ):
+    ) -> None:
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
         shader = direct_lookup_shader_many if multi else direct_lookup_shader
@@ -229,7 +229,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         if dtypes != self._colormap_dtypes:
             self._on_colormap_change()
 
-    def _on_rendering_change(self):
+    def _on_rendering_change(self) -> None:
         # overriding the Image method, so we can maintain the same old rendering name
         if isinstance(self.node, VolumeNode):
             rendering = self.layer.rendering
@@ -239,7 +239,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 else 'translucent_categorical'
             )
 
-    def _on_colormap_change(self, event=None):
+    def _on_colormap_change(self, event=None) -> None:
         # self.layer.colormap is a labels_colormap, which is an evented model
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
@@ -316,11 +316,11 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
 
         self._colormap_dtypes = (raw_dtype, view_dtype)
 
-    def _on_iso_gradient_mode_change(self):
+    def _on_iso_gradient_mode_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.iso_gradient_mode = self.layer.iso_gradient_mode
 
-    def _on_partial_labels_update(self, event):
+    def _on_partial_labels_update(self, event) -> None:
         if not self.layer.loaded:
             return
 
@@ -344,11 +344,11 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
 
 
 class LabelLayerNode(ScalarFieldLayerNode):
-    def __init__(self, custom_node: Node = None, texture_format=None):
+    def __init__(self, custom_node: Node = None, texture_format=None) -> None:
         self._custom_node = custom_node
         self._setup_nodes(texture_format)
 
-    def _setup_nodes(self, texture_format):
+    def _setup_nodes(self, texture_format) -> None:
         self._image_node = LabelNode(
             (
                 None

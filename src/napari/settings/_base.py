@@ -107,7 +107,7 @@ class EventedSettings(BaseSettings, EventedModel):
                 emitter = getattr(model.events, name)
                 emitter.connect(self._warn_restart)
 
-    def _on_sub_event(self, event: Event, field=None):
+    def _on_sub_event(self, event: Event, field: str | None = None) -> None:
         """emit the field.attr name and new value"""
         if field:
             field += '.'
@@ -222,7 +222,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
 
 
 class NapariEnvSettingsSource(EnvSettingsSource):
-    def __call__(self):
+    def __call__(self) -> dict[str, Any]:
         res = super().__call__()
         env_lower = {k.lower(): v for k, v in os.environ.items()}
         self.scan_env_aliases(res, self.settings_cls, [], env_lower)
@@ -236,7 +236,7 @@ class NapariEnvSettingsSource(EnvSettingsSource):
         class_: type[BaseSettings],
         path: list[str],
         env_dkt: dict[str, str],
-    ):
+    ) -> None:
         for field_name, field in class_.model_fields.items():
             if field.exclude:
                 continue
@@ -298,7 +298,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     )
 
     # provide config_path=None to prevent reading from disk.
-    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+    def __init__(
+        self,
+        config_path: str | Path | _NotSetType | None = _NOT_SET,
+        **values: Any,
+    ) -> None:
         cfg = (
             config_path
             if config_path is not _NOT_SET
@@ -312,11 +316,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             raise ValueError('env_settings is a reserved field name')
         super().__init__(config_path=cfg, **values)
 
-    def _maybe_save(self):
+    def _maybe_save(self) -> None:
         if self._save_on_change and self.config_path:
             self.save()
 
-    def _on_sub_event(self, event, field=None):
+    def _on_sub_event(self, event: Event, field: str | None = None) -> None:
         super()._on_sub_event(event, field)
         self._maybe_save()
 
@@ -377,8 +381,10 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         return data
 
     def save(
-        self, path: str | Path | _NotSetType | None = None, **dict_kwargs
-    ):
+        self,
+        path: str | Path | _NotSetType | None = None,
+        **dict_kwargs: Any,
+    ) -> None:
         """Save current settings to path.
 
         By default, this will exclude settings values that match the default
@@ -401,7 +407,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         elif str(path).endswith('.json'):
             data_ = json.dumps(
                 data,
-                default=_json_encode(self.model_config['json_encoders']),  # pyrefly: ignore [bad-argument-type]
+                default=_json_encode(
+                    self.model_config.get('json_encoders') or {}
+                ),
             )
         else:
             raise NotImplementedError(
@@ -410,7 +418,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         with open(path, 'w') as target:
             target.write(data_)
 
-    def _remove_env_settings(self, data):
+    def _remove_env_settings(self, data: dict[str, Any]) -> None:
         """Remove key:values from `data` that match settings from env vars.
 
         This is handy when we want to persist settings to disk without
@@ -443,7 +451,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     )
 
 
-def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):
+def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]) -> None:
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters
@@ -497,7 +505,7 @@ def _restore_config_data(dct: dict, delete: dict, defaults: dict) -> dict:
     return dct
 
 
-def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
+def _remove_empty_dicts(dct: dict, recurse: bool = True) -> dict:
     """Remove all (nested) keys with empty dict values from `dct`"""
     for k, v in list(dct.items()):
         if isinstance(v, Mapping) and recurse:

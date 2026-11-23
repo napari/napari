@@ -64,7 +64,7 @@ def draw(layer, event):
             yield
 
 
-def pick(layer, event):
+def pick(layer, event) -> None:
     """Change the selected label to the same as the region clicked."""
     # on press
     layer.selected_label = (
@@ -93,12 +93,12 @@ class BrushSizeOnMouseMove:
 
     """
 
-    def __init__(self, min_brush_size: int = 1):
+    def __init__(self, min_brush_size: int = 1) -> None:
         self.min_brush_size = min_brush_size
         self.init_pos = None
         self.init_brush_size = None
 
-    def __call__(self, layer, event):
+    def __call__(self, layer, event) -> None:
         if all(
             modifier in event.modifiers
             for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
@@ -122,7 +122,7 @@ class BrushSizeOnMouseMove:
             if layer.cursor == 'circle_frozen':
                 layer.cursor = 'circle'
 
-    def _on_modifiers_change(self):
+    def _on_modifiers_change(self) -> None:
         modifiers_setting = (
             get_settings().application.brush_size_on_mouse_move_modifiers
         )
