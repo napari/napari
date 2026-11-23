@@ -11,8 +11,8 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import ConfigDict
 
+from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EventedModel
 
 IndicesType = Union[range, list[int], np.ndarray]
@@ -108,7 +108,7 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 
 class _StyleEncodingModel(EventedModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = NapariConfigDict(extra='forbid')
 
 
 # The following classes provide generic implementations of common ways
