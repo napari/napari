@@ -613,6 +613,7 @@ QMenu::item {
     font-size: {{ font_size }};
     padding: 3px;
     padding-left: 10px;
+    padding-right: 30px;
 }
 
 QMenu::item:selected {
