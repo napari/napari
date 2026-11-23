@@ -8,8 +8,11 @@ from typing import TYPE_CHECKING, NamedTuple, cast
 import numpy as np
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import pint
     import xarray as xr
-    from numpy.typing import ArrayLike
+    from numpy.typing import ArrayLike, NDArray
 
 
 __all__ = (
@@ -48,10 +51,10 @@ class _XarrayMetadata(NamedTuple):
     ``None`` fields mean no value could be inferred for that metadata type.
     """
 
-    axis_labels: tuple[str, ...] | None = None
-    scale: list[float] | None = None
-    translate: list[float] | None = None
-    units: list[str | None] | None = None
+    axis_labels: Sequence[str] | None = None
+    scale: Sequence[float] | NDArray | None = None
+    translate: Sequence[float] | NDArray | None = None
+    units: Sequence[str | pint.Unit | None] | None = None
 
 
 class _CoordMetadata(NamedTuple):
@@ -251,10 +254,10 @@ def _get_xr_metadata(
     data: ArrayLike,
     *,
     rgb: bool = False,
-    axis_labels: tuple[str, ...] | None = None,
-    scale: list[float] | None = None,
-    translate: list[float] | None = None,
-    units: list[str | None] | None = None,
+    axis_labels: Sequence[str] | None = None,
+    scale: Sequence[float] | NDArray | None = None,
+    translate: Sequence[float] | NDArray | None = None,
+    units: Sequence[str | pint.Unit | None] | None = None,
 ) -> _XarrayMetadata:
     """Return layer metadata inherited from *data*.
 
