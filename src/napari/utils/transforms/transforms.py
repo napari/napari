@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from napari.types import Matrix2D, Vector1D
+    from napari.utils.events.containers._typed import Index
     from napari.utils.transforms._units import UnitsLike
 
     # A 2D array of numbers, e.g. an ``affine_matrix``.
@@ -170,19 +171,29 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
             self._cache_dict[f'getitem_{key}'] = super().__getitem__(key)
         return self._cache_dict[f'getitem_{key}']
 
-    def __setitem__(self, key: int, value: _T) -> None:
+    @overload
+    def __setitem__(self, key: int, value: _T) -> None: ...
+
+    @overload
+    def __setitem__(self, key: slice, value: Iterable[_T]) -> None: ...
+
+    def __setitem__(self, key: Index, value: _T | Iterable[_T]) -> None:
         val = self[key]
-        super().__setitem__(key, value)
+        if isinstance(key, slice):
+            super().__setitem__(key, cast('Iterable[_T]', value))
+        else:
+            super().__setitem__(key, cast('_T', value))
         if hasattr(val, 'changed'):
             val.changed.disconnect(self._clean_cache)
         if hasattr(value, 'changed'):
             value.changed.connect(self._clean_cache)
         self._clean_cache()
 
-    def __delitem__(self, key: int | slice) -> None:
-        val = self[key]
-        if hasattr(val, 'changed'):
-            val.changed.disconnect(self._clean_cache)
+    def __delitem__(self, key: object) -> None:
+        if isinstance(key, int | str | slice):
+            val = self[key]
+            if hasattr(val, 'changed'):
+                val.changed.disconnect(self._clean_cache)
         super().__delitem__(key)
         self._clean_cache()
 
