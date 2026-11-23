@@ -2,7 +2,7 @@ from typing import Literal
 
 import numpy as np
 
-from napari.layers.shapes._shapes_models.shape import Shape
+from napari.layers.shapes._shapes_models.shape import Shape, _is_orthogonal
 from napari.layers.shapes._shapes_utils import (
     center_radii_to_corners,
     rectangle_to_box,
@@ -107,6 +107,9 @@ class Ellipse(Shape):
         transform : np.ndarray
             2x2 array specifying linear transform.
         """
+        if _is_orthogonal(transform):
+            super().transform(transform)
+            return
         self._box = self._box @ transform.T
         self._data[:, self.dims_displayed] = (
             self._data[:, self.dims_displayed] @ transform.T

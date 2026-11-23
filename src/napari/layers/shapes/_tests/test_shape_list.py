@@ -590,3 +590,74 @@ def test_z_order_consistent_after_transform(seed):
         assert len(shape_list._mesh.displayed_triangles) == len(
             shape_list._mesh.triangles
         )
+
+
+def _assert_mesh_matches_shapes(shape_list):
+    """Each shape's mesh triangles resolve to that shape's own geometry."""
+    mesh = shape_list._mesh
+    for index, shape in enumerate(shape_list.shapes):
+        face = mesh.triangles[shape_list._mesh_triangles_face_slice(index)]
+        npt.assert_allclose(
+            mesh.vertices[face],
+            shape._face_vertices[shape._face_triangles],
+            rtol=1e-6,
+        )
+        edge = mesh.triangles[shape_list._mesh_triangles_edge_slice(index)]
+        edge_vertices = (
+            shape._edge_vertices + shape.edge_width * shape._edge_offsets
+        )
+        npt.assert_allclose(
+            mesh.vertices[edge],
+            edge_vertices[shape._edge_triangles],
+            rtol=1e-6,
+        )
+
+
+# polygon with a hole: the edge connecting outer and inner ring is
+# traversed twice
+POLYGON_WITH_HOLE = (
+    np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+            [0, 10],
+            [0, 0],
+            [2, 5],
+            [5, 8],
+            [8, 5],
+            [5, 2],
+            [2, 5],
+        ]
+    )
+    * 1.5
+)
+SHEAR = np.array([[1, 3], [0, 1]])
+
+
+@pytest.mark.parametrize(
+    ('method', 'arg'), [('rotate', 15), ('flip', 0), ('flip', 1)]
+)
+def test_mesh_consistent_after_transform(method, arg):
+    shape_list = ShapeList()
+    shape_list.add([Polygon(POLYGON_WITH_HOLE), Polygon(POLYGON_WITH_HOLE)])
+    _assert_mesh_matches_shapes(shape_list)
+
+    getattr(shape_list, method)(0, arg)
+
+    _assert_mesh_matches_shapes(shape_list)
+
+
+def test_mesh_consistent_after_vertex_count_change():
+    """The shear makes corners sharp enough to be beveled, which adds
+    vertices and triangles to the edge; the mesh of the following shapes
+    must not be corrupted by it.
+    """
+    shape_list = ShapeList()
+    shape_list.add([Polygon(POLYGON_WITH_HOLE), Polygon(POLYGON_WITH_HOLE)])
+    vertices_count_before = shape_list.shapes[0].vertices_count
+
+    shape_list.transform(0, SHEAR)
+
+    assert shape_list.shapes[0].vertices_count > vertices_count_before
+    _assert_mesh_matches_shapes(shape_list)
