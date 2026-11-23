@@ -13,6 +13,7 @@ import numpy.typing as npt
 
 from napari import layers
 from napari.layers import Image, Labels, Layer, Points
+from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
@@ -177,7 +178,7 @@ def _select_linked_layers(ll: LayerList) -> None:
     ll.selection.update(linked_layers_in_list)
 
 
-def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
+def _convert_dtype(ll: LayerList, mode: str = 'int64') -> None:
     if not (layer := ll.selection.active):
         return
 
@@ -186,16 +187,20 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
             'Data type conversion only implemented for labels'
         )
 
-    target_dtype = np.dtype(mode)
-    if (
-        np.min(layer.data) < np.iinfo(target_dtype).min
-        or np.max(layer.data) > np.iinfo(target_dtype).max
-    ):
+    if isinstance(layer.data, MultiScaleData):
+        raise NotImplementedError(
+            'Data type conversion only implemented for non-multiscale labels'
+        )
+
+    # np.min and astype are typed for arrays, not for LayerDataProtocol
+    data = cast('npt.NDArray', layer.data)
+    target_info = np.iinfo(mode)
+    if np.min(data) < target_info.min or np.max(data) > target_info.max:
         raise AssertionError(
             'Labeling contains values outside of the target data type range.'
         )
 
-    layer.data = layer.data.astype(np.dtype(mode))
+    layer.data = data.astype(mode)
 
 
 def _project_data(data: ArrayLike, *, axis: int, mode: str) -> ArrayLike:

@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, SupportsIndex, overload
+from typing import Any, SupportsIndex, overload
 
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
-
-if TYPE_CHECKING:
-    from numpy.typing import DTypeLike
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
@@ -55,7 +52,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         return self._data[0].ndim
 
     @property
-    def dtype(self) -> DTypeLike:
+    def dtype(self) -> np.dtype[Any]:
         """Return dtype of the first scale.."""
         return self._data[0].dtype
 

@@ -598,7 +598,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 f"mode must be either 'data' or 'slice', got {mode!r}"
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data),
+            input_data,
             rgb=self.rgb,
             dtype=self.dtype,
             percentiles=percentiles,
@@ -732,7 +732,7 @@ class _ImageSlicingState(ScalarFieldSlicingState):
             data = response.image.raw
             input_data = data[-1] if self.layer.multiscale else data
             self.layer.contrast_limits = calc_data_range(
-                typing.cast(LayerDataProtocol, input_data),
+                input_data,
                 rgb=self.layer.rgb,
                 dtype=self.layer.dtype,
             )

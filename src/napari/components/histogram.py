@@ -477,7 +477,7 @@ class HistogramModel(EventedModel):
             data = data[-1]
 
         if isinstance(data, np.ndarray):
-            return data  # pyrefly: ignore [bad-return]
+            return data
 
         # Chunked arrays (dask, zarr, h5py with chunks) are returned
         # as-is for the progressive sampler in _compute_chunked_progressive.
