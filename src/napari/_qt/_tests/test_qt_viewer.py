@@ -1424,6 +1424,54 @@ def test_dask_cache():
     )
 
 
+@pytest.mark.usefixtures('qt_viewer')
+def test_dask_autochunk_size_override():
+    da = pytest.importorskip('dask.array')
+    dask_config = pytest.importorskip('dask.config')
+    autochunk = get_settings().application.dask_autochunk
+    initial_override = autochunk.override
+    initial_chunk_size = autochunk.chunk_size
+
+    # restores the dask config at the end of the test
+    with dask_config.set({'array.chunk-size': '128MiB'}):
+        try:
+            # check that the override and the chunk size update the dask config
+            autochunk.override = True
+            autochunk.chunk_size = 64
+            assert dask_config.get('array.chunk-size') == '64MiB'
+
+            # and that dask uses it when it chunks an array automatically
+            arr = da.zeros((2048, 2048, 64), dtype=np.float64, chunks='auto')
+            chunk_nbytes = np.prod(arr.chunksize) * arr.dtype.itemsize
+            assert chunk_nbytes <= 64 * 2**20
+        finally:
+            autochunk.override = initial_override
+            autochunk.chunk_size = initial_chunk_size
+
+
+@pytest.mark.usefixtures('qt_viewer')
+def test_dask_autochunk_size_not_overridden_by_default():
+    dask_config = pytest.importorskip('dask.config')
+    autochunk = get_settings().application.dask_autochunk
+    initial_override = autochunk.override
+    initial_chunk_size = autochunk.chunk_size
+
+    # a chunk size set by the user in their own code
+    with dask_config.set({'array.chunk-size': '10MiB'}):
+        try:
+            # without the override, napari should not touch the dask config
+            autochunk.override = False
+            autochunk.chunk_size = 64
+            assert dask_config.get('array.chunk-size') == '10MiB'
+
+            # enabling the override applies the chunk size setting
+            autochunk.override = True
+            assert dask_config.get('array.chunk-size') == '64MiB'
+        finally:
+            autochunk.override = initial_override
+            autochunk.chunk_size = initial_chunk_size
+
+
 @pytest.mark.show_qt_viewer
 def test_viewer_drag_to_zoom(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot: QtBot
