@@ -148,6 +148,8 @@ class _SliceInput:
     # A permutation of the ``range(self.ndim)``.
     # The last ``self.ndisplay`` dimensions are displayed in the canvas.
     order: tuple[int, ...]
+    # Units of world_slice, captured with the coordinates for async delivery.
+    world_units: tuple[pint.Unit, ...] | None = None
 
     @property
     def ndim(self) -> int:
@@ -178,7 +180,10 @@ class _SliceInput:
             order = self.order
 
         return _SliceInput(
-            ndisplay=self.ndisplay, world_slice=world_slice, order=order
+            ndisplay=self.ndisplay,
+            world_slice=world_slice,
+            order=order,
+            world_units=self.world_units,
         )
 
     def data_slice(
@@ -239,7 +244,7 @@ class _SliceInput:
 
 
 def apply_units_to_transform(
-    data_to_world: Affine, world_units: Sequence[str] | None
+    data_to_world: Affine, world_units: Sequence[str | pint.Unit] | None
 ) -> Affine:
     """Applies unit scaling to a data_to_world transform.
 
@@ -247,7 +252,7 @@ def apply_units_to_transform(
     ----------
     data_to_world : Affine
         The original data to world transform.
-    world_units : Sequence[str] | None
+    world_units : Sequence[str | pint.Unit] | None
         The units for each dimension of the layer.
 
     Returns
