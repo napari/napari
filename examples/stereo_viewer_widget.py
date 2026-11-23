@@ -16,9 +16,7 @@ screen size. Cross-eyed viewing: use a negative separation.
 """
 
 import numpy as np
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QApplication,
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
@@ -201,9 +199,6 @@ class StereoViewerWidget(QWidget):
 
 
 if __name__ == '__main__':
-    # Needed so additional OpenGL canvases can share contexts with the main viewer.
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
-
     viewer = napari.Viewer(ndisplay=3)
     viewer.open_sample('napari', 'cells3d')
     viewer.scene.camera.angles = (-20, 20, -20)

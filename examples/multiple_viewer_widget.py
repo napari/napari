@@ -422,10 +422,6 @@ class MultipleViewerWidget(QSplitter):
 
 
 if __name__ == '__main__':
-    from qtpy import QtWidgets
-    QtWidgets.QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
-    # above two lines are needed to allow undocking the widget with
-    # additional viewers
     view = napari.Viewer()
     dock_widget = MultipleViewerWidget(view)
     cross = CrossWidget(view)
