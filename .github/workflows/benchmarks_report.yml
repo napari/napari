@@ -64,14 +64,23 @@ jobs:
           GITHUB_EVENT_WORKFLOW_RUN_HTML_URL: ${{ github.event.workflow_run.html_url }}
 
       - name: Collect PR number if available
+        id: pr
+        # pr_number comes from an artifact of a run on PR code, so accept only digits
         run: |
           if [[ -f pr_number ]]; then
-            echo "PR_NUMBER=$(cat pr_number)" >> "$GITHUB_ENV"
+            PR_NUMBER=$(cat pr_number)
+            if [[ ! "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
+              echo "::error::pr_number is not a number"
+              exit 1
+            fi
+            echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: "Comment on PR"
-        if: env.PR_NUMBER != ''
+        if: steps.pr.outputs.number != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -86,8 +95,10 @@ jobs:
             });
 
       - name: "Remove run-benchmarks label"
-        if: env.PR_NUMBER != ''
+        if: steps.pr.outputs.number != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

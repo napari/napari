@@ -57,6 +57,11 @@ on:
     - cron: '0 8 * * 1'
 
   workflow_call:
+    secrets:
+      GHA_TOKEN_BOT_REPO:
+        required: false
+      GHA_TOKEN_NAPARI_BOT_MAIN_REPO:
+        required: false
 
   pull_request:
     paths:

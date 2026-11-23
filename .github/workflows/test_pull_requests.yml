@@ -11,6 +11,9 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   COLUMNS: 120
 
@@ -176,7 +179,8 @@ jobs:
     # Upload partial coverage even if some test jobs fail, but skip when
     # test_initial failed: then no coverage-producing job ran.
     if: ${{ always() && needs.test_initial.result == 'success' }}
-    secrets: inherit
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
     needs:
       - test_initial
       - test
@@ -246,8 +250,9 @@ jobs:
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
         run: |
-          asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
+          asv run --show-stderr --quick  --attribute timeout=300  "${LATEST_RELEASE_COMMIT}^!"
         env:
+          LATEST_RELEASE_COMMIT: ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}
           PR: 1  # prevents asv from running very compute-intensive benchmarks
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
 

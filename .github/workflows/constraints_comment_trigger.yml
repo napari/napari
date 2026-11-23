@@ -6,12 +6,14 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 jobs:
   add_eyes:
     name: Add eyes reaction
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')
     runs-on: ubuntu-slim
     steps:
@@ -48,12 +50,21 @@ jobs:
             -d '{"content": "eyes"}'
   trigger-benchmarks:
     needs: add_eyes
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     uses: ./.github/workflows/upgrade_test_constraints.yml
-    secrets: inherit
+    secrets:
+      GHA_TOKEN_BOT_REPO: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+      GHA_TOKEN_NAPARI_BOT_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
 
   add_rocket:
     name: Add rocket reaction
     needs: trigger-benchmarks
+    permissions:
+      issues: write
+      pull-requests: write
     runs-on: ubuntu-slim
     steps:
       - name: Add rocket reaction
