@@ -89,9 +89,12 @@ class TaskStatusManager:
         description: str,
         cancel_callback: Optional[Callable] = None,
     ) -> uuid.UUID:
-        item = TaskStatusItem(
-            provider, task_status, description, cancel_callback
+        return self.add_task_status(
+            TaskStatusItem(provider, task_status, description, cancel_callback)
         )
+
+    def add_task_status(self, item: TaskStatusItem) -> uuid.UUID:
+        """Add an already created task status item, e.g. a subclass."""
         self._tasks[item.id] = item
         return item.id
 
