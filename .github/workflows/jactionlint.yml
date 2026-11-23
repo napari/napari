@@ -1,0 +1,26 @@
+name: jactionlint
+# https://github.com/jdx/jactionlint
+# Settings are in .github/jactionlint.yaml, so a local
+# `uvx jactionlint` run checks the same as this workflow.
+
+on:
+  pull_request:
+    paths:
+      - '.github/**'
+
+permissions:
+  contents: read
+
+jobs:
+  jactionlint:
+    name: jactionlint
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check workflow files
+        # The action downloads the jactionlint release it was published with,
+        # so pinning the action pins jactionlint too.
+        uses: jdx/jactionlint@72c00452809bcca05b8bc12acdcf15dd7a9c1c5e # v2.6.0

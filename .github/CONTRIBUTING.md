@@ -12,7 +12,7 @@ See the napari website for more detailed contributor information:
 There are over 20 GitHub workflows found in `.github/workflows`.
 The team creates a workflow to automate manual actions and steps.
 This results in improved accuracy and quality. Some key workflows:
-- `actionlint.yml` does static testing of GitHub action workflows
+- `jactionlint.yml` does static testing of GitHub action workflows
 - benchmarks
 - `reusable_run_tox_test.yml` uses our constraint files to install the
   compatible dependencies for each test environment which may differ
