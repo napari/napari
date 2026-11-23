@@ -35,6 +35,7 @@ from napari.layers.labels._labels_constants import (
     LabelsRendering,
     Mode,
 )
+from napari.layers.labels._labels_data import _set_labels_data
 from napari.layers.labels._labels_mouse_bindings import (
     BrushSizeOnMouseMove,
     draw,
@@ -1234,11 +1235,11 @@ class Labels(ScalarFieldBase):
         values = atom.old_values if undoing else atom.new_value
         if atom.mask is None:
             # The whole bounding box changed: assign directly.
-            self.data[atom.slice_key] = values  # pyrefly: ignore [unsupported-operation]
+            _set_labels_data(self.data, atom.slice_key, values)
             return
         region = np.asarray(self.data[atom.slice_key])
         region[atom.mask] = values
-        self.data[atom.slice_key] = region  # pyrefly: ignore [unsupported-operation]
+        _set_labels_data(self.data, atom.slice_key, region)
 
     def undo(self) -> None:
         self._load_history(
@@ -1924,7 +1925,7 @@ class Labels(ScalarFieldBase):
         # _apply_mask_to_data already wrote through and this assignment is a
         # no-op; for copy-returning backends (zarr, tensorstore, dask, ...)
         # this is the actual write-back.
-        self.data[slice_key] = region_data  # pyrefly: ignore [unsupported-operation]
+        _set_labels_data(self.data, slice_key, region_data)
 
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice

@@ -1,3 +1,4 @@
+import dask.array as da
 import numpy as np
 
 from napari.components.dims import Dims
@@ -83,6 +84,29 @@ def test_first_nonzero_coordinate():
         ),
         [4, 6, 6],
     )
+
+
+def test_first_nonzero_coordinate_dask():
+    data = np.zeros((8, 8, 8), dtype=np.uint8)
+    data[2, 2, 2] = data[5, 5, 5] = 1
+
+    def diagonal_chunks_only(block, block_id):
+        # A diagonal ray never needs the other six chunks.
+        assert block_id[0] == block_id[1] == block_id[2]
+        return block
+
+    volume = da.from_array(data, chunks=(4, 4, 4)).map_blocks(
+        diagonal_chunks_only, meta=np.empty((0, 0, 0), dtype=data.dtype)
+    )
+    start = np.zeros(3)
+    end = np.full(3, 7)
+    np.testing.assert_array_equal(
+        first_nonzero_coordinate(volume, start, end), [2, 2, 2]
+    )
+    np.testing.assert_array_equal(
+        first_nonzero_coordinate(volume, end, start), [5, 5, 5]
+    )
+    assert first_nonzero_coordinate(volume, start, np.ones(3)) is None
 
 
 def test_mouse_event_to_labels_coordinate_2d(MouseEvent):
