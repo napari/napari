@@ -265,18 +265,11 @@ class StringEnum(StrEnum):
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
-camel_to_spaces_pattern = re.compile(
-    r'((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))'
-)
 
 
 def camel_to_snake(name: str) -> str:
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
-
-
-def camel_to_spaces(val: str) -> str:
-    return camel_to_spaces_pattern.sub(r' \1', val)
 
 
 T = TypeVar('T', str, Path)
@@ -554,40 +547,6 @@ def _file_hash(
         # update the hash with the filename
         fparts = file.relative_to(path).parts
         _hash.update(''.join(fparts).encode())
-
-
-def _combine_signatures(
-    *objects: Callable,
-    return_annotation=inspect.Signature.empty,
-    exclude: Iterable[str] = (),
-) -> inspect.Signature:
-    """Create combined Signature from objects, excluding names in `exclude`.
-
-    Parameters
-    ----------
-    *objects : Callable
-        callables whose signatures should be combined
-    return_annotation : [type], optional
-        The return annotation to use for combined signature, by default
-        inspect.Signature.empty (as it's ambiguous)
-    exclude : tuple, optional
-        Parameter names to exclude from the combined signature (such as
-        'self'), by default ()
-
-    Returns
-    -------
-    inspect.Signature
-        Signature object with the combined signature. Reminder, str(signature)
-        provides a very nice repr for code generation.
-    """
-    params = itertools.chain(
-        *(inspect.signature(o).parameters.values() for o in objects)
-    )
-    new_params = sorted(
-        (p for p in params if p.name not in exclude),
-        key=lambda p: p.kind,
-    )
-    return inspect.Signature(new_params, return_annotation=return_annotation)
 
 
 def deep_update(dct: dict, merge_dct: dict, copy: bool = True) -> dict:
