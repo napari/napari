@@ -79,7 +79,7 @@ build==1.6.1
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.10.23
+certifi==2026.11.20
     # via
     #   napari (pyproject.toml)
     #   pyogrio
@@ -88,7 +88,7 @@ certifi==2026.10.23
     #   requests
 chardet==7.7.0
     # via trackastra
-charset-normalizer==3.5.2
+charset-normalizer==3.5.3
     # via requests
 click==8.5.1
     # via
@@ -114,7 +114,7 @@ contextily==1.7.1
     # via napari (pyproject.toml:docs)
 contourpy==1.4.0
     # via matplotlib
-coverage==7.17.3
+coverage==7.17.4
     # via napari (pyproject.toml)
 cuda-bindings==13.5.0
     # via torch
@@ -165,7 +165,7 @@ fastjsonschema==2.22.3
     # via nbformat
 fastremap==1.21.0
     # via trackastra
-filelock==4.2.12
+filelock==4.3.0
     # via
     #   gdown
     #   python-discovery
@@ -225,7 +225,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.5
     # via vispy
-hypothesis==6.170.16
+hypothesis==6.170.17
     # via napari (pyproject.toml)
 idna==3.20
     # via
@@ -271,7 +271,7 @@ ipykernel==7.4.0
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==9.18.1
+ipython==9.19.1
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -636,7 +636,7 @@ pint==0.26.2
     #   ome-types
 pip==26.3
     # via napari-plugin-manager
-platformdirs==4.14.7
+platformdirs==4.14.8
     # via
     #   napari (pyproject.toml)
     #   jupyter-core
@@ -781,7 +781,7 @@ python-discovery==1.9.6
     # via virtualenv
 python-dotenv==1.2.4
     # via pydantic-settings
-pyyaml==6.0.3
+pyyaml==6.0.4
     # via
     #   napari (pyproject.toml)
     #   bioio-ome-tiff
@@ -887,7 +887,7 @@ sortedcontainers==2.4.0
     # via
     #   distributed
     #   hypothesis
-soupsieve==4.1.2
+soupsieve==4.1.3
     # via beautifulsoup4
 sphinx==9.1.1
     # via
@@ -1069,7 +1069,7 @@ urllib3==2.8.0
     #   requests
 uvicorn==0.54.0
     # via sphinx-autobuild
-virtualenv==21.15.9
+virtualenv==21.15.12
     # via napari (pyproject.toml)
 vispy==0.17.0
     # via
@@ -1077,7 +1077,7 @@ vispy==0.17.0
     #   napari-svg
 watchfiles==1.3.0
     # via sphinx-autobuild
-wcwidth==0.9.4
+wcwidth==0.9.5
     # via prompt-toolkit
 websockets==17.4
     # via sphinx-autobuild

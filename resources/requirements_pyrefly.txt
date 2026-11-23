@@ -8,9 +8,9 @@ app-model==0.5.1
     # via -r resources/requirements_pyrefly.in
 build==1.6.1
     # via npe2
-certifi==2026.10.23
+certifi==2026.11.20
     # via requests
-charset-normalizer==3.5.2
+charset-normalizer==3.5.3
     # via requests
 docstring-parser==0.18.0
     # via magicgui
@@ -32,7 +32,7 @@ packaging==26.3
     # via
     #   build
     #   qtpy
-platformdirs==4.14.7
+platformdirs==4.14.8
     # via npe2
 psygnal==0.17.0
     # via
@@ -62,7 +62,7 @@ pyrefly==1.5.0
     # via -r resources/requirements_pyrefly.in
 pyside6-essentials==6.12.0
     # via -r resources/requirements_pyrefly.in
-pyyaml==6.0.3
+pyyaml==6.0.4
     # via npe2
 qtpy==2.4.3
     # via
@@ -85,11 +85,11 @@ tomli-w==1.2.0
     # via npe2
 typer==0.29.2
     # via npe2
-types-pyyaml==6.0.12.20261113
+types-pyyaml==6.0.12.20261122
     # via -r resources/requirements_pyrefly.in
 types-requests==2.33.0.20261030
     # via -r resources/requirements_pyrefly.in
-types-setuptools==84.2.0.20261104
+types-setuptools==84.2.0.20261122
     # via -r resources/requirements_pyrefly.in
 typing-extensions==4.16.0
     # via
