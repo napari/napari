@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pint
@@ -13,12 +14,24 @@ from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 if TYPE_CHECKING:
-    from napari.types import FullLayerData
+    from collections.abc import Callable
+    from typing import Any, TypeAlias
+
+    from napari.layers._data_protocols import LayerDataProtocol
+    from napari.layers._multiscale_data import MultiScaleData
+    from napari.types import ArrayLike, FullLayerData
+
+    # how images_to_stack calls np.stack or dask.array.stack
+    Stacker: TypeAlias = Callable[
+        [Sequence[LayerDataProtocol | MultiScaleData], int], ArrayLike
+    ]
 
 logger = logging.getLogger(__name__)
 
 
-def slice_from_axis(array, *, axis, element):
+def slice_from_axis(
+    array: LayerDataProtocol, *, axis: int, element: int
+) -> LayerDataProtocol:
     """Take a single index slice from array using slicing.
 
     Equivalent to :func:`np.take`, but using slicing, which ensures that the
@@ -48,15 +61,15 @@ def slice_from_axis(array, *, axis, element):
             'zarr array cannot be sliced lazily, converted to dask array.'
         )
 
-    slices = [slice(None) for i in range(array.ndim)]
+    slices: list[slice | int] = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
 
 
 def split_channels(
-    data: np.ndarray,
+    data: LayerDataProtocol | Sequence[LayerDataProtocol],
     channel_axis: int,
-    **kwargs,
+    **kwargs: Any,
 ) -> list[FullLayerData]:
     """Split the data array into separate arrays along an axis.
 
@@ -83,16 +96,19 @@ def split_channels(
 
     Returns
     -------
-    List of LayerData tuples: [(data: array, meta: Dict, type: str )]
+    list of FullLayerData
+        One ``(data, meta, 'image')`` tuple per channel.
     """
 
     # Determine if data is a multiscale
     multiscale = kwargs.get('multiscale')
-    if not multiscale:
+    if multiscale is None:
         multiscale, data = guess_multiscale(data)
         kwargs['multiscale'] = multiscale
 
-    n_channels = (data[0] if multiscale else data).shape[channel_axis]
+    # multiscale data is a sequence of levels
+    shape = data[0].shape if isinstance(data, Sequence) else data.shape
+    n_channels = shape[channel_axis]
     # Use original blending mode or for multichannel use translucent for first channel then additive
     kwargs['blending'] = kwargs.get('blending') or ['translucent_no_depth'] + [
         'additive'
@@ -148,10 +164,10 @@ def split_channels(
 
     layerdata_list = []
     for i in range(n_channels):
-        if multiscale:
+        if isinstance(data, Sequence):
             image = [
-                slice_from_axis(data[j], axis=channel_axis, element=i)
-                for j in range(len(data))
+                slice_from_axis(level, axis=channel_axis, element=i)
+                for level in data
             ]
         else:
             image = slice_from_axis(data, axis=channel_axis, element=i)
@@ -161,7 +177,7 @@ def split_channels(
                 i_kwargs[key] = next(val)
             except StopIteration as e:
                 raise IndexError(
-                    f"Error adding multichannel image with data shape {data.shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. "
+                    f"Error adding multichannel image with data shape {shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. "
                 ) from e
 
         layerdata: FullLayerData = (image, i_kwargs, 'image')
@@ -170,7 +186,7 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
+def stack_to_images(stack: Image, axis: int, **kwargs: Any) -> list[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -189,10 +205,12 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
         The image stack to be split into a list of image layers
     axis : int
         The axis to split along.
+    **kwargs : dict
+        Keyword arguments will override the properties of the split layers.
 
     Returns
     -------
-    imagelist: list
+    imagelist : list of napari.layers.Image
         List of Image objects
     """
 
@@ -241,6 +259,8 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     for i, tup in enumerate(layerdata_list):
         idata, imeta, _ = tup
         layer_name = f'{name} layer {i}'
+        # FullLayerData types meta as a read-only Mapping
+        imeta = dict(imeta)
         imeta['name'] = layer_name
 
         imagelist.append(Image(idata, **imeta))
@@ -248,7 +268,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     return imagelist
 
 
-def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
+def split_rgb(stack: Image, with_alpha: bool = False) -> list[Image]:
     """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError('Image must be RGB to use split_rgb')
@@ -275,7 +295,9 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     return images if with_alpha else images[:3]
 
 
-def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
+def images_to_stack(
+    images: list[Image], axis: int = 0, **kwargs: Any
+) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
     The new image layer will get the meta properties of the first
@@ -283,7 +305,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
     Parameters
     ----------
-    images : List
+    images : list of napari.layers.Image
         List of Image Layers
     axis : int
         Index to to insert the new axis
@@ -332,12 +354,12 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
     if all(multiscale_flags):
         # Check that all multiscale images have the same number of levels
-        n_scales_list = [len(image.data) for image in images]
+        n_scales_list = [len(image.multiscale_data()) for image in images]
         if len(set(n_scales_list)) != 1:
             raise ValueError(
                 f'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}'
             )
-        arrays_to_check = [img.data[0] for img in images]
+        arrays_to_check = [img.multiscale_data()[0] for img in images]
     else:
         arrays_to_check = [img.data for img in images]
 
@@ -356,16 +378,17 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
             'zarr array cannot be sliced lazily, converted to dask array.'
         )
     else:
-        stacker = np.stack
+        # cast because np.stack is not typed for LayerDataProtocol
+        stacker = cast('Stacker', np.stack)
 
     if all(multiscale_flags):
-        n_scales = len(images[0].data)
+        n_scales = len(images[0].multiscale_data())
         new_data = [
-            stacker([image.data[level] for image in images], axis=axis)
+            stacker([image.multiscale_data()[level] for image in images], axis)
             for level in range(n_scales)
         ]
     else:
-        new_data = stacker([image.data for image in images], axis=axis)
+        new_data = stacker([image.data for image in images], axis)
 
     # RGB images do not need extra dimensions inserted into metadata
     # They can use the meta dict from one of the source image layers
