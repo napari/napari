@@ -319,9 +319,9 @@ class GuidedTour(QObject):
 
 _BUILTIN_TOUR_TARGETS: dict[str, Callable[[_QtMainWindow], QWidget | None]] = {
     'canvas': lambda qt_window: qt_window._qt_viewer.canvas.native,
-    'layer_list': lambda qt_window: qt_window._qt_viewer.dockLayerList,
+    'layer_list': lambda qt_window: qt_window.dockLayerList,
     'layer_buttons': lambda qt_window: qt_window._qt_viewer.layerButtons,
-    'layer_controls': lambda qt_window: qt_window._qt_viewer.dockLayerControls,
+    'layer_controls': lambda qt_window: qt_window.dockLayerControls,
     'viewer_buttons': lambda qt_window: qt_window._qt_viewer.viewerButtons,
     'dims': lambda qt_window: qt_window._qt_viewer.dims,
     'status_bar': lambda qt_window: qt_window.statusBar(),
@@ -398,8 +398,8 @@ def build_viewer_tour(
 
         return _ensure_visible
 
-    reveal_layer_list = reveal(lambda: qt_viewer.dockLayerList)
-    reveal_layer_controls = reveal(lambda: qt_viewer.dockLayerControls)
+    reveal_layer_list = reveal(lambda: window.dockLayerList)
+    reveal_layer_controls = reveal(lambda: window.dockLayerControls)
 
     tour = GuidedTour(
         [

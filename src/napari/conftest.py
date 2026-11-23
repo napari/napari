@@ -406,10 +406,6 @@ def qt_viewer_(
     original_layers = viewer.__class__.layers.fget
     original_layer_buttons = viewer.__class__.layerButtons.fget
     original_viewer_buttons = viewer.__class__.viewerButtons.fget
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
-    original_dock_console = viewer.__class__.dockConsole.fget
-    original_dock_performance = viewer.__class__.dockPerformance.fget
 
     def hide_widget(widget) -> None:
         widget.hide()
@@ -442,34 +438,6 @@ def qt_viewer_(
             qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
         return self._viewerButtons
 
-    def patched_dock_layer_list(self):
-        if self._dockLayerList is None:
-            self._dockLayerList = original_dock_layer_list(self)  # pyrefly: ignore [not-callable]
-            qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
-        return self._dockLayerList
-
-    def patched_dock_layer_controls(self):
-        if self._dockLayerControls is None:
-            self._dockLayerControls = original_dock_layer_controls(self)  # pyrefly: ignore [not-callable]
-            qtbot.addWidget(
-                self._dockLayerControls, before_close_func=hide_widget
-            )
-        return self._dockLayerControls
-
-    def patched_dock_console(self):
-        if self._dockConsole is None:
-            self._dockConsole = original_dock_console(self)  # pyrefly: ignore [not-callable]
-            qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
-        return self._dockConsole
-
-    def patched_dock_performance(self):
-        if self._dockPerformance is None:
-            self._dockPerformance = original_dock_performance(self)  # pyrefly: ignore [not-callable]
-            qtbot.addWidget(
-                self._dockPerformance, before_close_func=hide_widget
-            )
-        return self._dockPerformance
-
     monkeypatch.setattr(
         viewer.__class__, 'controls', property(patched_controls)
     )
@@ -479,20 +447,6 @@ def qt_viewer_(
     )
     monkeypatch.setattr(
         viewer.__class__, 'viewerButtons', property(patched_viewer_buttons)
-    )
-    monkeypatch.setattr(
-        viewer.__class__, 'dockLayerList', property(patched_dock_layer_list)
-    )
-    monkeypatch.setattr(
-        viewer.__class__,
-        'dockLayerControls',
-        property(patched_dock_layer_controls),
-    )
-    monkeypatch.setattr(
-        viewer.__class__, 'dockConsole', property(patched_dock_console)
-    )
-    monkeypatch.setattr(
-        viewer.__class__, 'dockPerformance', property(patched_dock_performance)
     )
 
     qtbot.addWidget(viewer, before_close_func=hide_and_clear_qt_viewer)

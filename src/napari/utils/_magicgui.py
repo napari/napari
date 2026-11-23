@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from napari.layers import Layer
     from napari.types import LayerData, _LayerData
     from napari.utils.events import Event
+    from napari.viewer import Viewer
 
     ReturnAnnotation: TypeAlias = TypeForm[Any]
 
@@ -407,10 +408,9 @@ def add_future_data(
         False if it returns one of the `LayerData` types.
     """
     from napari._qt._qapp_model.injection._qprocessors import _add_future_data
-    from napari.viewer import Viewer
 
     viewer = find_viewer_ancestor(gui)
-    if isinstance(viewer, Viewer):
+    if viewer is not None:
         _add_future_data(
             future,
             return_type=get_args(return_type)[0],
@@ -420,12 +420,8 @@ def add_future_data(
         )
 
 
-def find_viewer_ancestor(widget: Widget | QWidget) -> ViewerModel | None:
+def find_viewer_ancestor(widget: Widget | QWidget) -> Viewer | None:
     """Return the closest parent Viewer of ``widget``.
-
-    Priority is given to `Viewer` ancestors of ``widget``.
-    `napari.current_viewer()` is called for Widgets without a
-    Viewer ancestor.
 
     Parameters
     ----------
@@ -434,32 +430,32 @@ def find_viewer_ancestor(widget: Widget | QWidget) -> ViewerModel | None:
 
     Returns
     -------
-    viewer : napari.components.ViewerModel or None
-        Viewer ancestor if it exists, else `napari.current_viewer()`
+    viewer : napari.Viewer or None
+        The viewer of the main window or dock widget that contains
+        ``widget``, or None if ``widget`` has no such ancestor.
     """
+    from napari._qt.qt_main_window import _QtMainWindow
     from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
     if isinstance(widget, Widget):
         parent = widget.native.parent()
     else:
         parent = widget.parent()
-    from napari.viewer import current_viewer
 
     while parent:
-        if hasattr(parent, '_qt_viewer'):  # QMainWindow
-            return parent._qt_viewer.viewer
-        if isinstance(parent, QtViewerDockWidget):  # DockWidget
-            qt_viewer = parent._ref_qt_viewer()
-            if qt_viewer is not None:
-                return qt_viewer.viewer
-            return current_viewer()
+        if isinstance(parent, _QtMainWindow):
+            return parent.viewer
+        if isinstance(parent, QtViewerDockWidget):
+            qt_window = parent._ref_qt_window()
+            if qt_window is not None:
+                return qt_window.viewer
         parent = parent.parent()
-    return current_viewer()
+    return None
 
 
 def proxy_viewer_ancestor(
     widget: Widget,
-) -> PublicOnlyProxy[ViewerModel] | None:
+) -> PublicOnlyProxy[Viewer] | None:
     if viewer := find_viewer_ancestor(widget):
         return PublicOnlyProxy(viewer)
     return None

@@ -42,6 +42,7 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QToolTip,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -54,6 +55,7 @@ from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.perf.qt_performance import QtPerformance
 from napari._qt.qt_event_loop import (
     _svg_path_to_icon,
     get_icon_path,
@@ -121,6 +123,80 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[list[_QtMainWindow]] = []
 
+    @property
+    def viewer(self) -> Viewer:
+        """The napari viewer shown in this window."""
+        return cast('Viewer', self._qt_viewer.viewer)
+
+    @property
+    def dockLayerList(self) -> QtViewerDockWidget:
+        """Dock widget with the layer list and the layer and viewer buttons."""
+        if self._dockLayerList is None:
+            layerList = QWidget()
+            layerList.setObjectName('layerList')
+            layerListLayout = QVBoxLayout()
+            layerListLayout.addWidget(self._qt_viewer.layerButtons)
+            layerListLayout.addWidget(self._qt_viewer.layers)
+            layerListLayout.addWidget(self._qt_viewer.viewerButtons)
+            layerListLayout.setContentsMargins(8, 4, 8, 6)
+            layerList.setLayout(layerListLayout)
+            self._dockLayerList = QtViewerDockWidget(
+                self,
+                layerList,
+                name='layer list',
+                area='left',
+                allowed_areas=['left', 'right'],
+                object_name='layer list',
+                close_btn=False,
+            )
+        return self._dockLayerList
+
+    @property
+    def dockLayerControls(self) -> QtViewerDockWidget:
+        """Dock widget with the controls of the selected layer."""
+        if self._dockLayerControls is None:
+            self._dockLayerControls = QtViewerDockWidget(
+                self,
+                self._qt_viewer.controls,
+                name='layer controls',
+                area='left',
+                allowed_areas=['left', 'right'],
+                object_name='layer controls',
+                close_btn=False,
+            )
+        return self._dockLayerControls
+
+    @property
+    def dockConsole(self) -> QtViewerDockWidget:
+        """Dock widget for the console, which is created on first use."""
+        if self._dockConsole is None:
+            self._dockConsole = QtViewerDockWidget(
+                self,
+                QWidget(),
+                name='console',
+                area='bottom',
+                allowed_areas=['top', 'bottom'],
+                object_name='console',
+                close_btn=False,
+            )
+            self._dockConsole.setVisible(False)
+            self._dockConsole.visibilityChanged.connect(
+                self._qt_viewer._ensure_connect
+            )
+        return self._dockConsole
+
+    @property
+    def dockPerformance(self) -> QtViewerDockWidget | None:
+        """Dock widget with performance metrics, if perf monitoring is on."""
+        if self._dockPerformance is None and perf.perf_config is not None:
+            self._dockPerformance = QtViewerDockWidget(
+                self,
+                QtPerformance(),
+                name='performance',
+                area='bottom',
+            )
+        return self._dockPerformance
+
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
@@ -138,6 +214,10 @@ class _QtMainWindow(QMainWindow):
         self._qt_viewer: QtViewer = QtViewer(
             viewer, show_welcome_screen=show_welcome_screen
         )
+        self._dockLayerList: QtViewerDockWidget | None = None
+        self._dockLayerControls: QtViewerDockWidget | None = None
+        self._dockConsole: QtViewerDockWidget | None = None
+        self._dockPerformance: QtViewerDockWidget | None = None
         self._quit_app = False
         self._viewer_tour: GuidedTour | None = None
 
@@ -429,7 +509,7 @@ class _QtMainWindow(QMainWindow):
         # Toggling the console visibility is disabled when it is not
         # available, so ensure that it is hidden.
         if in_ipython() or in_jupyter() or in_python_repl():
-            self._qt_viewer.dockConsole.setVisible(False)
+            self.dockConsole.setVisible(False)
 
         if window_fullscreen:
             self._maximized_flag = window_maximized
@@ -757,17 +837,18 @@ class Window:
         )
         get_settings().appearance.events.logo.connect(self._update_logo)
 
-        self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
+        self._add_viewer_dock_widget(self._qt_window.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerControls,
+            self._qt_window.dockLayerControls,
             tabify=False,
         )
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerList, tabify=False
+            self._qt_window.dockLayerList, tabify=False
         )
-        if perf.perf_config is not None:
+        dock_performance = self._qt_window.dockPerformance
+        if dock_performance is not None:
             self._add_viewer_dock_widget(
-                self._qt_viewer.dockPerformance, menu=self.window_menu
+                dock_performance, menu=self.window_menu
             )
 
         viewer.events.help.connect(self._help_changed)
@@ -780,10 +861,10 @@ class Window:
             # Ensure the controls dock uses the minimum height
             self._qt_window.resizeDocks(
                 [
-                    self._qt_viewer.dockLayerControls,
-                    self._qt_viewer.dockLayerList,
+                    self._qt_window.dockLayerControls,
+                    self._qt_window.dockLayerList,
                 ],
-                [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
+                [self._qt_window.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
 
@@ -1227,7 +1308,7 @@ class Window:
                 stacklevel=2,
             )
             dock_widget = QtViewerDockWidget(
-                self._qt_viewer,
+                self._qt_window,
                 widget,
                 name=name,
                 area=area,
@@ -1237,7 +1318,7 @@ class Window:
             )
         else:
             dock_widget = QtViewerDockWidget(
-                self._qt_viewer,
+                self._qt_window,
                 widget,
                 name=name,
                 area=area,
