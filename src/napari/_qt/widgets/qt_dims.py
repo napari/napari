@@ -168,6 +168,10 @@ class QtDims(QWidget):
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
+        # Join the animation thread before removing the sliders: it only
+        # holds a weak reference to its slider, which (depending on the
+        # Qt bindings) may be destroyed as soon as it is removed.
+        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -178,7 +182,6 @@ class QtDims(QWidget):
         # Freshly created sliders have no `last_used` style property yet, and
         # the `last_used` event only fires on a change
         self._on_last_used_changed()
-        self.stop()
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
@@ -412,6 +415,9 @@ class QtDims(QWidget):
                 self.dims._play_ready = True
 
     def closeEvent(self, event):
+        # The animation thread is a child of this widget, and deleting a
+        # QThread that is still running aborts the whole process.
+        self.stop()
         [w.deleteLater() for w in self.slider_widgets]
         self.deleteLater()
         event.accept()
