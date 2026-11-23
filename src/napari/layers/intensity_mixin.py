@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
+from napari.layers.base import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
@@ -15,13 +16,12 @@ validate_2_tuple = validate_n_seq(2)
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from napari.components.overlays import ColorBarOverlay, Overlay
+    from napari.components.overlays import ColorBarOverlay
     from napari.utils.colormaps import Colormap
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
-    from napari.utils.events import EmitterGroup, EventedDict
 
 
-class IntensityVisualizationMixin:
+class IntensityVisualizationMixin(Layer):
     """A mixin that adds gamma, colormap, and contrast limits logic to Layers.
 
     When used, this should come before the Layer in the inheritance, e.g.:
@@ -36,13 +36,8 @@ class IntensityVisualizationMixin:
 
     if TYPE_CHECKING:
         # Provided by the layer class this mixin is combined with.
-        events: EmitterGroup
-        _overlays: EventedDict[str, Overlay]
-
         @property
         def dtype(self) -> np.dtype: ...
-
-        def _update_thumbnail(self) -> None: ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -70,7 +65,7 @@ class IntensityVisualizationMixin:
         self._overlays.update({'colorbar': self._colorbar})
 
     def reset_contrast_limits(
-        self: ScalarFieldBase | Surface,
+        self,
         mode: Literal['data', 'slice'] | None = None,
         percentiles: tuple[float, float] | None = None,
     ) -> None:
