@@ -7,6 +7,7 @@ import pytest
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.utils.notifications import (
     Notification,
+    WarningNotification,
     notification_manager,
     show_debug,
     show_error,
@@ -32,6 +33,13 @@ def test_notification_repr_has_message():
     assert "='this is the message'" in repr(
         Notification('this is the message')
     )
+
+
+def test_warning_notification_str():
+    notification = WarningNotification(
+        UserWarning('the message'), filename='file.py', lineno=3
+    )
+    assert str(notification) == 'file.py:3: UserWarning: the message'
 
 
 def test_notification_manager_no_gui(monkeypatch):
@@ -181,3 +189,39 @@ def test_notification_manager_no_warning_duplication():
 
         fun()
         assert len(notification_manager.records) == 1
+
+
+@pytest.mark.parametrize(
+    'message', [UserWarning(), UserWarning(['a']), 'a plain string']
+)
+def test_notification_manager_warning_without_args(message):
+    """Warnings with no or unhashable arguments, or strings, are shown."""
+    with notification_manager:
+        notification_manager.records.clear()
+        notification_manager._seen_warnings.clear()
+        warnings.showwarning(
+            message, category=UserWarning, filename=__file__, lineno=1
+        )
+        assert len(notification_manager.records) == 1
+
+
+def test_notification_manager_warning_dedup_by_location():
+    """A warning call site is shown once, whatever its message."""
+    with notification_manager:
+        notification_manager.records.clear()
+        notification_manager._seen_warnings.clear()
+        for path in ['a.tif', 'b.tif']:
+            warnings.showwarning(
+                UserWarning(f'Failed to read {path}'),
+                category=UserWarning,
+                filename=__file__,
+                lineno=1,
+            )
+        assert len(notification_manager.records) == 1
+        warnings.showwarning(
+            UserWarning('Failed to read a.tif'),
+            category=UserWarning,
+            filename=__file__,
+            lineno=2,
+        )
+        assert len(notification_manager.records) == 2

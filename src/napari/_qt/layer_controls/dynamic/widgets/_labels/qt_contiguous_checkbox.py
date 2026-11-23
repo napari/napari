@@ -11,7 +11,7 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari._qt.utils import attr_to_settr
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -61,10 +61,9 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         )
         for layer in self._layers:
             connect_setattr(
-                contig_cb.stateChanged,
+                contig_cb.toggled,
                 layer,
                 'contiguous',
-                convert_fun=checked_to_bool,
             )
         self.contiguous_checkbox = contig_cb
 

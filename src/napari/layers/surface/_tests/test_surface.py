@@ -139,6 +139,20 @@ def test_random_3D_surface():
     assert layer._view_vertex_values.ndim == 1
 
 
+@pytest.mark.parametrize('order', [(0, 1, 2), (2, 1, 0), (1, 0, 2)])
+def test_3D_surface_follows_dims_order(order):
+    """Test view vertices follow the dims order when all axes are displayed."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    layer = Surface((vertices, faces))
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
+    np.testing.assert_array_equal(
+        layer._view_vertices, vertices[:, list(order)]
+    )
+
+
 def test_random_4D_surface():
     """Test instantiating Surface layer with random 4D data."""
     np.random.seed(0)
@@ -189,6 +203,38 @@ def test_random_3D_timeseries_surface():
     # shown
     with pytest.warns(UserWarning, match='must be non-displayed dimensions'):
         layer._slice_dims(Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2)))
+    assert len(layer._view_vertices) == 0
+
+
+def test_rollling_random_3D_timeseries_surface_in_2D():
+    """Test instantiating Surface layer with random 3D timeseries data."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random((5, 22, 10))
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    ndim = layer.ndim
+    assert ndim == 5
+
+    # hide the extra dims (0, 1) and the last vertex axis (4), display (2, 3)
+    # equivalent to rolling after first displaying (0, 1, 2, 3, 4)
+    order = (4, 0, 1, 2, 3)
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2, order=order))
+
+
+def test_2D_timeseries_surface_in_3D():
+    """Test 2D surface with a values axis shows no data in 3D view."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random((22, 10))
+    layer = Surface((vertices, faces, values))
+    assert layer.ndim == 3
+
+    # all axes are displayed, so the values axis is too
+    with pytest.warns(UserWarning, match='must be non-displayed dimensions'):
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
     assert len(layer._view_vertices) == 0
 
 

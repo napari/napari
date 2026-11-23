@@ -75,8 +75,12 @@ class LayerNameOverlay(_BaseTextOverlay):
 
     Attributes
     ----------
-    color : np.ndarray
-        A (4,) color array of the text overlay.
+    color : np.ndarray or None
+        A (4,) color array of the text overlay. If unset, it uses the brightest
+        color of the layer colormap (e.g. green for a green channel),
+        lightened or darkened as needed to stay readable against the
+        background. Gray colormaps and layers without a colormap use a
+        color contrasting the background.
     font_size : float, optional
         The font size (in points) of the text.
     position : CanvasPosition
@@ -103,6 +107,35 @@ class LayerNameOverlay(_BaseTextOverlay):
 
 class CurrentSliceOverlay(_BaseTextOverlay):
     """Label model to display the current dims slice in the canvas
+
+    Attributes
+    ----------
+    color : np.ndarray
+        A (4,) color array of the text overlay.
+    font_size : float, optional
+        The font size (in points) of the text.
+    position : CanvasPosition
+        The position of the overlay in the canvas.
+    box : bool
+        Whether the background box is visible or not.
+    box_color : ColorValue or None
+        Background box color. If unset, it defaults to the canvas color.
+    gridded : bool
+        The overlay will be duplicated across all grid cells in gridded mode.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
+    """
+
+
+class DimsDisplayedOverlay(_BaseTextOverlay):
+    """Label model to display the currently displayed dims in the canvas
 
     Attributes
     ----------

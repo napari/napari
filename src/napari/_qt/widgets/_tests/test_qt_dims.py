@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from qtpy.QtCore import Qt
 
+from napari._qt.qt_resources import get_stylesheet
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
 
@@ -294,6 +295,21 @@ def test_update_dims_labels(qtbot):
     assert first_label._elidedText() == view.dims.axis_labels[0]
 
 
+def test_slice_labels_scale_with_font_size(qtbot):
+    """Slice labels get wider when the font size increases."""
+    view = QtDims(Dims(ndim=3))
+    qtbot.addWidget(view)
+    slice_label = view.slider_widgets[0].totslice_label
+    original_width = slice_label.width()
+
+    view.setStyleSheet(
+        get_stylesheet('dark', extra_variables={'font_size': '20pt'})
+    )
+    view._on_font_changed()
+
+    assert slice_label.width() > original_width
+
+
 def test_model_axis_label_updates_do_not_write_back(qtbot):
     """Programmatic model updates should not re-enter through QLineEdit signals."""
     dims = Dims(ndim=4)
@@ -388,11 +404,21 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     assert slider.loop_mode == 'loop'
     assert not qt_dims.is_playing
 
+    # `is_playing` changes in the animation thread, while the button only
+    # learns about it from the queued `started`/`finished` signals. Wait for
+    # both, otherwise the second click starts playback again instead of
+    # stopping it.
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: qt_dims.is_playing)
+    qtbot.waitUntil(
+        lambda: qt_dims.is_playing and button.property('playing') == 'True'
+    )
 
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: not qt_dims.is_playing)
+    qtbot.waitUntil(
+        lambda: (
+            not qt_dims.is_playing and button.property('playing') == 'False'
+        )
+    )
 
     with mock_qt_method_ctx(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.MouseButton.RightButton)

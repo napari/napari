@@ -280,3 +280,54 @@ def test_notifications_error_with_threading(make_napari_viewer, monkeypatch):
         viewer.add_image(result)
         assert len(notification_manager.records) >= 1
         notification_manager.records = []
+
+
+def test_notification_close_restarts_timer_below(qt_viewer_, monkeypatch):
+    """Closing the top-most notification restarts the dismiss timer of the
+    notification below it, so stacked notifications all close eventually.
+    """
+    canvas = qt_viewer_.canvas.native
+    first = NapariQtNotification.from_notification(
+        Notification('first'), canvas
+    )
+    second = NapariQtNotification.from_notification(
+        Notification('second'), canvas
+    )
+    NapariQtNotification._instances.extend([first, second])
+
+    restarted = []
+    monkeypatch.setattr(first, 'timer_start', lambda: restarted.append(first))
+
+    second.close()
+
+    assert NapariQtNotification._instances == [first]
+    assert restarted == [first]
+    first.close()
+
+
+def test_close_button_closes_notification(qt_viewer_, monkeypatch):
+    """Clicking the close button closes the notification and restarts the
+    dismiss timer of the notification below it.
+
+    `clicked` passes a `checked` argument, which must not be taken as
+    `start_next`.
+    """
+    canvas = qt_viewer_.canvas.native
+    first = NapariQtNotification.from_notification(
+        Notification('first'), canvas
+    )
+    second = NapariQtNotification.from_notification(
+        Notification('second'), canvas
+    )
+    NapariQtNotification._instances.extend([first, second])
+    second.setVisible(True)
+
+    restarted = []
+    monkeypatch.setattr(first, 'timer_start', lambda: restarted.append(first))
+
+    second.close_button.click()
+
+    assert second.isHidden()
+    assert NapariQtNotification._instances == [first]
+    assert restarted == [first]
+    first.close()

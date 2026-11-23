@@ -1,6 +1,9 @@
-from typing import Any
+import re
+from collections.abc import Callable
+from typing import Any, ParamSpec, TypeVar
 
 import gdown
+from pooch import get_logger
 from pooch.downloaders import (
     DOIDownloader,
     FTPDownloader,
@@ -27,6 +30,42 @@ DOI_TO_FILE_GOOGLE_ID = {
 
 GOOGLE_DRIVE_PREFIX="https://drive.google.com/open?export=download&id="
 
+SKIMAGE_MIRROR_FILES = {
+    'cells3d.tif': 'cells3d.tif',
+    'lily-of-the-valley-fluorescence.tif': 'lily.tif',
+    'pivchallenge/B/B001_1.tif': 'pivchallenge-B-B001_1.tif',
+    'pivchallenge/B/B001_2.tif': 'pivchallenge-B-B001_2.tif',
+}
+
+def skimage_mirror_url(url: str) -> str | None:
+    match = re.fullmatch(
+        r'https://gitlab\.com/scikit-image/data/-/raw/[^/]+/(.+)',
+        url,
+    )
+    if match and (filename := SKIMAGE_MIRROR_FILES.get(match[1])):
+        return f'https://data.napari.dev/examples/{filename}'
+    return None
+
+
+class SkimageMirrorDownloader(HTTPDownloader):
+    def __call__(
+        self,
+        url: str,
+        output_file: Any,
+        pooch: Any,
+        check_only: bool = False,
+    ) -> bool | None:
+        mirror_url = skimage_mirror_url(url)
+        if mirror_url is None:
+            raise ValueError(f'No scikit-image mirror configured for {url}')
+
+        get_logger().info('Redirecting %s to %s', url, mirror_url)
+        res =  super().__call__(
+            mirror_url, output_file, pooch, check_only=check_only
+        )
+        get_logger().info('Finished mirror download: %s', mirror_url)
+        return res
+
 
 class BackupDownloader(HTTPDownloader):
     def __call__(self, url: str, output_file: str, pooch:Any, check_only:bool=False) -> bool | None:
@@ -42,4 +81,24 @@ class BackupDownloader(HTTPDownloader):
 def napari_choose_downloader(url: str, progressbar: bool=False) -> HTTPDownloader | SFTPDownloader | FTPDownloader | DOIDownloader:
     if url in DOI_TO_FILE_GOOGLE_ID:
         return BackupDownloader(progressbar=progressbar)
+    if skimage_mirror_url(url) is not None:
+        return SkimageMirrorDownloader(progressbar=progressbar)
     return choose_downloader(url)
+
+
+P = ParamSpec('P')
+R = TypeVar('R')
+
+
+def nilearn_download_factory(
+    fetch_surf_nki_enhanced: Callable[P, R],
+) -> Callable[P, R]:
+    def nilearn_change_url(*args: P.args, **kwargs: P.kwargs) -> R:
+        if kwargs.get('n_subjects') == 1:
+            # we kee copy of only data fetched with n_subjects=1,
+            # so only for ths case we can use our mirror
+            kwargs.setdefault('url', 'https://data.napari.dev/examples/')
+
+        return fetch_surf_nki_enhanced(*args, **kwargs)
+
+    return nilearn_change_url

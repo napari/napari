@@ -44,7 +44,7 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
 
     This class is an adapter between that interface and Qt's
     `QAbstractItemView` interface (see `Qt Model/View Programming
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_). It allows python
     users to interact with the list in the "usual" python ways, while updating
     any Qt Views that may be connected, and also updates the python list object
     if any GUI events occur in the view.
