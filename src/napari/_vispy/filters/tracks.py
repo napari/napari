@@ -28,6 +28,8 @@ class TracksFilter(Filter):
         the lower limit on length of the 'tail'
     head_length : int, float
         the upper limit on length of the 'tail'
+    fade_to : float
+        minimum opacity at the end of the tail/head (between 0.0 and 1.0)
     use_fade : bool
         this will enable/disable tail fading with time
     vertex_time : 1D array, list
@@ -52,11 +54,14 @@ class TracksFilter(Filter):
                 } else {
                     alpha = 0.;
                 }
+            } else if ($a_vertex_time < $current_time - $tail_length) {
+                alpha = 0.;
             } else {
                 // fade the track into the temporal distance, scaled by the
                 // maximum tail and head length from the gui
-                float fade = ($head_length + $current_time - $a_vertex_time) / ($tail_length + $head_length);
-                alpha = clamp(1.0-fade, 0.0, 1.0);
+                float total_length = $tail_length + $head_length;
+                float fade = total_length > 0.0 ? ($head_length + $current_time - $a_vertex_time) / total_length : 0.0;
+                alpha = clamp(1.0 - fade * (1.0 - $fade_to), 0.0, 1.0);
             }
 
             // when use_fade is disabled, the entire track is visible
@@ -88,6 +93,7 @@ class TracksFilter(Filter):
         current_time: float = 0,
         tail_length: float = 30,
         head_length: float = 0,
+        fade_to: float = 0.0,
         use_fade: bool = True,
         vertex_time: list | np.ndarray | None = None,
     ) -> None:
@@ -98,6 +104,7 @@ class TracksFilter(Filter):
         self.current_time = current_time
         self.tail_length = tail_length
         self.head_length = head_length
+        self.fade_to = fade_to
         self.use_fade = use_fade
         self.vertex_time = vertex_time
 
@@ -111,6 +118,15 @@ class TracksFilter(Filter):
         if isinstance(n, slice):
             n = np.max(self._vertex_time)  # pyrefly: ignore [bad-assignment]
         self.vshader['current_time'] = float(n)
+
+    @property
+    def fade_to(self) -> float:
+        return self._fade_to
+
+    @fade_to.setter
+    def fade_to(self, value: float) -> None:
+        self._fade_to = float(value)
+        self.vshader['fade_to'] = self._fade_to
 
     @property
     def use_fade(self) -> bool:

@@ -6,6 +6,7 @@ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets._tracks import (
     QtColormapComboBoxControl,
     QtColorPropertiesComboBoxControl,
+    QtFadeToSliderControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
     QtHideCompletedTracksCheckBoxControl,
@@ -38,6 +39,8 @@ class QtTracksControls(QtLayerControls):
         Checkbox controlling if graph of the layer should be shown.
     _head_length_slider_control : napari._qt.layer_controls.widgets._tracks.QtHeadLengthSliderControl
         Widget that wraps a slider controlling head length of the layer.
+    _fade_to_slider_control : napari._qt.layer_controls.widgets._tracks.QtFadeToSliderControl
+        Widget that wraps a slider controlling fade_to of the layer.
     _id_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtIdCheckBoxControl
         Widget that wraps a checkbox controlling if id of the layer should be shown.
     _tail_display_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtTailDisplayCheckBoxControl
@@ -76,6 +79,8 @@ class QtTracksControls(QtLayerControls):
             self, layer
         )
         self._add_widget_controls(self._head_length_slider_control)
+        self._fade_to_slider_control = QtFadeToSliderControl(self, layer)
+        self._add_widget_controls(self._fade_to_slider_control)
         self._tail_display_checkbox_control = QtTailDisplayCheckBoxControl(
             self, layer
         )
