@@ -17,19 +17,26 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
+    TypeGuard,
     TypeVar,
+    overload,
 )
 
 import numpy as np
-import numpy.typing as npt
 
 if TYPE_CHECKING:
+    import hashlib
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
     import packaging.version
+    import pandas as pd
 
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
+
+_T = TypeVar('_T')
+_Scalar = TypeVar('_Scalar', bound=str | Enum | float | np.generic | None)
 
 
 def parse_version(v: str) -> packaging.version._BaseVersion:
@@ -91,22 +98,31 @@ def in_python_repl() -> bool:
     )
 
 
-def ensure_iterable(
-    arg: str | Enum | float | list | npt.NDArray | None,
-):
+@overload
+def ensure_iterable(arg: _Scalar) -> Iterator[_Scalar]: ...
+
+
+@overload
+def ensure_iterable(arg: Iterable[_T]) -> Iterable[_T]: ...
+
+
+def ensure_iterable(arg: object) -> Iterable[object]:
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
+
+    Returns
+    -------
+    iterable
+        ``arg`` itself if it is an iterable other than a string or enum,
+        otherwise an infinite ``itertools.repeat`` of ``arg``.
     """
-    if is_iterable(arg):
+    if isinstance(arg, collections.abc.Iterable) and is_iterable(arg):
         return arg
 
     return itertools.repeat(arg)
 
 
-def is_iterable(
-    arg: str | Enum | float | list | npt.NDArray | None,
-    allow_none: bool = False,
-) -> bool:
+def is_iterable(arg: object, allow_none: bool = False) -> bool:
     """Determine if a single argument is an iterable."""
     if arg is None:
         return allow_none
@@ -118,7 +134,7 @@ def is_iterable(
     return isinstance(arg, collections.abc.Iterable)
 
 
-def is_sequence(arg: Any) -> bool:
+def is_sequence(arg: object) -> TypeGuard[Sequence[Any]]:
     """Check if ``arg`` is a sequence like a list or tuple.
 
     return True:
@@ -136,11 +152,11 @@ def is_sequence(arg: Any) -> bool:
 
 
 def ensure_sequence_of_iterables(
-    obj: Any,
+    obj: object,
     length: int | None = None,
     repeat_empty: bool = False,
     allow_none: bool = False,
-):
+) -> Iterable[Any]:
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
     If length is provided and the object is already a sequence of iterables,
@@ -202,13 +218,19 @@ def ensure_sequence_of_iterables(
     return itertools.repeat(obj)
 
 
-def formatdoc(obj):
+def formatdoc(obj: _T) -> _T:
     """Substitute globals and locals into an object's docstring."""
-    frame = inspect.currentframe().f_back  # pyrefly: ignore [missing-attribute]
+    doc = obj.__doc__
+    if doc is None:
+        return obj
+    current = inspect.currentframe()
+    frame = current.f_back if current is not None else None
+    del current
+    if frame is None:
+        # frame introspection is unavailable on some Python implementations
+        return obj
     try:
-        obj.__doc__ = obj.__doc__.format(
-            **{**frame.f_globals, **frame.f_locals}
-        )
+        obj.__doc__ = doc.format(**{**frame.f_globals, **frame.f_locals})
     finally:
         del frame
     return obj
@@ -226,7 +248,7 @@ class StringEnum(StrEnum):
         return self.value
 
     @classmethod
-    def _missing_(cls, value: object) -> StringEnum | None:
+    def _missing_(cls, value: object) -> Self | None:
         if isinstance(value, StringEnum):
             # ruff suggests to use TypeError for when
             # a value is of the wrong type,
@@ -292,14 +314,13 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     ----------
     relpath : str|Path
         A path, either as string or Path object.
-    must_exist : bool, default True
+    must_exist : bool, default False
         Raise ValueError if `relpath` is not a URL and does not exist.
 
     Returns
     -------
     abspath : str|Path
-        An absolute path, or list or tuple of absolute paths (same type as
-        input)
+        An absolute path of the same type as ``relpath``.
     """
     from urllib.parse import urlparse
 
@@ -318,7 +339,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     return OriginType(path)
 
 
-def all_subclasses(cls: type) -> set:
+def all_subclasses(cls: type) -> set[type]:
     """Recursively find all subclasses of class ``cls``.
 
     Parameters
@@ -337,8 +358,8 @@ def all_subclasses(cls: type) -> set:
 
 
 def ensure_n_tuple(
-    val: Iterable, n: int, fill: int = 0, before: bool = True
-) -> tuple:
+    val: Iterable[Any], n: int, fill: int = 0, before: bool = True
+) -> tuple[Any, ...]:
     """Ensure input is a length n tuple.
 
     Parameters
@@ -347,6 +368,8 @@ def ensure_n_tuple(
         Iterable to be forced into length n-tuple.
     n : int
         Length of tuple.
+    fill : int, default 0
+        Value used to pad the tuple up to length n.
     before : bool, default True
         Fill the tuple with `fill` before or after the input iterable.
 
@@ -362,7 +385,7 @@ def ensure_n_tuple(
     return tuple_value[:n] + (fill,) * (n - len(tuple_value))
 
 
-def ensure_layer_data_tuple(val: tuple) -> tuple:
+def ensure_layer_data_tuple(val: tuple[Any, ...]) -> tuple[Any, ...]:
     msg = f'Not a valid layer data tuple: {val!r}'
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
@@ -374,7 +397,9 @@ def ensure_layer_data_tuple(val: tuple) -> tuple:
     return val
 
 
-def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
+def ensure_list_of_layer_data_tuple(
+    val: list[tuple[Any, ...]],
+) -> list[tuple[Any, ...]]:
     # allow empty list to be returned but do nothing in that case
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
@@ -382,17 +407,17 @@ def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     raise TypeError('Not a valid list of layer data tuples!')
 
 
-def _quiet_array_equal(*a, **k) -> bool:
+def _quiet_array_equal(*a: Any, **k: Any) -> bool:
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', 'elementwise comparison')
         return np.array_equal(*a, **k)
 
 
-def _pandas_dataframe_equal(df1, df2):
+def _pandas_dataframe_equal(df1: pd.DataFrame, df2: pd.DataFrame) -> bool:
     return df1.equals(df2)
 
 
-def _arraylike_short_names(obj) -> Iterator[str]:
+def _arraylike_short_names(obj: Any) -> Iterator[str]:
     """Yield all the short names of an array-like or its class."""
     type_ = type(obj) if not inspect.isclass(obj) else obj
     for base in type_.mro():
@@ -441,7 +466,7 @@ def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
     return operator.eq
 
 
-def _is_array_type(array: npt.ArrayLike, type_name: str) -> bool:
+def _is_array_type(array: object, type_name: str) -> bool:
     """Checks if an array-like instance or class is of the type described by a short name.
 
     This is useful when you want to check the type of array-like quickly without
@@ -449,8 +474,8 @@ def _is_array_type(array: npt.ArrayLike, type_name: str) -> bool:
 
     Parameters
     ----------
-    array
-        The array-like object.
+    array : array-like or type
+        The array-like object or its class.
     type_name : str
         The short name of the type to test against (e.g. 'numpy.ndarray', 'xarray.DataArray').
 
@@ -534,13 +559,14 @@ def paths_hash(
 
 
 def _file_hash(
-    _hash, file: Path, path: Path, include_paths: bool = True
+    _hash: hashlib._Hash, file: Path, path: Path, include_paths: bool = True
 ) -> None:
     """Update hash with based on file contents and optionally relative path.
 
     Parameters
     ----------
-    _hash
+    _hash : hashlib hash object
+        Hash that is updated in place.
     file : Path
         Path to the source file which will be used to compute the hash.
     path : Path
@@ -558,7 +584,7 @@ def _file_hash(
 
 def _combine_signatures(
     *objects: Callable,
-    return_annotation=inspect.Signature.empty,
+    return_annotation: Any = inspect.Signature.empty,
     exclude: Iterable[str] = (),
 ) -> inspect.Signature:
     """Create combined Signature from objects, excluding names in `exclude`.
