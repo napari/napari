@@ -632,7 +632,11 @@ class QtViewer(QSplitter):
             'QtViewer._on_slice_ready: %s', responses
         )
         for weak_layer, response in responses.items():
-            if layer := weak_layer():
+            layer = weak_layer()
+            if (
+                layer is not None
+                and layer._slicing_state._last_slice_id == response.request_id
+            ):
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
                 layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
