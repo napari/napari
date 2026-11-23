@@ -26,8 +26,15 @@ from napari.layers.utils.color_transformations import (
     transform_color_with_defaults,
 )
 from napari.utils.colormaps import Colormap
-from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
+from napari.utils.colormaps.categorical_colormap import (
+    CategoricalColormap,
+    ValidCategoricalColormapArg,
+)
+from napari.utils.colormaps.colormap_utils import (
+    ColorType,
+    ValidColormapArg,
+    ensure_colormap,
+)
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 
@@ -36,6 +43,39 @@ from napari.utils.events.custom_types import Array
 # contrasting colors make the grouping visible immediately and can then be replaced with a
 # purpose-chosen cycle.
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
+
+
+def ensure_categorical_colormap(
+    categorical_colormap: ValidCategoricalColormapArg,
+) -> CategoricalColormap:
+    """Coerce a categorical colormap argument into a ``CategoricalColormap``.
+
+    Parameters
+    ----------
+    categorical_colormap : CategoricalColormap, dict, Sequence or np.ndarray
+        A ``CategoricalColormap``, a dict of its keyword arguments, a dict
+        mapping property values directly to colors, or a sequence of colors
+        to use as the fallback color cycle.
+
+    Returns
+    -------
+    CategoricalColormap
+    """
+    if isinstance(categorical_colormap, CategoricalColormap):
+        return categorical_colormap
+    kwargs: dict[str, Any]
+    if (
+        isinstance(categorical_colormap, dict)
+        and 'colormap' not in categorical_colormap
+        and 'fallback_color' not in categorical_colormap
+    ):
+        # assume it's a direct mapping between property values and colors
+        kwargs = {'colormap': categorical_colormap}
+    elif isinstance(categorical_colormap, (Sequence, np.ndarray)):
+        kwargs = {'fallback_color': categorical_colormap}
+    else:
+        kwargs = categorical_colormap
+    return CategoricalColormap(**kwargs)
 
 
 @dataclass
@@ -181,25 +221,9 @@ class ColorManager(EventedModel):
     @field_validator('categorical_colormap', mode='before')
     @classmethod
     def _ensure_categorical_colormap(
-        cls, categorical_colormap
+        cls, categorical_colormap: ValidCategoricalColormapArg
     ) -> CategoricalColormap:
-        if isinstance(categorical_colormap, CategoricalColormap):
-            return categorical_colormap
-        if (
-            isinstance(categorical_colormap, dict)
-            and 'colormap' not in categorical_colormap
-            and 'fallback_color' not in categorical_colormap
-        ):
-            # assume it's a direct mapping between property values and colors
-            categorical_colormap = {
-                'colormap': categorical_colormap,
-            }
-        elif isinstance(categorical_colormap, (Sequence, np.ndarray)):
-            categorical_colormap = {
-                'fallback_color': categorical_colormap,
-            }
-
-        return CategoricalColormap(**categorical_colormap)
+        return ensure_categorical_colormap(categorical_colormap)
 
     @field_validator('colors', mode='before')
     @classmethod
@@ -490,7 +514,7 @@ class ColorManager(EventedModel):
                     )
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list | None = None
+        self, current_color: ColorType, update_indices: list | None = None
     ) -> None:
         """Update the current color and update the colors if requested.
 
@@ -498,7 +522,7 @@ class ColorManager(EventedModel):
 
         Parameters
         ----------
-        current_color : np.ndarray
+        current_color : ColorType
             The new current color value.
         update_indices : list
             The indices of the color elements to update.
@@ -518,16 +542,12 @@ class ColorManager(EventedModel):
     @classmethod
     def _from_layer_kwargs(
         cls,
-        colors: dict | str | np.ndarray,
+        colors: dict | str | list | np.ndarray,
         properties: dict[str, np.ndarray],
         n_colors: int | None = None,
-        continuous_colormap: str | Colormap | None = None,
+        continuous_colormap: ValidColormapArg | None = None,
         contrast_limits: tuple[float, float] | None = None,
-        categorical_colormap: CategoricalColormap
-        | dict
-        | list
-        | np.ndarray
-        | None = None,
+        categorical_colormap: ValidCategoricalColormapArg | None = None,
         color_mode: ColorMode | str | None = None,
         current_color: np.ndarray | None = None,
         default_color_cycle: ColorType = None,
