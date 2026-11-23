@@ -35,12 +35,12 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self._last_mouse_pos = None
 
+        self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.size.connect(self._on_size_change)
         self.node.events.canvas_change.connect(self._on_canvas_change)
         self.viewer.events.mouse_over_canvas.connect(
             self._on_mouse_over_canvas
         )
-        # no need to connect position, since that's in the base classes of CanvasOverlay
 
         self.reset()
 
