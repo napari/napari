@@ -310,6 +310,40 @@ def test_async_slice_response_applied_on_main_thread(
     assert set(update_threads) == {threading.main_thread()}
 
 
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_stale_response_not_applied(
+    make_napari_viewer, qtbot, rng, monkeypatch
+):
+    viewer = make_napari_viewer()
+    data = LockableData(rng.random((3, 4, 5)))
+    image = Image(data)
+    setup_viewer_for_async_slicing(viewer, image)
+
+    applied_z = []
+    update_slice_response = image._slicing_state._update_slice_response
+
+    def record_applied_z(response):
+        applied_z.append(response.slice_input.world_slice.point[0])
+        update_slice_response(response)
+
+    monkeypatch.setattr(
+        image._slicing_state, '_update_slice_response', record_applied_z
+    )
+
+    with data.lock:
+        viewer.dims.current_step = (1, 0, 0)
+        qtbot.waitUntil(
+            lambda: any(
+                task.running()
+                for task in viewer._layer_slicer._task_to_requests
+            )
+        )
+        viewer.dims.current_step = (2, 0, 0)
+
+    qtbot.waitUntil(lambda: image.loaded)
+    assert applied_z == [2]
+
+
 def test_callback_emitting_signal_of_deleted_qobject_is_disconnected(qapp):
     class Source(QObject):
         signal = Signal()

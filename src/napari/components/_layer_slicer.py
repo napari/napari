@@ -86,8 +86,8 @@ class _LayerSlicer:
     Events
     ------
     ready
-        emitted after slicing is done with a dict value that maps from layer
-        to slice response. Note that this may be emitted on the main or
+        emitted after a layer is sliced with a dict value that maps from the
+        layer to its slice response. Note that this may be emitted on the main or
         a non-main thread. If usage of this event relies on something happening
         on the main thread, actions should be taken to ensure that the callback
         is also executed on the main thread (e.g. by emitting a Qt signal from
@@ -102,20 +102,18 @@ class _LayerSlicer:
             manager for the slicing threading
         _force_sync: bool
             if true, forces slicing to execute synchronously
-        _layers_to_task : dict of tuples of layer weakrefs to futures
-            task storage for cancellation logic
+        _layer_to_task : dict of layer weakrefs to futures
+            each layer's latest task, for cancellation logic
         _task_to_requests : dict of futures to slice requests
-            maps completed tasks back to their layer and slice requests,
+            maps unfinished tasks to their layer and slice request
         _lock_futures_dicts : threading.RLock
-            lock to guard against concurrent changes to `_layers_to_task`
+            lock to guard against concurrent changes to `_layer_to_task`
             and `_task_to_requests` when finding, adding, or removing tasks
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
-        self._layers_to_task: dict[
-            tuple[weakref.ReferenceType[Layer], ...], Future
-        ] = {}
+        self._layer_to_task: dict[weakref.ReferenceType[Layer], Future] = {}
         self._task_to_requests: dict[
             Future, dict[weakref.ReferenceType[Layer], _SliceRequest]
         ] = {}
@@ -153,7 +151,8 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
-        futures = self._layers_to_task.values()
+        with self._lock_futures_dicts:
+            futures = list(self._task_to_requests)
         _, not_done_futures = wait(futures, timeout=timeout)
 
         if len(not_done_futures) > 0:
@@ -167,17 +166,12 @@ class _LayerSlicer:
         layers: Iterable[Layer],
         dims: Dims,
         force: bool = False,
-    ) -> Future[dict] | None:
+    ) -> list[Future[dict]]:
         """Slices the given layers with the given dims.
 
-        Submitting multiple layers at one generates multiple requests, but only ONE task.
-
-        This will attempt to cancel all pending slicing tasks that can be entirely
-        replaced the new ones. If multiple layers are sliced, any task that contains
-        only one of those layers can safely be cancelled. If a single layer is sliced,
-        it will wait for any existing tasks that include that layer AND another layer,
-        In other words, it will only cancel if the new task will replace the
-        slices of all the layers in the pending task.
+        Each layer is sliced in its own task, which cancels that layer's
+        pending task. A running task can't be cancelled, so consumers of the
+        ready event should ignore responses to stale requests.
 
         This should only be called from the main thread.
 
@@ -193,9 +187,10 @@ class _LayerSlicer:
 
         Returns
         -------
-        future of dict or none
-            A future with a result that maps from a layer to an async layer
-            slice response. Or none if no async slicing tasks were submitted.
+        list of futures
+            One future per async slicing task, with a result that maps from
+            the task's layer to its async slice response. Empty if no async
+            slicing tasks were submitted.
         """
         logger.debug(
             '_LayerSlicer.submit: layers=%s, dims=%s, force=%s',
@@ -203,9 +198,6 @@ class _LayerSlicer:
             dims,
             force,
         )
-        if existing_task := self._find_existing_task(layers):
-            logger.debug('Cancelling task %s', id(existing_task))
-            existing_task.cancel()
 
         # Not all layer types will initially be asynchronously sliceable.
         # The following logic gives us a way to handle those in the short
@@ -235,17 +227,11 @@ class _LayerSlicer:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
 
-        # First maybe submit an async slicing task to start it ASAP.
-        task = None
-        if len(requests) > 0:
-            logger.debug('Submitting task %s', id(task))
-            task = self._executor.submit(self._slice_layers, requests)
-            # Store task before adding done callback to ensure there is always
-            # a task to remove in the done callback.
-            with self._lock_futures_dicts:
-                self._layers_to_task[tuple(requests)] = task
-                self._task_to_requests[task] = requests
-            task.add_done_callback(self._on_slice_done)
+        # First submit async slicing tasks to start them ASAP.
+        tasks = [
+            self._submit_layer_task(weak_layer, request)
+            for weak_layer, request in requests.items()
+        ]
 
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
@@ -254,6 +240,29 @@ class _LayerSlicer:
                 force=force,
             )
 
+        return tasks
+
+    def _submit_layer_task(
+        self,
+        weak_layer: weakref.ReferenceType[Layer],
+        request: _SliceRequest,
+    ) -> Future[dict]:
+        """Submit a task that slices one layer, cancelling its pending task."""
+        with self._lock_futures_dicts:
+            previous_task = self._layer_to_task.get(weak_layer)
+        if previous_task is not None:
+            logger.debug('Cancelling task %s', id(previous_task))
+            previous_task.cancel()
+
+        requests = {weak_layer: request}
+        task = self._executor.submit(self._slice_layers, requests)
+        logger.debug('Submitted task %s', id(task))
+        # Store task before adding done callback to ensure there is always
+        # a task to remove in the done callback.
+        with self._lock_futures_dicts:
+            self._layer_to_task[weak_layer] = task
+            self._task_to_requests[task] = requests
+        task.add_done_callback(self._on_slice_done)
         return task
 
     def shutdown(self) -> None:
@@ -295,9 +304,10 @@ class _LayerSlicer:
         logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
         with self._lock_futures_dicts:
             requests = self._task_to_requests.pop(task, None)
-
-        if not self._try_to_remove_task(task):
-            logger.debug('Task not found: %s', id(task))
+            for weak_layer in requests or ():
+                # A newer task may already have replaced this one.
+                if self._layer_to_task.get(weak_layer) is task:
+                    del self._layer_to_task[weak_layer]
 
         if task.cancelled():
             logger.debug('Cancelled task: %s', id(task))
@@ -319,37 +329,3 @@ class _LayerSlicer:
             notification_manager.receive_error(
                 type(exception), exception, exception.__traceback__
             )
-
-    def _try_to_remove_task(self, task: Future[dict]) -> bool:
-        """
-        Attempt to remove task, return false if task not found, return true
-        if task is found and removed from layers_to_task dict.
-
-        This function provides a lock to ensure that the layers_to_task dict
-        is unmodified during this process.
-        """
-        with self._lock_futures_dicts:
-            for k_layers, v_task in self._layers_to_task.items():
-                if v_task == task:
-                    del self._layers_to_task[k_layers]
-                    return True
-        return False
-
-    def _find_existing_task(
-        self, layers: Iterable[Layer]
-    ) -> Future[dict] | None:
-        """Find the task associated with a list of layers. Returns the first
-        task found for which the layers of the task are a subset of the input
-        layers.
-
-        This function provides a lock to ensure that the layers_to_task dict
-        is unmodified during this process.
-        """
-        with self._lock_futures_dicts:
-            layer_set = set(layers)
-            for weak_task_layers, task in self._layers_to_task.items():
-                task_layers = {w() for w in weak_task_layers} - {None}
-                if task_layers.issubset(layer_set):
-                    logger.debug('Found existing task for %s', task_layers)
-                    return task
-        return None
