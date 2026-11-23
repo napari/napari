@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Tracks
 from napari.layers.tracks._track_utils import TrackManager
@@ -10,10 +11,90 @@ from napari.utils._test_utils import (
     validate_kwargs_sorted,
 )
 
-# def test_empty_tracks():
-#     """Test instantiating Tracks layer without data."""
-#     pts = Tracks()
-#     assert pts.data.shape == (0, 4)
+
+def test_empty_tracks():
+    """Test instantiating Tracks layer without data."""
+    layer = Tracks()
+    assert layer.data.shape == (0, 4)
+    assert layer.ndim == 3
+    assert len(layer._manager) == 0
+    assert layer._manager.max_time is None
+    assert layer._extent_data.shape == (2, 3)
+
+
+@pytest.mark.parametrize(
+    ('data', 'expected_shape'),
+    [
+        (np.empty((0, 4)), (0, 4)),
+        ([], (0, 4)),
+        (np.empty((0, 5)), (0, 5)),
+        (
+            pd.DataFrame(columns=['track_id', 't', 'y', 'x']),
+            (0, 4),
+        ),
+    ],
+)
+def test_empty_tracks_from_empty_input(data, expected_shape):
+    """Test instantiating Tracks layer from empty data."""
+    layer = Tracks(data)
+    assert layer.data.shape == expected_shape
+    assert layer.track_colors.shape == (0, 4)
+
+
+def test_empty_tracks_add_data_later():
+    """Test assigning data to an empty Tracks layer and clearing it again."""
+    layer = Tracks()
+    data = [[1, 0, 4, 4], [1, 1, 5, 5]]
+    layer.data = data
+    np.testing.assert_array_equal(layer.data, data)
+    assert layer._manager.max_time == 1
+    assert len(layer._manager) == 1
+
+    # clearing back to empty works too
+    layer.data = np.empty((0, 4))
+    assert layer.data.shape == (0, 4)
+    assert layer._manager.max_time is None
+    assert layer._get_value((0, 0, 0)) is None
+
+
+def test_empty_tracks_add_tracks_no_args():
+    """Test ViewerModel.add_tracks() without data (issue #3111 repro)."""
+    viewer = ViewerModel()
+    layer = viewer.add_tracks()
+    assert layer.data.shape == (0, 4)
+    assert layer.ndim == 3
+
+
+def test_empty_tracks_slice_and_value():
+    """Test slicing, value lookup and labels on an empty Tracks layer."""
+    layer = Tracks()
+    assert layer._get_value((0, 0, 0)) is None
+    labels, _positions = layer.track_labels
+    assert labels is None
+
+    # moving to another time point and refreshing does not crash
+    dims = Dims(
+        ndim=layer.ndim,
+        point=(5, 0, 0),
+        range=((0, 10, 1), (0, 50, 1), (0, 50, 1)),
+    )
+    layer._slice_dims(dims)
+    assert layer.current_time == 5
+    layer.refresh()
+    labels, _positions = layer.track_labels
+    assert labels is None
+
+
+def test_fast_points_lookup_empty() -> None:
+    """Empty input to _fast_points_lookup returns an empty lookup."""
+    assert TrackManager._fast_points_lookup(np.array([], dtype=np.uint)) == {}
+
+
+def test_fast_points_lookup_single_point() -> None:
+    """A single point still produces a one-entry lookup."""
+    assert TrackManager._fast_points_lookup(np.array([0], dtype=np.uint)) == {
+        0: slice(0, 1)
+    }
 
 
 data_array_2dt = np.zeros((1, 4))

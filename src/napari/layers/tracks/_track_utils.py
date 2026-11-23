@@ -79,7 +79,7 @@ class TrackManager:
 
         self._data: npt.NDArray
         self._order: np.ndarray[tuple[int], np.dtype[np.integer]]
-        self._kdtree: cKDTree
+        self._kdtree: cKDTree | None
         self._points: npt.NDArray
         self._points_id: npt.NDArray
         self._points_lookup: dict[int, slice]
@@ -102,6 +102,8 @@ class TrackManager:
     @staticmethod
     def _fast_points_lookup(sorted_time: np.ndarray) -> dict[int, slice]:
         """Computes a fast lookup table from time to their respective points slicing."""
+        if sorted_time.size == 0:
+            return {}
 
         # finds where t transitions to t + 1
         transitions = np.nonzero(sorted_time[:-1] - sorted_time[1:])[0] + 1
@@ -144,7 +146,10 @@ class TrackManager:
         self._points = self._data[self._ordered_points_idx, 1:]
 
         # build a tree of the track data to allow fast lookup of nearest track
-        self._kdtree = cKDTree(self._points)
+        # (no tree when there is no data; get_value already handles None)
+        self._kdtree = (
+            cKDTree(self._points) if self._points.shape[0] > 0 else None
+        )
 
         # make the lookup table
         # NOTE(arl): it's important to convert the time index to an integer
@@ -155,13 +160,18 @@ class TrackManager:
         self._points_lookup = self._fast_points_lookup(time)
 
         # make a second lookup table using a sparse matrix to convert track id
-        # to the vertex indices
-        self._id2idxs = coo_matrix(
-            (
-                np.broadcast_to(1, self.track_ids.size),  # just dummy ones
-                (self.track_ids, np.arange(self.track_ids.size)),
-            )
-        ).tocsr()
+        # to the vertex indices. An empty layer has no ids, and coo_matrix
+        # cannot infer dimensions from zero sized index arrays, so use an
+        # explicitly shaped (0, 0) matrix in that case.
+        if self.track_ids.size == 0:
+            self._id2idxs = coo_matrix((0, 0)).tocsr()
+        else:
+            self._id2idxs = coo_matrix(
+                (
+                    np.broadcast_to(1, self.track_ids.size),  # just dummy ones
+                    (self.track_ids, np.arange(self.track_ids.size)),
+                )
+            ).tocsr()
 
         # Invalidate cached track end times when data changes
         self._track_end_times = None
@@ -250,6 +260,10 @@ class TrackManager:
 
     def _vertex_indices_from_id(self, track_id: int) -> npt.NDArray:
         """return the vertices corresponding to a track id"""
+        if self.data.shape[0] == 0:
+            # empty layer: no vertices belong to any track id, and the
+            # (0, 0) id->index table cannot be indexed
+            return np.array([], dtype=int)
         return self._id2idxs[track_id].nonzero()[1]
 
     def _validate_track_data(self, data: np.ndarray) -> np.ndarray:
@@ -312,7 +326,9 @@ class TrackManager:
         track_connex = np.ones(self.data.shape[0], dtype=bool)
         track_connex[indices_new_id] = False
         # Add 'False' for the last entry too (end of the last track)
-        track_connex[-1] = False
+        # (no last entry when there is no data)
+        if track_connex.size > 0:
+            track_connex[-1] = False
 
         self._points_id = points_id
         self._track_vertices = track_vertices
@@ -383,7 +399,7 @@ class TrackManager:
     @property
     def max_time(self) -> int | None:
         """Determine the maximum timestamp of the dataset"""
-        if self.track_times is not None:
+        if self.track_times is not None and len(self.track_times) > 0:
             return int(np.max(self.track_times))
         return None
 
