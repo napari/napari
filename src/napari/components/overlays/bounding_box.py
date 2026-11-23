@@ -4,9 +4,9 @@ from napari.components.overlays.base import SceneOverlay
 from napari.utils.color import ColorValue
 
 
-class BoundingBoxOverlay(SceneOverlay):
+class _BoundingBoxOverlay(SceneOverlay):
     """
-    Bounding box overlay to indicate layer boundaries.
+    Bounding box overlay to indicate data boundaries.
 
     Attributes
     ----------
@@ -39,3 +39,11 @@ class BoundingBoxOverlay(SceneOverlay):
     points: bool = True
     point_size: float = 5
     point_color: ColorValue = Field(default_factory=lambda: ColorValue('blue'))
+
+
+class LayerBoundingBoxOverlay(_BoundingBoxOverlay):
+    pass
+
+
+class ViewerBoundingBoxOverlay(_BoundingBoxOverlay):
+    pass

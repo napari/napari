@@ -13,7 +13,10 @@ from napari._vispy.layers.surface import VispySurfaceLayer
 from napari._vispy.layers.tracks import VispyTracksLayer
 from napari._vispy.layers.vectors import VispyVectorsLayer
 from napari._vispy.overlays.base import VispyBaseOverlay
-from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
+from napari._vispy.overlays.bounding_box import (
+    VispyLayerBoundingBoxOverlay,
+    VispyViewerBoundingBoxOverlay,
+)
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
 from napari._vispy.overlays.canvas_axes import VispyCanvasAxesOverlay
 from napari._vispy.overlays.colorbar import VispyColorBarOverlay
@@ -37,7 +40,6 @@ from napari._vispy.overlays.text import (
 )
 from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
-    BoundingBoxOverlay,
     BrushCircleOverlay,
     CanvasAxesOverlay,
     ColorBarOverlay,
@@ -47,6 +49,7 @@ from napari.components.overlays import (
     DimsDisplayedOverlay,
     LabelsBrushStrokeOverlay,
     LabelsPolygonOverlay,
+    LayerBoundingBoxOverlay,
     LayerNameOverlay,
     Overlay,
     ScaleBarOverlay,
@@ -54,6 +57,7 @@ from napari.components.overlays import (
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
+    ViewerBoundingBoxOverlay,
     ZoomOverlay,
 )
 from napari.layers import (
@@ -87,7 +91,8 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     CoordinateGridOverlay: VispyCoordinateGridOverlay,
     SceneAxesOverlay: VispySceneAxesOverlay,
     CanvasAxesOverlay: VispyCanvasAxesOverlay,
-    BoundingBoxOverlay: VispyBoundingBoxOverlay,
+    LayerBoundingBoxOverlay: VispyLayerBoundingBoxOverlay,
+    ViewerBoundingBoxOverlay: VispyViewerBoundingBoxOverlay,
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
