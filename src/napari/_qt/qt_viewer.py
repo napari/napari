@@ -912,7 +912,7 @@ class QtViewer(QSplitter):
                 error_messages = '\n'.join(
                     str(x.message.args[0])
                     if isinstance(x.message, Warning)
-                    else str(x.message)
+                    else x.message
                     for x in wa
                 )
 

@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 from collections.abc import (
+    Generator,
     Iterator,
     Mapping,
     MutableMapping,
@@ -434,7 +435,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_JSON)
-        return super().json(exclude=exclude, **kwargs)
+        return super().model_dump_json(exclude=exclude, **kwargs)
 
     def model_dump(self, **kwargs) -> dict[str, Any]:
         """Convert to a dictionary."""
@@ -784,7 +785,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         )
 
     @contextmanager
-    def _defer_slicing(self) -> Iterator[None]:
+    def _defer_slicing(self) -> Generator[None, None, None]:
         """Prevent dims changes from slicing layers.
 
         The caller is responsible for slicing afterwards.

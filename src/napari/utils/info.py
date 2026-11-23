@@ -307,10 +307,10 @@ def sys_info(as_html: bool = False) -> str:
     except ValueError:
         from napari.utils._platformdirs import user_config_dir
 
-        _async_setting = str(os.getenv('NAPARI_ASYNC', 'False'))
-        _autoswap_buffers = str(os.getenv('NAPARI_AUTOSWAP', 'False'))
-        _triangulation_backend = str(
-            os.getenv('NAPARI_TRIANGULATION_BACKEND', 'Fastest available')
+        _async_setting = os.getenv('NAPARI_ASYNC', 'False')
+        _autoswap_buffers = os.getenv('NAPARI_AUTOSWAP', 'False')
+        _triangulation_backend = os.getenv(
+            'NAPARI_TRIANGULATION_BACKEND', 'Fastest available'
         )
         _config_path = os.getenv('NAPARI_CONFIG', user_config_dir())
 

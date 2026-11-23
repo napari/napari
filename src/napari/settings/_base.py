@@ -261,7 +261,7 @@ class NapariEnvSettingsSource(EnvSettingsSource):
             for env_name in field.validation_alias.choices[1:]:
                 if env_name not in env_dkt:
                     continue
-                env_value = env_dkt[str(env_name)]
+                env_value = env_dkt[env_name]
                 value = TypeAdapter(field_type).validate_python(env_value)
                 sub_dkt = dkt
                 for sub in path:
@@ -404,9 +404,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
 
     def _dump(self, path: str, data: Dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
-        if str(path).endswith(('.yaml', '.yml')):
+        if path.endswith(('.yaml', '.yml')):
             data_ = self._yaml_dump(data)
-        elif str(path).endswith('.json'):
+        elif path.endswith('.json'):
             data_ = json.dumps(
                 data,
                 default=_json_encode(

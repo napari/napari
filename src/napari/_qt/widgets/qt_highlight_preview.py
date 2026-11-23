@@ -561,7 +561,6 @@ class QtHighlightPreviewWidget(QWidget):
         value : int
             Minimum highlight value.
         """
-        value = int(value)
         if value >= self._max_value:
             raise ValueError(
                 f'Minimum value must be smaller than {self._max_value}'
@@ -594,7 +593,6 @@ class QtHighlightPreviewWidget(QWidget):
         value : int
             Maximum highlight value.
         """
-        value = int(value)
         if value <= self._min_value:
             raise ValueError(
                 f'Maximum value must be larger than {self._min_value}'
