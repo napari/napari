@@ -398,7 +398,7 @@ class Tracks(Layer):
         return self._manager.data
 
     @data.setter
-    def data(self, data: np.ndarray) -> None:
+    def data(self, data: list | np.ndarray) -> None:
         """set the data and build the vispy arrays for display"""
         # set the data and build the tracks
         self._manager.data = data
@@ -440,7 +440,7 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: dict[str, np.ndarray] | pd.DataFrame | None,
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
@@ -452,7 +452,9 @@ class Tracks(Layer):
         return self._manager.properties
 
     @properties.setter
-    def properties(self, properties: dict[str, np.ndarray]) -> None:
+    def properties(
+        self, properties: dict[str, np.ndarray] | pd.DataFrame
+    ) -> None:
         """set track properties"""
         self.features = properties
 
@@ -469,8 +471,6 @@ class Tracks(Layer):
     @graph.setter
     def graph(self, graph: dict[int, int | list[int]]) -> None:
         """Set the track graph."""
-        # Ignored type, because pyrefly can't handle different signatures
-        # on getters and setters; see https://github.com/python/mypy/issues/3004
         self._manager.graph = graph
         self._manager.build_graph()
         self.events.rebuild_graph()

@@ -187,10 +187,10 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: 'dict[str, np.ndarray] | pd.DataFrame | None',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
-        self._feature_table.reorder(self._order)  # pyrefly: ignore [bad-argument-type]
+        self._feature_table.reorder(self._order)  # pyrefly: ignore[bad-argument-type]
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
 
