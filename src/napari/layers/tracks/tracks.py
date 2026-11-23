@@ -227,6 +227,11 @@ class Tracks(Layer):
         self._slicing_state.slice_done.connect(self.events.rebuild_tracks)
         self._slicing_state.slice_done.connect(self.events.rebuild_graph)
 
+        # circular import
+        from napari.components.overlays import ColorBarOverlay
+
+        self._overlays.update({'colorbar': ColorBarOverlay()})
+
     @property
     def _extent_data(self) -> np.ndarray:
         """Extent of layer in data coordinates.
@@ -567,6 +572,11 @@ class Tracks(Layer):
     def colormaps_dict(self, colormaps_dict: dict[str, Colormap]) -> None:
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
+
+    @property
+    def colorbar(self):
+        """Color Bar overlay."""
+        return self._overlays['colorbar']
 
     def _recolor_tracks(self) -> None:
         """recolor the tracks"""
