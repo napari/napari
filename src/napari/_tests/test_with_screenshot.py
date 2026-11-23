@@ -455,20 +455,26 @@ def test_crosshair_drawn_at_cursor(make_napari_viewer):
     crosshair.visible = True
     crosshair.gap = 40
     crosshair.color = 'red'
+    crosshair.opacity = 1
 
     def red_pixels():
         """Mask of the red crosshair pixels in the canvas."""
         screenshot = viewer.screenshot(canvas_only=True, flash=False)
+        # the lines are antialiased: when one falls between two pixel rows,
+        # each row only gets about half of the color. The background is
+        # black, so a low threshold is enough to tell them apart.
         return (
-            (screenshot[..., 0] > 100)
-            & (screenshot[..., 1] < 100)
-            & (screenshot[..., 2] < 100)
+            (screenshot[..., 0] > 50)
+            & (screenshot[..., 1] < 50)
+            & (screenshot[..., 2] < 50)
         )
 
     red = red_pixels()
-    assert red.any()
 
-    # the crosshair is made of a horizontal and a vertical line
+    # the crosshair is made of a horizontal and a vertical line. Check both
+    # are found, as otherwise argmax picks the first row/column with any red
+    assert red.sum(axis=1).max() > crosshair.gap
+    assert red.sum(axis=0).max() > crosshair.gap
     row = int(np.argmax(red.sum(axis=1)))
     col = int(np.argmax(red.sum(axis=0)))
 

@@ -192,6 +192,10 @@ authors:
   family-names: Barbosa Soares
   affiliation: Pontifical Catholic University of Rio de Janeiro (PUC-Rio)
   alias: mlaurabs
+- given-names: Kalline
+  family-names: Barreto
+  affiliation: PUC-Rio
+  alias: KallineB
 - given-names: Job
   family-names: Becht
   affiliation: Netherlands Forensic Institute
@@ -514,6 +518,10 @@ authors:
   affiliation: Georg-August-Universität Göttingen
   orcid: https://orcid.org/0000-0001-6562-7187
   alias: constantinpape
+- given-names: Jaesung
+  family-names: Park
+  affiliation: Nexon Korea
+  alias: jaesungkr
 - given-names: Yann
   family-names: Pellegrini
   alias: Yann-P
