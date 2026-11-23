@@ -96,7 +96,7 @@ def layer_slicer():
 def test_submit_with_one_async_layer_no_block(layer_slicer):
     layer = FakeAsyncLayer()
 
-    future = layer_slicer.submit(layers=[layer], dims=Dims())
+    [future] = layer_slicer.submit(layers=[layer], dims=Dims())
 
     assert _wait_for_response(future)[layer].id == 1
     assert _wait_for_response(future)[layer].id == 1
@@ -106,10 +106,14 @@ def test_submit_with_multiple_async_layer_no_block(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
 
-    future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
+    future1, future2 = layer_slicer.submit(
+        layers=[layer1, layer2], dims=Dims()
+    )
 
-    assert _wait_for_response(future)[layer1].id == 1
-    assert _wait_for_response(future)[layer2].id == 1
+    assert list(_wait_for_response(future1)) == [layer1]
+    assert list(_wait_for_response(future2)) == [layer2]
+    assert _wait_for_response(future1)[layer1].id == 1
+    assert _wait_for_response(future2)[layer2].id == 1
 
 
 def test_submit_emits_ready_event_when_done(layer_slicer):
@@ -122,7 +126,7 @@ def test_submit_emits_ready_event_when_done(layer_slicer):
 
     layer_slicer.events.ready.connect(on_done)
 
-    future = layer_slicer.submit(layers=[layer], dims=Dims())
+    [future] = layer_slicer.submit(layers=[layer], dims=Dims())
     actual_result = _wait_for_result(future)
 
     assert actual_result is event_result
@@ -132,10 +136,10 @@ def test_submit_with_one_sync_layer(layer_slicer):
     layer = FakeSyncLayer()
     assert layer.slice_count == 0
 
-    future = layer_slicer.submit(layers=[layer], dims=Dims())
+    futures = layer_slicer.submit(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-    assert future is None
+    assert futures == []
 
 
 def test_submit_with_multiple_sync_layer(layer_slicer):
@@ -144,11 +148,11 @@ def test_submit_with_multiple_sync_layer(layer_slicer):
     assert layer1.slice_count == 0
     assert layer2.slice_count == 0
 
-    future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
+    futures = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
     assert layer1.slice_count == 1
     assert layer2.slice_count == 1
-    assert future is None
+    assert futures == []
 
 
 def test_submit_with_mixed_layers(layer_slicer):
@@ -157,7 +161,7 @@ def test_submit_with_mixed_layers(layer_slicer):
     assert layer1.slice_count == 0
     assert layer2.slice_count == 0
 
-    future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
+    [future] = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
     assert layer2.slice_count == 1
     assert _wait_for_response(future)[layer1].id == 1
@@ -170,7 +174,7 @@ def test_submit_lock_blocking(layer_slicer):
 
     assert layer.slice_count == 0
     with layer.lock:
-        blocked = layer_slicer.submit(layers=[layer], dims=dims)
+        [blocked] = layer_slicer.submit(layers=[layer], dims=dims)
         assert not blocked.done()
 
     assert _wait_for_response(blocked)[layer].id == 1
@@ -181,14 +185,49 @@ def test_submit_multiple_calls_cancels_pending(layer_slicer):
     layer = FakeAsyncLayer()
 
     with layer.lock:
-        blocked = layer_slicer.submit(layers=[layer], dims=dims)
+        [blocked] = layer_slicer.submit(layers=[layer], dims=dims)
         _wait_until_running(blocked)
-        pending = layer_slicer.submit(layers=[layer], dims=dims)
+        [pending] = layer_slicer.submit(layers=[layer], dims=dims)
         assert not pending.running()
         layer_slicer.submit(layers=[layer], dims=dims)
         assert not blocked.done()
 
     assert pending.cancelled()
+
+
+def test_submit_cancels_pending_tasks_of_each_layer(layer_slicer):
+    dims = Dims()
+    blocker = FakeAsyncLayer()
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeAsyncLayer()
+
+    with blocker.lock:
+        [blocked] = layer_slicer.submit(layers=[blocker], dims=dims)
+        _wait_until_running(blocked)
+        [pending1] = layer_slicer.submit(layers=[layer1], dims=dims)
+        [pending2] = layer_slicer.submit(layers=[layer2], dims=dims)
+        layer_slicer.submit(layers=[layer1, layer2], dims=dims)
+
+    assert pending1.cancelled()
+    assert pending2.cancelled()
+
+
+def test_submit_one_layer_cancels_only_its_pending_task(layer_slicer):
+    dims = Dims()
+    blocker = FakeAsyncLayer()
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeAsyncLayer()
+
+    with blocker.lock:
+        [blocked] = layer_slicer.submit(layers=[blocker], dims=dims)
+        _wait_until_running(blocked)
+        pending1, pending2 = layer_slicer.submit(
+            layers=[layer1, layer2], dims=dims
+        )
+        layer_slicer.submit(layers=[layer1], dims=dims)
+
+    assert pending1.cancelled()
+    assert _wait_for_response(pending2)[layer2].id == 1
 
 
 def test_submit_mixed_allows_sync_to_run(layer_slicer):
@@ -197,7 +236,7 @@ def test_submit_mixed_allows_sync_to_run(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeSyncLayer()
     with layer1.lock:
-        blocked = layer_slicer.submit(layers=[layer1], dims=dims)
+        [blocked] = layer_slicer.submit(layers=[layer1], dims=dims)
         layer_slicer.submit(layers=[layer2], dims=dims)
         assert layer2.slice_count == 1
         assert not blocked.done()
@@ -211,7 +250,7 @@ def test_submit_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeSyncLayer()
     with layer1.lock:
-        blocked = layer_slicer.submit(layers=[layer1, layer2], dims=dims)
+        [blocked] = layer_slicer.submit(layers=[layer1, layer2], dims=dims)
 
         assert layer2.slice_count == 1
         assert not blocked.done()
@@ -228,11 +267,14 @@ def test_submit_with_multiple_async_layer_with_all_locked(
     layer2 = FakeAsyncLayer()
 
     with layer1.lock, layer2.lock:
-        blocked = layer_slicer.submit(layers=[layer1, layer2], dims=dims)
-        assert not blocked.done()
+        blocked1, blocked2 = layer_slicer.submit(
+            layers=[layer1, layer2], dims=dims
+        )
+        assert not blocked1.done()
+        assert not blocked2.done()
 
-    assert _wait_for_response(blocked)[layer1].id == 1
-    assert _wait_for_response(blocked)[layer2].id == 1
+    assert _wait_for_response(blocked1)[layer1].id == 1
+    assert _wait_for_response(blocked2)[layer2].id == 1
 
 
 def test_submit_task_to_layers_lock(layer_slicer):
@@ -242,11 +284,11 @@ def test_submit_task_to_layers_lock(layer_slicer):
     layer = FakeAsyncLayer()
 
     with layer.lock:
-        task = layer_slicer.submit(layers=[layer], dims=dims)
-        assert task in layer_slicer._layers_to_task.values()
+        [task] = layer_slicer.submit(layers=[layer], dims=dims)
+        assert task in layer_slicer._layer_to_task.values()
 
     assert _wait_for_response(task)[layer].id == 1
-    assert task not in layer_slicer._layers_to_task
+    assert task not in layer_slicer._layer_to_task
 
 
 def test_submit_exception_main_thread(layer_slicer):
@@ -286,7 +328,7 @@ def test_submit_exception_subthread_on_result(layer_slicer, monkeypatch):
             )
 
     layer = FakeAsyncLayerError()
-    future = layer_slicer.submit(layers=[layer], dims=Dims())
+    [future] = layer_slicer.submit(layers=[layer], dims=Dims())
 
     done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
     assert done, 'Test future did not complete within timeout.'
@@ -303,11 +345,11 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
     layer = FakeAsyncLayer()
 
     with layer.lock:
-        slice_future = layer_slicer.submit(layers=[layer], dims=dims)
+        [slice_future] = layer_slicer.submit(layers=[layer], dims=dims)
         _wait_until_running(slice_future)
         # The slice task has started, but has not finished yet
         # because we are holding the layer's slicing lock.
-        assert len(layer_slicer._layers_to_task) > 0
+        assert len(layer_slicer._layer_to_task) > 0
         # We can't call wait_until_idle on this thread because we're
         # holding the layer's slice lock, so submit it to be executed
         # on another thread and also wait for it to start.
@@ -318,7 +360,7 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
         _wait_until_running(wait_future)
 
     _wait_for_result(wait_future)
-    assert len(layer_slicer._layers_to_task) == 0
+    assert len(layer_slicer._layer_to_task) == 0
 
 
 def test_force_sync_on_sync_layer(layer_slicer):
@@ -326,10 +368,10 @@ def test_force_sync_on_sync_layer(layer_slicer):
 
     with layer_slicer.force_sync():
         assert layer_slicer._force_sync
-        future = layer_slicer.submit(layers=[layer], dims=Dims())
+        futures = layer_slicer.submit(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-    assert future is None
+    assert futures == []
     assert not layer_slicer._force_sync
 
 
@@ -338,10 +380,10 @@ def test_force_sync_on_async_layer(layer_slicer):
 
     with layer_slicer.force_sync():
         assert layer_slicer._force_sync
-        future = layer_slicer.submit(layers=[layer], dims=Dims())
+        futures = layer_slicer.submit(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-    assert future is None
+    assert futures == []
 
 
 def test_submit_with_one_3d_image(layer_slicer):
@@ -357,7 +399,7 @@ def test_submit_with_one_3d_image(layer_slicer):
     )
 
     with lockable_data.lock:
-        future = layer_slicer.submit(layers=[layer], dims=dims)
+        [future] = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
     layer_result = _wait_for_response(future)[layer]
     np.testing.assert_equal(layer_result.image.view, data[2, :, :])
@@ -376,7 +418,7 @@ def test_submit_with_3d_labels(layer_slicer):
     )
 
     with lockable_data.lock:
-        future = layer_slicer.submit(layers=[layer], dims=dims)
+        [future] = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
 
     layer_result = _wait_for_response(future)[layer]
@@ -403,7 +445,7 @@ def test_submit_with_one_3d_points(layer_slicer):
     )
 
     with lockable_internal_data.lock:
-        future = layer_slicer.submit(layers=[layer], dims=dims)
+        [future] = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
 
 
