@@ -7,6 +7,7 @@ from typing import (
     Any,
     NewType,
     Optional,
+    TypeAlias,
     Union,
     get_args,
 )
@@ -39,6 +40,7 @@ __all__ = [
     'LayerData',
     'LayerDataTuple',
     'LayerTypeName',
+    'Matrix2D',
     'PathLike',
     'PathOrPaths',
     'PointsData',
@@ -48,6 +50,7 @@ __all__ = [
     'ShapesData',
     'SurfaceData',
     'TracksData',
+    'Vector1D',
     'VectorsData',
     'WidgetCallable',
     'WriterFunction',
@@ -61,6 +64,16 @@ __all__ = [
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 LayerDataType = Union[npt.ArrayLike, Sequence[npt.ArrayLike]]
+
+# A 1D vector of numbers, e.g. a per-axis ``scale`` or ``translate``.
+Vector1D: TypeAlias = (
+    Sequence[float] | np.ndarray[tuple[int], np.dtype[np.number]]
+)
+# A 2D matrix of numbers, e.g. a ``rotate`` or ``shear`` matrix.
+Matrix2D: TypeAlias = (
+    Sequence[Sequence[float]]
+    | np.ndarray[tuple[int, int], np.dtype[np.number]]
+)
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
