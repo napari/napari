@@ -450,3 +450,29 @@ def test_set_axis_error(AffineType):
     affine = AffineType(ndim=2)
     with pytest.raises(ValueError, match='must have length ndim'):
         affine.axis_labels = ('x', 'y', 'z')
+
+
+def test_affine_integer_matrix_integer_coords():
+    coords = np.array([[1, 2], [3, 4]])
+
+    t_lin = Affine(linear_matrix=np.eye(2, dtype=int), translate=(0.5, 1.5))
+    npt.assert_allclose(t_lin(coords), [[1.5, 3.5], [3.5, 5.5]])
+
+    # Ensure float32 inputs preserve float32 dtype (no unintended upcasting)
+    t_f32 = Affine(linear_matrix=np.eye(2, dtype=np.float32))
+    out_f32 = t_f32(np.array([1.0, 2.0], dtype=np.float32))
+    assert out_f32.dtype == np.float32
+    npt.assert_allclose(out_f32, [1.0, 2.0])
+
+
+def test_scale_translate_integer_scale_integer_coords():
+    coords = np.array([[1, 2], [3, 4]])
+
+    t = ScaleTranslate(scale=np.array([2, 3], dtype=int), translate=(0.5, 1.5))
+    npt.assert_allclose(t(coords), [[2.5, 7.5], [6.5, 13.5]])
+
+    # Ensure float32 inputs preserve float32 dtype
+    t_f32 = ScaleTranslate(scale=np.array([2, 3], dtype=np.float32))
+    out_f32 = t_f32(np.array([1.0, 2.0], dtype=np.float32))
+    assert out_f32.dtype == np.float32
+    npt.assert_allclose(out_f32, [2.0, 6.0])
