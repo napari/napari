@@ -32,7 +32,7 @@ python-discovery==1.9.6
     #   virtualenv
 tomli-w==1.2.0
     # via tox
-tox==4.67.13
+tox==4.67.15
     # via
     #   -r resources/requirements_tox.in
     #   tox-gh-actions
