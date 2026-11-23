@@ -42,7 +42,7 @@ WELCOME_SHORTCUTS = (
     'napari.window.file._image_from_clipboard',
     'napari.window.file.open_files_dialog',
     'napari.window.view.toggle_command_palette',
-    'napari:show_shortcuts',
+    'napari.show_shortcuts',
 )
 
 

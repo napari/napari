@@ -502,35 +502,35 @@ def test_create_layer_controls_qcolorswatchedit(
     [
         (
             _LABELS_WITH_DIRECT_COLORMAP,
-            'napari:activate_labels_transform_mode',
+            'napari.activate_labels_transform_mode',
         ),
         (
             _LABELS,
-            'napari:activate_labels_transform_mode',
+            'napari.activate_labels_transform_mode',
         ),
         (
             _IMAGE,
-            'napari:activate_image_transform_mode',
+            'napari.activate_image_transform_mode',
         ),
         (
             _POINTS,
-            'napari:activate_points_transform_mode',
+            'napari.activate_points_transform_mode',
         ),
         (
             _SHAPES,
-            'napari:activate_shapes_transform_mode',
+            'napari.activate_shapes_transform_mode',
         ),
         (
             _SURFACE,
-            'napari:activate_surface_transform_mode',
+            'napari.activate_surface_transform_mode',
         ),
         (
             _TRACKS,
-            'napari:activate_tracks_transform_mode',
+            'napari.activate_tracks_transform_mode',
         ),
         (
             _VECTORS,
-            'napari:activate_vectors_transform_mode',
+            'napari.activate_vectors_transform_mode',
         ),
     ],
 )

@@ -148,7 +148,7 @@ class QtShapesControls(QtLayerControls):
             tooltip='Move to front',
         )
         action_manager.bind_button(
-            'napari:move_shapes_selection_to_front', self.move_front_button
+            'napari.move_shapes_selection_to_front', self.move_front_button
         )
         self.move_back_button = QtModePushButton(
             layer,
@@ -156,7 +156,7 @@ class QtShapesControls(QtLayerControls):
             tooltip='Move to back',
         )
         action_manager.bind_button(
-            'napari:move_shapes_selection_to_back', self.move_back_button
+            'napari.move_shapes_selection_to_back', self.move_back_button
         )
         self.delete_button = QtModePushButton(
             layer,
