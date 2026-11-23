@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jdx/jactionlint/main/schema/jactionlint-config.json
+# Configuration for jactionlint (https://jactionlint.jdx.dev/config),
+# run by .github/workflows/jactionlint.yml.
+
+# Check what actionlint checked. Security rules are left to zizmor
+# (.github/workflows/zizmor.yml).
+profile: correctness
+
+paths:
+  "**":
+    ignore:
+      # Prefer one redirect per line over grouping writes to $GITHUB_ENV etc.
+      - 'shellcheck reported issue in this script: SC2129:.+'
