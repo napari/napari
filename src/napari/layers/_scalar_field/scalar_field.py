@@ -4,7 +4,14 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, Literal, TypeAlias, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Protocol,
+    TypeAlias,
+    cast,
+)
 
 import numpy as np
 from numpy import typing as npt
@@ -43,7 +50,7 @@ from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from napari.components import Dims
 
@@ -53,25 +60,64 @@ if TYPE_CHECKING:
         | np.ndarray[tuple[Literal[3, 4]], np.dtype[np.number]]
     )
 
+    class MaterializerProtocol(Protocol):
+        def __call__(self, level: int, data_slice: Any) -> np.ndarray: ...
+
 
 __all__ = ('ScalarFieldBase',)
 
 
-def _make_level_materializer(
-    data: MultiScaleData,
-) -> Callable[[int], np.ndarray]:
-    """Return a cached function that materializes one level of *data* at a time.
+def _hashable_index(index: Any) -> Any:
+    """Return a hashable representation of a numpy-compatible index.
 
-    The returned callable accepts a ``level`` integer and returns
-    ``np.asarray(data[level])``, caching the last result so repeated slice
-    requests at the same level avoid redundant data fetches.  Replacing
-    ``data`` by constructing a new materializer automatically abandons the old
-    cache without an explicit ``cache_clear()``.
+    Slices are converted to (start, stop, step) tuples because they are
+    only hashable from python 3.12. Once we drop 3.11, we can drop this.
+    """
+    if isinstance(index, slice):
+        return ('slice', index.start, index.stop, index.step)
+    if isinstance(index, tuple):
+        return tuple(_hashable_index(item) for item in index)
+    return index
+
+
+class _HashableIndex:
+    """Hashable wrapper around a numpy-compatible index (see _hashable_index)."""
+
+    __slots__ = ('_key', 'index')
+
+    def __init__(self, index: Any) -> None:
+        self.index = index
+        self._key = _hashable_index(index)
+
+    def __hash__(self) -> int:
+        return hash(self._key)
+
+    def __eq__(self, other: object) -> bool:
+        return hash(self) == hash(other)
+
+
+def _make_data_materializer(
+    data: LayerDataProtocol | MultiScaleData,
+) -> MaterializerProtocol:
+    """Return a cached function that materializes one level and slice of *data* at a time.
+
+    The returned callable accepts a level and a slice; these are also used as key to cache
+    the result so repeated calls for the same data do not trigger additional fetches.
+
+    Separate materializers can be generated for the same data to keep caching separate
+    (e.g: thumbnail and rendered data).
     """
 
+    data_multiscale = [data] if not isinstance(data, MultiScaleData) else data
+
     @lru_cache(maxsize=1)
-    def _materializer(level: int) -> np.ndarray:
-        return np.asarray(data[level])
+    def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
+        return np.asarray(data_multiscale[level][index.index])
+
+    # needed only because `slice` is not hashable in python 3.11
+    # after we drop it, we can just return `_materialize` and ditch hashableindex
+    def _materializer(level: int, data_slice: Any) -> np.ndarray:
+        return _materialize(level, _HashableIndex(data_slice))
 
     return _materializer
 
@@ -212,7 +258,8 @@ class ScalarFieldBase(Layer, ABC):
 
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
-    _level_materializer: Callable[[int], np.ndarray] | None
+    _data_materializer: MaterializerProtocol
+    _thumbnail_materializer: MaterializerProtocol
     _slicing_state: ScalarFieldSlicingState
 
     def __init__(
@@ -338,7 +385,7 @@ class ScalarFieldBase(Layer, ABC):
         self.corner_pixels[1][displayed_axes] = (
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
-        self._reset_thumbnail_level_data()
+        self._recreate_data_materializers()
 
         self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
@@ -398,7 +445,7 @@ class ScalarFieldBase(Layer, ABC):
         # note, we don't support changing from/to multiscale after construction
         self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
         self._reset_data_level()
-        self._reset_thumbnail_level_data()
+        self._recreate_data_materializers()
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
@@ -571,24 +618,13 @@ class ScalarFieldBase(Layer, ABC):
             if level_changed:
                 self.refresh(extent=False, thumbnail=False)
 
-    def _reset_thumbnail_level_data(self) -> None:
-        """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
-
-        Called once during ``__init__`` and again whenever ``data`` is replaced.
-        Single-scale and 3D multiscale layers set ``_level_materializer`` to
-        ``None``; only 2D multiscale layers cache the thumbnail level.
-        """
+    def _recreate_data_materializers(self) -> None:
+        """Recreates the data materializers after data was changed."""
         data = self._data
-        if isinstance(data, MultiScaleData):
-            self._thumbnail_level = len(data) - 1
-            self._level_materializer = (
-                _make_level_materializer(data)
-                if self._get_ndim() == 2
-                else None
-            )
-        else:
-            self._thumbnail_level = 0
-            self._level_materializer = None
+        self._data_materializer = _make_data_materializer(data)  # pyrefly: ignore [bad-argument-type]
+        # separate one for thumbnail to ensure cache is not cleaned
+        # by the one above
+        self._thumbnail_materializer = _make_data_materializer(data)  # pyrefly: ignore [bad-argument-type]
 
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
@@ -975,31 +1011,10 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         else:
             data_level = 0
 
-        thumbnail_level = self.layer._thumbnail_level
-        data_at_thumbnail_level: (
-            LayerDataProtocol | MultiScaleData | np.ndarray
-        )
-        if self.layer._level_materializer:
-            data_at_thumbnail_level = self.layer._level_materializer(
-                thumbnail_level
-            )
-        elif self.layer.multiscale:
-            data_at_thumbnail_level = data[thumbnail_level]
-        else:
-            data_at_thumbnail_level = data
-
-        data_at_data_level: LayerDataProtocol | MultiScaleData | np.ndarray
-        if not self.layer.multiscale:
-            data_at_data_level = data
-        elif data_level == thumbnail_level:
-            data_at_data_level = data_at_thumbnail_level
-        else:
-            data_at_data_level = data[data_level]
-
         return self._slice_request_class(
             slice_input=slice_input,
-            data_at_data_level=data_at_data_level,
-            data_at_thumbnail_level=data_at_thumbnail_level,
+            data_materializer=self.layer._data_materializer,
+            thumbnail_materializer=self.layer._thumbnail_materializer,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
@@ -1008,7 +1023,6 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             corner_pixels=self.layer.corner_pixels,
             rgb=len(self.layer.data.shape) != self.ndim,
             data_level=data_level,
-            thumbnail_level=thumbnail_level,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
         )
