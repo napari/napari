@@ -56,6 +56,8 @@ jobs:
             We strive to be a welcoming and open project. Please follow our
             [Code of
             Conduct](https://napari.org/dev/community/code_of_conduct.html).
+          pr-closed-msg: ""
+          pr-merged-msg: ""
           issue-opened-msg: ""
       - name: Run agentscan if first-contribution left a comment
         if: "${{ steps.first-contribution.outputs.comment-url != '' }}"
