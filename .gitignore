@@ -1,4 +1,7 @@
 uv.lock
+.pixi
+# pixi lock file is not committed, it is created when installing the environment
+tools/conda-forge/pixi.lock
 *leak-backref-graph*
 docs
 tmp
