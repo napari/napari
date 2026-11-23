@@ -70,7 +70,7 @@ class IntensityVisualizationMixin:
         self._overlays.update({'colorbar': self._colorbar})
 
     def reset_contrast_limits(
-        self: 'ScalarFieldBase | Surface',
+        self: ScalarFieldBase | Surface,
         mode: Literal['data', 'slice'] | None = None,
         percentiles: tuple[float, float] | None = None,
     ) -> None:
