@@ -1,3 +1,4 @@
+import io
 from typing import TYPE_CHECKING
 
 import imageio.v3 as iio
@@ -58,17 +59,23 @@ def test_animated_gif_reader(save_image):
     assert layer_data[0][0].shape == (5, 20, 20, 3)
 
 
-@pytest.mark.slow
-def test_reader_plugin_url():
-    layer_data = npe2.read(
-        [
-            'https://github.com/napari/docs/raw/main/docs/_static/images/nf-logo.png'
-        ],
-        stack=False,
-    )
-    assert isinstance(layer_data, list)
-    assert len(layer_data) == 1
-    assert isinstance(layer_data[0], tuple)
+def test_reader_plugin_url(monkeypatch):
+    """Test URL handing without external network connections."""
+    image = (np.arange(16 * 24 * 3) % 256).astype(np.uint8).reshape(16, 24, 3)
+    png = iio.imwrite('<bytes>', image, extension='.png')
+    url = 'https://example.invalid/logo.png'
+    requested = []
+
+    def fake_urlopen(uri, *args, **kwargs):
+        requested.append(uri)
+        return io.BytesIO(png)
+
+    monkeypatch.setattr('urllib.request.urlopen', fake_urlopen)
+
+    layer_data = npe2.read([url], stack=False)
+
+    assert requested == [url]
+    np.testing.assert_array_equal(layer_data[0][0], image)
 
 
 def test_reader_plugin_csv(tmp_path):
