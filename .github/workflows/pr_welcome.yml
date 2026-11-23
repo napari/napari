@@ -41,8 +41,9 @@ jobs:
             for real-time discussion.
 
 
-            For details on testing, writing docs, and our review process,
-            please see [the contributing
+            Some of our CI tests can be flaky: don't be discouraged by failures.
+            For details on testing, writing docs, and our review process, please
+            see [the contributing
             guide](https://napari.org/dev/developers/index.html).
 
 
@@ -52,6 +53,8 @@ jobs:
             reminds everyone that we are humans who enjoy working with other
             humans.
 
+            Please make sure to update the CITATION.cff file to include your
+            name and affiliation if applicable.
 
             We strive to be a welcoming and open project. Please follow our
             [Code of
