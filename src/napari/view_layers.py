@@ -234,14 +234,15 @@ def imshow(
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
     channel_axis : int, optional
-        Axis to expand image along. If provided, each channel in the data
-        will be added as an individual image layer. In channel_axis mode,
-        other parameters MAY be provided as lists. The Nth value of the list
-        will be applied to the Nth channel in the data. If a single value
-        is provided, it will be broadcast to all Layers.
-        All parameters except data, rgb, and multiscale can be provided as
-        list of values. If a list is provided, it must be the same length as
-        the axis that is being expanded as channels.
+        Axis containing the image channels. By default, each channel is
+        added as a separate layer. Layer parameters may be provided as a
+        list with one value per channel, or as a single value for all layers.
+
+        .. versionchanged:: 0.11.0
+            With ``rgb=True``, an axis of length 3 or 4 can supply the color
+            components of a single layer. For example, use ``channel_axis=0``
+            for a (3, Y, X) image. If splitting along the axis already yields
+            RGB or RGBA images, each is added as a separate layer.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and

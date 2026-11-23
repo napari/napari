@@ -2,6 +2,7 @@ import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
+import zarr
 
 from napari.components import ViewerModel
 from napari.utils.colormaps import (
@@ -39,6 +40,7 @@ multi_channel_test_data = [
     ((15, 10, 3), {'colormap': ['red', 'green', 'blue']}),
     # multiple RGB images
     ((45, 40, 5, 3), {'channel_axis': 2, 'rgb': True}),
+    ((3, 45, 40, 3), {'channel_axis': 0, 'rgb': True}),
     # Test adding multichannel image with custom names.
     ((), {'name': ['multi ' + str(i + 3) for i in range(5)]}),
     # Test adding multichannel image with custom contrast limits.
@@ -73,6 +75,7 @@ ids = [
     'specified_multichannel',
     'split_RGB',
     'list_RGB',
+    'list_three_RGB',
     'names',
     'contrast_limits_broadcast',
     'contrast_limits_list',
@@ -218,6 +221,55 @@ def test_multichannel_dask_array():
     for i in range(data.shape[0]):
         assert viewer.layers[i].data.shape == data.shape[1:]
         assert isinstance(viewer.layers[i].data, type(data))
+
+
+@pytest.mark.parametrize(('channels', 'axis'), [(3, 0), (4, -2), (3, -1)])
+def test_rgb_channel_axis(channels, axis):
+    rgb = np.arange(10 * 12 * channels, dtype=np.uint8).reshape(
+        10, 12, channels
+    )
+    data = np.moveaxis(rgb, -1, axis)
+    viewer = ViewerModel()
+
+    (layer,) = viewer.add_image(
+        data, channel_axis=axis, rgb=True, name=['color']
+    )
+
+    assert list(viewer.layers) == [layer]
+    assert layer.name == 'color'
+    assert layer.rgb
+    assert layer.ndim == 2
+    np.testing.assert_array_equal(layer.data, rgb)
+
+
+@pytest.mark.parametrize('array_type', ['dask', 'zarr'])
+def test_rgb_channel_axis_chunked_multiscale(array_type):
+    chunks = (3, 5, 6)
+    levels = [
+        np.arange(3 * y * x, dtype=np.uint8).reshape(3, y, x)
+        for y, x in [(20, 24), (10, 12)]
+    ]
+    array = da.from_array if array_type == 'dask' else zarr.array
+    data = [array(level, chunks=chunks) for level in levels]
+
+    (layer,) = ViewerModel().add_image(data, channel_axis=0, rgb=True)
+
+    assert layer.rgb
+    assert layer.multiscale
+    for result, original in zip(layer.data, levels, strict=True):
+        assert isinstance(result, da.Array)
+        assert result.chunksize == (5, 6, 3)
+        np.testing.assert_array_equal(result, original.transpose(1, 2, 0))
+
+
+def test_rgb_channel_axis_xarray():
+    data = xr.DataArray(da.zeros((2, 3, 10, 12)), dims=('t', 'c', 'y', 'x'))
+
+    (layer,) = ViewerModel().add_image(data, channel_axis=1, rgb=True)
+
+    assert layer.axis_labels == ('t', 'y', 'x')
+    assert layer.data.dims == ('t', 'y', 'x', 'c')
+    assert isinstance(layer.data.data, da.Array)
 
 
 def test_forgot_multichannel_error_hint():
