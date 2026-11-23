@@ -181,7 +181,7 @@ class NapariQtNotification(QDialog):
         """Expand the notification on double click."""
         self.toggle_expansion()
 
-    def close(self, start_next: bool = True):
+    def close(self, *, start_next: bool = True):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
