@@ -28,7 +28,6 @@ from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
-from napari._qt.perf.qt_performance import QtPerformance
 from napari._qt.utils import QImg2array
 from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_viewer_buttons import (
@@ -45,7 +44,7 @@ from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.settings._application import DaskSettings
-from napari.utils import config, perf, resize_dask_cache
+from napari.utils import config, resize_dask_cache
 from napari.utils.action_manager import action_manager
 from napari.utils.geometry import get_center_bbox
 from napari.utils.history import (
@@ -78,6 +77,7 @@ if TYPE_CHECKING:
     )
 
     from napari._qt.layer_controls import QtLayerControlsContainer
+    from napari._qt.qt_main_window import _QtMainWindow
     from napari._vispy.layers.base import VispyBaseLayer
     from napari.components import ViewerModel
     from napari.utils.events import Event
@@ -187,10 +187,6 @@ class QtViewer(QSplitter):
         # futures whose result is still to be added, see `_add_future`
         self._futures: dict[Future, Callable[..., None]] = {}
 
-        self._dockLayerList: QtViewerDockWidget | None = None
-        self._dockLayerControls: QtViewerDockWidget | None = None
-        self._dockConsole: QtViewerDockWidget | None = None
-        self._dockPerformance: QtViewerDockWidget | None = None
         self._show_welcome_screen = show_welcome_screen
         self._font_manager = QtFontManager()
         self._overlay_font = QGuiApplication.font().family()
@@ -333,66 +329,37 @@ class QtViewer(QSplitter):
             self._viewerButtons = QtViewerButtons(self.viewer)
         return self._viewerButtons
 
+    def _main_window(self) -> _QtMainWindow | None:
+        """The napari main window this viewer is embedded in, if any."""
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        window = self.window()
+        return window if isinstance(window, _QtMainWindow) else None
+
+    # the main window owns the dock widgets; these return None without one
     @property
-    def dockLayerList(self) -> QtViewerDockWidget:
-        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
-        if self._dockLayerList is None:
-            layerList = QWidget()
-            layerList.setObjectName('layerList')
-            layerListLayout = QVBoxLayout()
-            layerListLayout.addWidget(self.layerButtons)
-            layerListLayout.addWidget(self.layers)
-            layerListLayout.addWidget(self.viewerButtons)
-            layerListLayout.setContentsMargins(8, 4, 8, 6)
-            layerList.setLayout(layerListLayout)
-            self._dockLayerList = QtViewerDockWidget(
-                self,
-                layerList,
-                name='layer list',
-                area='left',
-                allowed_areas=['left', 'right'],
-                object_name='layer list',
-                close_btn=False,
-            )
-        return self._dockLayerList
+    def dockLayerList(self) -> QtViewerDockWidget | None:
+        """Layer list dock widget of the main window."""
+        window = self._main_window()
+        return window.dockLayerList if window is not None else None
 
     @property
-    def dockLayerControls(self) -> QtViewerDockWidget:
-        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
-        if self._dockLayerControls is None:
-            self._dockLayerControls = QtViewerDockWidget(
-                self,
-                self.controls,
-                name='layer controls',
-                area='left',
-                allowed_areas=['left', 'right'],
-                object_name='layer controls',
-                close_btn=False,
-            )
-        return self._dockLayerControls
+    def dockLayerControls(self) -> QtViewerDockWidget | None:
+        """Layer controls dock widget of the main window."""
+        window = self._main_window()
+        return window.dockLayerControls if window is not None else None
 
     @property
-    def dockConsole(self) -> QtViewerDockWidget:
-        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
-        if self._dockConsole is None:
-            self._dockConsole = QtViewerDockWidget(
-                self,
-                QWidget(),
-                name='console',
-                area='bottom',
-                allowed_areas=['top', 'bottom'],
-                object_name='console',
-                close_btn=False,
-            )
-            self._dockConsole.setVisible(False)
-            self._dockConsole.visibilityChanged.connect(self._ensure_connect)
-        return self._dockConsole
+    def dockConsole(self) -> QtViewerDockWidget | None:
+        """Console dock widget of the main window."""
+        window = self._main_window()
+        return window.dockConsole if window is not None else None
 
     @property
     def dockPerformance(self) -> QtViewerDockWidget | None:
-        if self._dockPerformance is None:
-            self._dockPerformance = self._create_performance_dock_widget()
-        return self._dockPerformance
+        """Performance dock widget of the main window."""
+        window = self._main_window()
+        return window.dockPerformance if window is not None else None
 
     @property
     def layer_to_visual(self) -> dict[Layer, VispyBaseLayer[Layer]]:
@@ -428,17 +395,6 @@ class QtViewer(QSplitter):
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)
-
-    def _create_performance_dock_widget(self) -> QtViewerDockWidget | None:
-        """Create the dock widget that shows performance metrics."""
-        if perf.perf_config is not None:
-            return QtViewerDockWidget(
-                self,
-                QtPerformance(),
-                name='performance',
-                area='bottom',
-            )
-        return None
 
     def _weakref_if_possible(self, obj: object) -> ref | object:
         """Create a weakref to obj.
@@ -608,9 +564,10 @@ class QtViewer(QSplitter):
     @console.setter
     def console(self, console: QtConsole | None) -> None:
         self._console = console
-        if console is not None:
-            self.dockConsole.setWidget(console)
-            console.setParent(self.dockConsole)
+        dock_console = self.dockConsole
+        if console is not None and dock_console is not None:
+            dock_console.setWidget(console)
+            console.setParent(dock_console)
 
     def _emit_slice_ready(self, event: Event) -> None:
         """Callback connected to `viewer._layer_slicer.events.ready`.
@@ -1226,18 +1183,21 @@ class QtViewer(QSplitter):
         # force instantiation of console if not already instantiated
         _ = self.console
 
-        viz = not self.dockConsole.isVisible()
+        dock_console = self.dockConsole
+        if dock_console is None:
+            return
+        viz = not dock_console.isVisible()
         # modulate visibility at the dock widget level as console is dockable
-        self.dockConsole.setVisible(viz)
-        if self.dockConsole.isFloating():
-            self.dockConsole.setFloating(True)
+        dock_console.setVisible(viz)
+        if dock_console.isFloating():
+            dock_console.setFloating(True)
 
         if viz:
-            self.dockConsole.raise_()
-            self.dockConsole.setFocus()
+            dock_console.raise_()
+            dock_console.setFocus()
 
         self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.dockConsole.isVisible()
+            'expanded', dock_console.isVisible()
         )
         self.viewerButtons.consoleButton.style().unpolish(
             self.viewerButtons.consoleButton
@@ -1426,7 +1386,9 @@ class QtViewer(QSplitter):
         self.canvas.delete()
         if self._console is not None:
             self._console.close()
-        self.dockConsole.deleteLater()
+        dock_console = self.dockConsole
+        if dock_console is not None:
+            dock_console.deleteLater()
         if event is not None:
             event.accept()
 

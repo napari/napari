@@ -112,7 +112,7 @@ def test_add_layer_to_viewer():
 def test_add_future_data():
     future = MagicMock()
     viewer = MagicMock()
-    with pytest.raises(RuntimeError, match='No current `Viewer` found'):
+    with pytest.raises(RuntimeError, match='No current `Window` found'):
         _add_future_data(future, Union[ImageData, LabelsData])
     _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
     viewer.window._qt_viewer._add_future.assert_called_once()

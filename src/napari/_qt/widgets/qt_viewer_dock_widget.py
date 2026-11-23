@@ -25,7 +25,7 @@ from napari.settings import get_settings
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
 
-    from napari._qt.qt_viewer import QtViewer
+    from napari._qt.qt_main_window import _QtMainWindow
 
 counter = count()
 _sentinel = object()
@@ -49,8 +49,8 @@ class QtViewerDockWidget(QDockWidget):
 
     Parameters
     ----------
-    qt_viewer : QtViewer
-        The QtViewer instance that this dock widget will belong to.
+    qt_window : _QtMainWindow
+        The main window that this dock widget will belong to.
     widget : QWidget or magicgui.widgets.Widget
         `widget` that will be added as QDockWidget's main widget.
     name : str
@@ -77,7 +77,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def __init__(
         self,
-        qt_viewer,
+        qt_window,
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
@@ -88,9 +88,9 @@ class QtViewerDockWidget(QDockWidget):
         add_vertical_stretch=True,
         close_btn=True,
     ) -> None:
-        self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
+        self._ref_qt_window: ReferenceType[_QtMainWindow] = ref(qt_window)
         super().__init__(name)
-        self._parent = qt_viewer
+        self._parent = qt_window
         self.name = name
         self._close_btn = close_btn
 
@@ -194,11 +194,10 @@ class QtViewerDockWidget(QDockWidget):
 
     def destroyOnClose(self):
         """Destroys dock plugin dock widget when 'x' is clicked."""
-        from napari.viewer import Viewer
-
-        viewer = self._ref_qt_viewer().viewer
-        if isinstance(viewer, Viewer):
-            viewer.window.remove_dock_widget(self)
+        qt_window = self._ref_qt_window()
+        if qt_window is None:
+            return
+        qt_window._window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
@@ -259,13 +258,13 @@ class QtViewerDockWidget(QDockWidget):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self._ref_qt_viewer().keyPressEvent(event)
+        return self._ref_qt_window()._qt_viewer.keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         # if you subclass QtViewerDockWidget and override the keyReleaseEvent
         # method, be sure to call super().keyReleaseEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self._ref_qt_viewer().keyReleaseEvent(event)
+        return self._ref_qt_window()._qt_viewer.keyReleaseEvent(event)
 
     def _set_title_orientation(self, area):
         # NoDockWidgetArea means the widget is floating; nothing to orient.

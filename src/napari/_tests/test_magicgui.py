@@ -542,10 +542,6 @@ def test_magicgui_get_viewer(make_napari_viewer):
     viewer1 = make_napari_viewer()
     viewer2 = make_napari_viewer()
     assert viewer2 is not viewer1
-    # Ensure one is returned by napari.current_viewer()
-    from napari import current_viewer
-
-    assert current_viewer() is viewer2
 
     @magicgui
     def func(v: Viewer):
@@ -557,17 +553,14 @@ def test_magicgui_get_viewer(make_napari_viewer):
         assert isinstance(func_viewer, PublicOnlyProxy)
         return func_viewer.__wrapped__ is v
 
-    # We expect func's Viewer to be current_viewer, not viewer
-    assert func_returns(viewer2)
-    assert not func_returns(viewer1)
+    # without a viewer ancestor there is no viewer to pass
+    assert func() is None
     # With viewer as parent, it should be returned instead
     viewer1.window.add_dock_widget(func)
     assert func_returns(viewer1)
     assert not func_returns(viewer2)
     # no widget should be shown
     assert not func.v.visible
-    # ensure that viewer2 is still the current viewer
-    assert current_viewer() is viewer2
 
 
 MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']

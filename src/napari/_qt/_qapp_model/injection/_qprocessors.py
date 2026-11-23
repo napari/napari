@@ -23,11 +23,13 @@ from napari import layers, types, viewer
 from napari._qt._qapp_model.injection._qproviders import (
     _provide_viewer,
     _provide_viewer_or_raise,
+    _provide_window_or_raise,
 )
 from napari.layers._source import layer_source
+from napari.viewer import Viewer
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
     from napari.components import ViewerModel
 
@@ -81,7 +83,7 @@ def _add_layer_data_to_viewer(
     viewer: ViewerModel | None = None,
     layer_name: str | None = None,
     source: dict | None = None,
-    meta: dict | None = None,
+    meta: Mapping[str, Any] | None = None,
 ) -> None:
     """Show a result in the viewer.
 
@@ -99,7 +101,7 @@ def _add_layer_data_to_viewer(
         be updated.
     source : dict or None
         An optional layer source to use.
-    meta: dict or None
+    meta : Mapping or None
         An optional dict pased as keyword arguments to the layer constructor.
         Currently used to pass information like a scale, units, etc.
 
@@ -138,7 +140,7 @@ def _add_layer_data_to_viewer(
 
 def _add_layer_to_viewer(
     layer: layers.Layer,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     source: dict | None = None,
 ) -> None:
     if layer is not None and (viewer := viewer or _provide_viewer()):
@@ -150,7 +152,7 @@ def _add_future_data(
     future: Future,
     return_type: Any,
     _from_tuple: bool = True,
-    viewer: viewer.Viewer | None = None,
+    viewer: Viewer | None = None,
     source: dict | None = None,
 ) -> None:
     """Process a Future object.
@@ -178,9 +180,12 @@ def _add_future_data(
         An optional layer source to use.
     """
     if viewer is None:
-        viewer = _provide_viewer_or_raise(
-            msg='Futures cannot be processed in headless mode.',
+        window = _provide_window_or_raise(
+            msg='Futures cannot be processed in headless mode.'
         )
+    else:
+        window = viewer.window
+
     add_data = (
         _add_layer_data_tuples_to_viewer
         if _from_tuple
@@ -188,7 +193,7 @@ def _add_future_data(
     )
     # The future may finish in a background thread, but layers must be
     # added on the main thread. The QtViewer takes care of that.
-    viewer.window._qt_viewer._add_future(
+    window._qt_viewer._add_future(
         future,
         partial(add_data, return_type=return_type, source=source),
     )
