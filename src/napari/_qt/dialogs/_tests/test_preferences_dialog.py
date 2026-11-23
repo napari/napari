@@ -458,3 +458,33 @@ def test_startup_script_file_extension(pref):
         pref._stack.widget(0).widget().widget.widgets['startup_script']
     )
     assert startup_script_widget.file_filter() == 'File (*.py)'
+
+
+def test_unavailable_triangulation_backend_widget(pref, monkeypatch):
+    from napari.layers.shapes._shapes_models import shape
+    from napari.utils.triangulation_backend import TriangulationBackend
+
+    monkeypatch.setattr(shape, 'partsegcore_triangulate', None)
+    pref._rebuild_dialog()
+
+    for index in range(pref._stack.count()):
+        page = pref._stack.widget(index)
+        if not hasattr(page, 'widget'):
+            continue
+        form = page.widget().widget
+        if 'triangulation_backend' in form.widgets:
+            widget = form.widgets['triangulation_backend']
+            break
+    else:
+        pytest.fail('Triangulation backend widget not found')
+
+    index = widget.findData('PartSegCore')
+    assert index != -1
+    item = widget.model().item(index)
+    assert not item.isEnabled()
+    assert item.text().endswith('(unavailable)')
+
+    with pytest.warns(UserWarning, match='not available'):
+        widget.state = TriangulationBackend.partsegcore
+
+    assert widget.state == TriangulationBackend.fastest_available
