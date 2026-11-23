@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
 
+from napari.layers.base._base_constants import BaseProjectionMode
 from napari.layers.base._slice import _next_request_id
+from napari.layers.image._image_constants import ImageProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
@@ -18,6 +20,16 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import DTypeLike
+
+    # (data, axis, mode) -> projected data, e.g. _ImageSliceRequest._project_slice
+    _Projector: TypeAlias = Callable[
+        [
+            np.ndarray,
+            tuple[int, ...],
+            ImageProjectionMode | BaseProjectionMode,
+        ],
+        np.ndarray,
+    ]
 
 
 @dataclass(frozen=True)
@@ -70,8 +82,10 @@ class _ScalarFieldSliceResponse:
     image : _ScalarFieldView
         The sliced image data.
     thumbnail: _ScalarFieldView
-        The thumbnail image data. This may come from a different resolution to the sliced image
-        data for multi-scale images. Otherwise, it's the same instance as data.
+        The thumbnail image data, covering the full displayed extent. Shares
+        the ``image`` instance when the image is uncropped, which is always
+        the case for single-scale images. Otherwise, it comes from the
+        thumbnail level of a multiscale image.
     tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
         For single-scale images, this will be the identity matrix.
@@ -175,6 +189,45 @@ class _ScalarFieldSliceResponse:
         )
 
 
+def _materialize_and_project(
+    data: Any,
+    project: _Projector,
+    index: tuple[slice | int, ...],
+    mode: Any,
+    axis: tuple[int, ...],
+) -> np.ndarray:
+    """Materialize the data, index into it and project it."""
+    array = np.asarray(data[index])
+    return array if mode == 'none' else project(array, axis, mode)
+
+
+class _ThumbnailPlaneCache:
+    """The projected plane of the last-read thumbnail level from ``data``."""
+
+    def __init__(self, data: Any, project: _Projector) -> None:
+        self._data = data
+        self._project = project
+        self._entry: tuple[tuple, np.ndarray] | None = None
+
+    def __call__(
+        self,
+        level: int,
+        index: tuple[slice | int, ...],
+        mode: Any,
+        axis: tuple[int, ...],
+    ) -> np.ndarray:
+        key = (level, index, mode, axis)
+        # read the entry once, so another thread can't swap it mid-call
+        entry = self._entry
+        if entry is not None and entry[0] == key:
+            return entry[1]
+        plane = _materialize_and_project(
+            self._data[level], self._project, index, mode, axis
+        )
+        self._entry = (key, plane)
+        return plane
+
+
 @dataclass(frozen=True)
 class _ScalarFieldSliceRequest:
     """A callable that stores all the input data needed to slice an image layer.
@@ -190,10 +243,11 @@ class _ScalarFieldSliceRequest:
     ----------
     slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    data_at_data_level : Any
-        The pre-selected data source accounting for the current data level.
-    data_at_thumbnail_level : Any
-        The pre-selected data source for the thumbnail.
+    data : Any
+        The original data source, including all levels for multiscale data.
+    thumbnail_plane_cache : _ThumbnailPlaneCache
+        Reads the multiscale thumbnail plane, cached. Used during
+        execution, not request construction.
     dtype : DTypeLike
         The dtype of the layer's data.
     data_slice : _ThickNDSlice
@@ -205,8 +259,8 @@ class _ScalarFieldSliceRequest:
     """
 
     slice_input: _SliceInput
-    data_at_data_level: Any = field(repr=False)
-    data_at_thumbnail_level: Any = field(repr=False)
+    data: Any = field(repr=False)
+    thumbnail_plane_cache: _ThumbnailPlaneCache = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
@@ -235,11 +289,27 @@ class _ScalarFieldSliceRequest:
                 else self._call_single_scale()
             )
 
+    def _thumbnail_plane(self) -> np.ndarray:
+        """Return the thumbnail level at the dims point, projected but uncropped.
+
+        Only the displayed dims remain, at full extent and in index order, so
+        callers crop and transpose it. ``thumbnail_plane_cache`` keeps it, so pan and
+        zoom don't read it again.
+        """
+        # volumes are too large to keep in the cache
+        assert self._thumbnail_level_is_plane()
+        level = self.thumbnail_level
+        data_slice = self._thick_slice_at_level(level)
+        return self.thumbnail_plane_cache(
+            level,
+            self._indices(data_slice),
+            self.projection_mode,
+            tuple(self.slice_input.not_displayed),
+        )
+
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        data = self._project_thick_slice(
-            self.data_at_data_level, self.data_slice
-        )
+        data = self._project_thick_slice(self.data, self.data_slice)
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -262,10 +332,8 @@ class _ScalarFieldSliceRequest:
         for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[self.data_level][d]
 
-        data = self.data_at_data_level
-
         translate = np.zeros(self.slice_input.ndim)
-        disp_slice = [slice(None) for _ in data.shape]
+        disp_slice = [slice(None)] * self.slice_input.ndim
         if self.slice_input.ndisplay == 2:
             for d in self.slice_input.displayed:
                 disp_slice[d] = slice(
@@ -284,20 +352,32 @@ class _ScalarFieldSliceRequest:
             ndim=self.slice_input.ndim,
         )
 
-        # project the thick slice, cropped to the displayed tile in one index
-        data_slice = self._thick_slice_at_level(self.data_level)
-        data = self._project_thick_slice(data, data_slice, disp_slice)
+        if (
+            self.data_level == self.thumbnail_level
+            and self._thumbnail_level_is_plane()
+        ):
+            displayed = sorted(self.slice_input.displayed)
+            data = self._thumbnail_plane()[
+                tuple(disp_slice[d] for d in displayed)
+            ]
+        else:
+            # project the thick slice, cropped to the displayed tile in one index
+            data_slice = self._thick_slice_at_level(self.data_level)
+            data = self._project_thick_slice(
+                self.data[self.data_level], data_slice, disp_slice
+            )
 
         order = self._get_order()
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
 
-        thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
-        thumbnail_data = self._project_thick_slice(
-            self.data_at_thumbnail_level, thumbnail_data_slice
-        )
-        thumbnail_data = np.transpose(thumbnail_data, order)
-        thumbnail = _ScalarFieldView.from_view(thumbnail_data)
+        # The thumbnail only needs the full extent, not a particular level.
+        if self._tile_covers_level():
+            thumbnail = image
+        else:
+            thumbnail = _ScalarFieldView.from_view(
+                np.transpose(self._thumbnail_plane(), order)
+            )
 
         return _ScalarFieldSliceResponse(
             image=image,
@@ -305,6 +385,26 @@ class _ScalarFieldSliceRequest:
             tile_to_data=tile_to_data,
             slice_input=self.slice_input,
             request_id=self.id,
+        )
+
+    def _thumbnail_level_is_plane(self) -> bool:
+        """Whether the displayed extent of the thumbnail level is at most 2D.
+
+        True in 2D display, and in 3D display for 2D data or a singleton
+        displayed dim, so those planes are cached like the 2D thumbnail.
+        """
+        shape = self.level_shapes[self.thumbnail_level]
+        return sum(shape[d] > 1 for d in self.slice_input.displayed) <= 2
+
+    def _tile_covers_level(self) -> bool:
+        """Whether the image tile spans the full extent of its data level."""
+        if self.slice_input.ndisplay == 3:
+            return True  # volume display ignores corner bounds
+        shape = self.level_shapes[self.data_level]
+        return all(
+            self.corner_pixels[0, d] == 0
+            and self.corner_pixels[1, d] == shape[d] - 1
+            for d in self.slice_input.displayed
         )
 
     def _thick_slice_at_level(self, level: int) -> _ThickNDSlice:
@@ -332,6 +432,25 @@ class _ScalarFieldSliceRequest:
         ``disp_slice`` optionally crops the displayed dimensions to the
         visible tile.
         """
+        return _materialize_and_project(
+            data,
+            self._project_slice,
+            self._indices(data_slice, disp_slice),
+            self.projection_mode,
+            tuple(self.slice_input.not_displayed),
+        )
+
+    def _indices(
+        self,
+        data_slice: _ThickNDSlice,
+        disp_slice: list[slice] | None = None,
+    ) -> tuple[slice | int, ...]:
+        """Return the numpy index of the data slice.
+
+        Not-displayed dims get ints or slices, displayed dims ``slice(None)``
+        unless cropped by ``disp_slice``. Unlike ``data_slice`` it has no
+        NaNs, so it also works as the thumbnail cache key.
+        """
         if self.projection_mode == 'none':
             slices = self._point_to_slices(data_slice.point)
         else:
@@ -344,17 +463,7 @@ class _ScalarFieldSliceRequest:
             for d in self.slice_input.displayed:
                 slices[d] = disp_slice[d]
 
-        data = np.asarray(data[tuple(slices)])
-
-        if self.projection_mode == 'none':
-            # early return with only the dims point being used
-            return data
-
-        return self._project_slice(
-            data=data,
-            axis=tuple(self.slice_input.not_displayed),
-            mode=self.projection_mode,
-        )
+        return tuple(slices)
 
     @staticmethod
     def _project_slice(
