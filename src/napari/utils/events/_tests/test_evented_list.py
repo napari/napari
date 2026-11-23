@@ -345,10 +345,19 @@ def test_setting_nested_slice():
     assert tuple(ne_list[1, 1, 1]) == (9, 10, 1112)
 
 
-def test_deleting_nested_slice():
+@pytest.mark.parametrize(
+    ('key', 'expected'),
+    [
+        ((1, slice(None)), []),
+        ((1, slice(1, None)), [10]),
+        ((1, slice(None, None, 2)), [11]),
+        ((1, 2), [10, 11]),
+    ],
+)
+def test_deleting_nested_slice(key, expected):
     ne_list = NestableEventedList([0, [10, 11, 12], 2])
-    del ne_list[1, :]
-    assert list(ne_list[1]) == []
+    del ne_list[key]
+    assert list(ne_list[1]) == expected
 
 
 NESTED_POS_INDICES = [
