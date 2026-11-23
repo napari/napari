@@ -94,7 +94,7 @@ def format_tip(tip: str) -> str:
                 warnings.simplefilter('ignore')
                 shortcut = Shortcut(command_id).platform
         if shortcut:
-            tip = tip.replace(match.group(), str(shortcut))
+            tip = tip.replace(match.group(), shortcut)
     return tip
 
 

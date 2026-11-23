@@ -130,8 +130,8 @@ def is_sequence(arg: Any) -> bool:
         dict
         set
     """
-    return bool(
-        isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str)
+    return isinstance(arg, collections.abc.Sequence) and not isinstance(
+        arg, str
     )
 
 
@@ -527,7 +527,7 @@ def paths_hash(
     _hash = hash_func()
     for file_path in sorted(paths):
         file_path = Path(file_path)
-        if ignore_hidden and str(file_path.stem).startswith('.'):
+        if ignore_hidden and file_path.stem.startswith('.'):
             continue
         _file_hash(_hash, file_path, file_path.parent, include_paths)
     return _hash.hexdigest()

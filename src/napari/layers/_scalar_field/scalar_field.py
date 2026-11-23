@@ -239,7 +239,7 @@ class ScalarFieldBase(Layer, ABC):
 
         # Determine dimensionality of the data
         if ndim is None:
-            ndim = len(data.shape)  # pyrefly: ignore [missing-attribute]
+            ndim = len(data.shape)
         self._data = data
 
         # Xarray metadata inference is a no-op if data is not xarray-like
@@ -250,7 +250,7 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
-        rgb = len(xr_source.shape) != ndim  # pyrefly: ignore [missing-attribute]
+        rgb = len(xr_source.shape) != ndim
         xr_metadata = _get_xr_metadata(
             xr_source,  # pyrefly: ignore [bad-argument-type]
             rgb=rgb,
@@ -357,7 +357,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self) -> np.dtype:
-        return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
+        return normalize_dtype(self._data.dtype)
 
     @property
     def data_raw(
@@ -369,7 +369,7 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data  # pyrefly: ignore [bad-return]
+        return self._data
 
     @data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
@@ -680,7 +680,7 @@ class ScalarFieldBase(Layer, ABC):
 
         raw = self._slice.image.raw
         shape = (
-            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape  # pyrefly: ignore [missing-attribute]
+            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape
         )
 
         if self.ndim < len(coord):

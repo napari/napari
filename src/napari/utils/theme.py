@@ -84,7 +84,7 @@ class Theme(EventedModel):
     @field_validator('syntax_style', mode='before')
     @classmethod
     def _ensure_syntax_style(cls, value: str) -> str:
-        from pygments.styles import STYLE_MAP
+        from pygments.styles import STYLE_MAP  # pyrefly: ignore[untyped-import]
 
         valid_styles = ', '.join(STYLE_MAP)
         assert value in STYLE_MAP, (
@@ -227,7 +227,7 @@ def lighten(
 
 def opacity(color: str | Color, value: int = 255) -> str:
     red, green, blue = _parse_color_as_rgb(color)
-    return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
+    return f'rgba({red}, {green}, {blue}, {max(min(value, 255), 0)})'
 
 
 def gradient(stops: Iterable[str], horizontal: bool = True) -> str:

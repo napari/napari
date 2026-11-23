@@ -56,7 +56,7 @@ def _start_viewer_tour(
 
 
 v = parse(__version__)
-VERSION = 'dev' if v.is_devrelease or v.is_prerelease else str(v.base_version)
+VERSION = 'dev' if v.is_devrelease or v.is_prerelease else v.base_version
 
 HELP_URLS: dict[str, str] = {
     'getting_started': f'https://napari.org/{VERSION}/getting_started/start_index.html',

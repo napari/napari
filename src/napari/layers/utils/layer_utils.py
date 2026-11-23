@@ -349,7 +349,7 @@ def calc_data_range(
     samples: list | None = None
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
-        center = int(data.shape[0] // 2)
+        center = data.shape[0] // 2
         slices = [
             slice(0, 4096),
             slice(center - 2048, center + 2048),
@@ -374,7 +374,7 @@ def calc_data_range(
             and data.shape[-offset + 1] > 64
         ):
             # Find a central patch of the image to take
-            center = [int(s // 2) for s in data.shape[-offset:]]
+            center = [s // 2 for s in data.shape[-offset:]]
             central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
             samples = [data[idx + central_slice] for idx in idxs]
         else:
@@ -748,7 +748,7 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
     # edge chunk may be smaller than this size.
     try:
-        chunk_size = operator.index(axis_chunks)  # pyrefly: ignore [bad-argument-type]
+        chunk_size = operator.index(axis_chunks)
     except TypeError:
         return None
     if chunk_size <= 0:
