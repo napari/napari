@@ -34,3 +34,21 @@ def get_submenu_action(qmodel_menu, submenu_text, action_text):
     raise ValueError(
         f'Could not find action "{action_text}" in "{submenu_text}"'
     )  # pragma: no cover
+
+
+def register_qactions_and_plugins() -> None:
+    """Register Qt actions and plugin contributions without a viewer.
+
+    Creating a viewer registers all app-model actions and plugin
+    contributions. This does the same registration without building the
+    viewer window, so tests that only inspect the app-model are faster.
+    Use it with the `mock_app_model` fixture, which clears these caches
+    again at teardown.
+    """
+    from napari._qt._qapp_model.qactions import init_qactions
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
+    init_qactions.cache_clear()
+    _initialize_plugins()
+    init_qactions()

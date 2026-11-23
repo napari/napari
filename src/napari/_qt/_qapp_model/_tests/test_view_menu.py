@@ -17,6 +17,7 @@ from napari._app_model.actions._view import (
     _toggle_canvas_ndim,
     toggle_actions,
 )
+from napari._qt._qapp_model._tests.utils import register_qactions_and_plugins
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
@@ -318,9 +319,9 @@ def test_toggle_activity_dock(make_napari_viewer):
     )
 
 
-def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
+def test_toggle_layer_tooltips(mock_app_model):
     """Test toggle layer tooltips"""
-    make_napari_viewer()
+    register_qactions_and_plugins()
     action_id = 'napari.window.toggle_layer_tooltips'
     app = get_app_model()
 

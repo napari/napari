@@ -225,9 +225,7 @@ def test_open_with_dialog_choices_persist_dir(
     )
 
 
-def test_open_with_dialog_choices_raises(make_napari_viewer):
-    viewer = make_napari_viewer()
-
+def test_open_with_dialog_choices_raises(qt_viewer):
     get_settings().plugins.extension2reader = {}
     with pytest.raises(FileNotFoundError, match='does not exist'):
         open_with_dialog_choices(
@@ -237,7 +235,7 @@ def test_open_with_dialog_choices_raises(make_napari_viewer):
             readers={'fake-plugin': 'Fake Plugin'},
             paths=['my-file.fake'],
             stack=False,
-            qt_viewer=viewer.window._qt_viewer,
+            qt_viewer=qt_viewer,
         )
     # settings weren't saved because reading failed
     assert not get_settings().plugins.extension2reader

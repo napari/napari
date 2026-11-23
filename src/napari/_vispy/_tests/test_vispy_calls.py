@@ -3,14 +3,14 @@ from unittest.mock import patch
 import numpy as np
 
 
-def test_data_change_ndisplay_image(make_napari_viewer):
+def test_data_change_ndisplay_image(qt_viewer):
     """Test change data calls for image layer with ndisplay change."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
     data = np.random.random((10, 15, 8))
     layer = viewer.add_image(data)
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -22,15 +22,15 @@ def test_data_change_ndisplay_image(make_napari_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_labels(make_napari_viewer):
+def test_data_change_ndisplay_labels(qt_viewer):
     """Test change data calls for labels layer with ndisplay change."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15, 8))
     layer = viewer.add_labels(data)
 
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -42,14 +42,14 @@ def test_data_change_ndisplay_labels(make_napari_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_points(make_napari_viewer):
+def test_data_change_ndisplay_points(qt_viewer):
     """Test change data calls for points layer with ndisplay change."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 3))
     layer = viewer.add_points(data)
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -61,14 +61,14 @@ def test_data_change_ndisplay_points(make_napari_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_vectors(make_napari_viewer):
+def test_data_change_ndisplay_vectors(qt_viewer):
     """Test change data calls for vectors layer with ndisplay change."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 3))
     layer = viewer.add_vectors(data)
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -80,15 +80,15 @@ def test_data_change_ndisplay_vectors(make_napari_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_shapes(make_napari_viewer):
+def test_data_change_ndisplay_shapes(qt_viewer):
     """Test change data calls for shapes layer with ndisplay change."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 3))
     layer = viewer.add_shapes(data)
 
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -100,9 +100,9 @@ def test_data_change_ndisplay_shapes(make_napari_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_surface(make_napari_viewer):
+def test_data_change_ndisplay_surface(qt_viewer):
     """Test change data calls for surface layer with ndisplay change."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
     vertices = np.random.random((10, 3))
@@ -111,7 +111,7 @@ def test_data_change_ndisplay_surface(make_napari_viewer):
     data = (vertices, faces, values)
     layer = viewer.add_surface(data)
 
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):

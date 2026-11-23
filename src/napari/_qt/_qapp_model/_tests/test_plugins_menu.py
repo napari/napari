@@ -13,6 +13,7 @@ from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
+from napari.plugins import _initialize_plugins
 
 if TYPE_CHECKING:
     from npe2 import DynamicPlugin
@@ -147,7 +148,7 @@ def test_plugin_multiple_widget_menu(
 
 
 def test_plugin_menu_plugin_state_change(
-    make_napari_viewer,
+    mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):
     """Check plugin menu items correct after a plugin changes state."""
@@ -155,6 +156,8 @@ def test_plugin_menu_plugin_state_change(
     pm = tmp_plugin.plugin_manager
 
     # Register plugin q actions
+    init_qactions.cache_clear()
+    _initialize_plugins.cache_clear()
     init_qactions()
     # Check only `Q_PLUGINS_ACTIONS` in plugin menu before any plugins registered
     plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
@@ -168,8 +171,8 @@ def test_plugin_menu_plugin_state_change(
     def widget2():
         """Dummy widget."""
 
-    # Configures `app`, registers actions and initializes plugins
-    make_napari_viewer()
+    # Register the plugin contributions, as creating a viewer does
+    _initialize_plugins()
 
     plugins_menu = app.menus.get_menu(MenuId.MENUBAR_PLUGINS)
     assert len(plugins_menu) == len(_plugins.Q_PLUGINS_ACTIONS) + 1

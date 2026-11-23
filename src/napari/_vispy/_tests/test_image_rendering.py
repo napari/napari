@@ -8,15 +8,15 @@ from napari.components.dims import Dims
 from napari.layers.image import Image
 
 
-def test_image_rendering(make_napari_viewer):
+def test_image_rendering(qt_viewer):
     """Test 3D image with different rendering."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     viewer.dims.ndisplay = 3
 
     data = np.random.random((20, 20, 20))
     layer = viewer.add_image(data)
-    vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
+    vispy_layer = qt_viewer.layer_to_visual[layer]
 
     assert layer.rendering == 'mip'
 

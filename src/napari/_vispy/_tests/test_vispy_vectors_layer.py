@@ -111,10 +111,10 @@ def test_generate_vector_meshes_2D(edge_width, length, style, p):
     ],
 )
 def test_vector_style_change(
-    make_napari_viewer, initial_vector_style, new_vector_style
+    qt_viewer, initial_vector_style, new_vector_style
 ):
     # initialize viewer
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
     # add a vector layer
     vector_layer = viewer.add_vectors(
         vector_style=initial_vector_style, name='vectors'
