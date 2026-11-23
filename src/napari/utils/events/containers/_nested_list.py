@@ -189,7 +189,7 @@ class NestableEventedList(EventedList[_T]):
         self, key: slice, value: Iterable[_T]
     ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: MaybeNestedIndex, value: Any) -> None:
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
@@ -204,7 +204,7 @@ class NestableEventedList(EventedList[_T]):
         super().__setitem__(key, value)
 
     def _delitem_indices(
-        self, key: MaybeNestedIndex
+        self, key: object
     ) -> Iterable[tuple[EventedList[_T], int]]:
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
@@ -247,7 +247,7 @@ class NestableEventedList(EventedList[_T]):
         # potentially different emitter
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                event.index = self.index(event.source)  # pyrefly:ignore[missing-attribute]
+                event.index = self.index(event.source)  # pyrefly: ignore[missing-attribute]
 
         emitter(event)
 
@@ -271,7 +271,7 @@ class NestableEventedList(EventedList[_T]):
             dest_index += len(destination_group) + 1
         return dest_index
 
-    def _move_plan(  # pyrefly: ignore [bad-override]
+    def _move_plan(  # pyrefly: ignore[bad-override]
         self,
         sources: Iterable[int] | Iterable[tuple[int, ...]],
         dest_index: int | NestedIndex,
