@@ -89,5 +89,7 @@ def detect_installed_qt_bindings() -> dict[str, str]:
     with contextlib.suppress(metadata.PackageNotFoundError):
         res['pyqt6'] = metadata.version('PyQt6')
     with contextlib.suppress(metadata.PackageNotFoundError):
+        res['pyside6'] = metadata.version('PySide6-Essentials')
+    with contextlib.suppress(metadata.PackageNotFoundError):
         res['pyside6'] = metadata.version('PySide6')
     return res
