@@ -304,23 +304,96 @@ def test_async_labels_edits_after_slice_read(
 
 
 @pytest.mark.usefixtures('_enable_async')
-def test_async_labels_paint_during_slice_delivery(make_napari_viewer, qtbot):
+def test_async_labels_edits_before_and_after_read(make_napari_viewer, qtbot):
+    zarr = pytest.importorskip('zarr')
     viewer = make_napari_viewer()
-    labels = viewer.add_labels(np.zeros((20, 20), dtype=np.int32))
+    shape = (5, 32, 32)
+    slow_data = LockableData(np.zeros(shape))
+    image = viewer.add_image(slow_data, multiscale=False)
+    data = zarr.zeros(shape=shape, chunks=(1, 32, 32), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = 3
+    qtbot.waitUntil(lambda: labels.loaded and image.loaded)
+
+    reloads = []
+    # Keep the worker on the image until the indexed edit has been written.
+    with slow_data.lock:
+        image.refresh()
+        viewer.dims.set_current_step(0, 3)
+        labels.events.reload.connect(reloads.append)
+        labels.data_setitem(tuple(np.array([i]) for i in (3, 2, 2)), 1)
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    assert not labels.loaded
+
+    # Qt now holds a copy that predates these overlapping strokes. A stroke
+    # on another plane must not leak into the incoming plane.
+    labels.paint((3, 10, 10), 2)
+    labels.paint((3, 10, 11), 3)
+    labels.paint((2, 16, 16), 4)
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert not reloads
+    expected = data[3]
+    assert expected[2, 2] == 1
+    assert expected[10, 11] == 3
+    assert expected[16, 16] == 0
+    np.testing.assert_array_equal(labels._slice.image.raw, expected)
+    node = viewer.window._qt_viewer.canvas.layer_to_visual[labels].node
+    np.testing.assert_array_equal(
+        node._data, labels._raw_to_displayed(expected)
+    )
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize(('brush_size', 'strokes'), [(151, 1), (1, 33)])
+def test_async_labels_repair_limit(
+    make_napari_viewer, qtbot, brush_size, strokes
+):
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    data = zarr.zeros(shape=(3, 192, 192), chunks=(1, 64, 64), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = brush_size
+    qtbot.waitUntil(lambda: labels.loaded)
+    labels.refresh()
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+
+    reloads = []
+    labels.events.reload.connect(reloads.append)
+    for i in range(strokes):
+        labels.paint((1, 96, 96 + i), 1)
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert len(reloads) == 1
+    assert data[1, 96, 96] == 1
+    np.testing.assert_array_equal(labels._slice.image.raw, data[1])
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('backend', ['numpy', 'zarr'])
+def test_async_labels_paint_during_slice_delivery(
+    make_napari_viewer, qtbot, backend
+):
+    viewer = make_napari_viewer()
+    if backend == 'zarr':
+        data = pytest.importorskip('zarr').zeros(
+            shape=(3, 20, 20), dtype='int32'
+        )
+    else:
+        data = np.zeros((3, 20, 20), dtype=np.int32)
+    labels = viewer.add_labels(data)
     qtbot.waitUntil(lambda: labels.loaded)
     labels.brush_size = 1
 
     def paint_once(event):
         labels._transforms.events.changed.disconnect(paint_once)
-        labels.paint((5, 5), 1)
+        labels.paint((1, 5, 5), 1)
 
-    # A transform callback can paint after the shared raw plane has been
+    # A transform callback can paint after the incoming raw plane has been
     # converted into a separate texture array but before the layer is loaded.
     labels._transforms.events.changed.connect(paint_once)
     labels.refresh()
     qtbot.waitUntil(lambda: labels.loaded)
     node = viewer.window._qt_viewer.canvas.layer_to_visual[labels].node
-    assert labels.data[5, 5] == 1
+    assert labels.data[1, 5, 5] == 1
     assert node._data[5, 5] != node._data[0, 0]
 
 

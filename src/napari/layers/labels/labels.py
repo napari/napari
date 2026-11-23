@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+import weakref
 from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
@@ -46,7 +47,10 @@ from napari.layers.labels._labels_utils import (
     get_dtype,
     interpolate_coordinates,
 )
-from napari.layers.labels._slice import _LabelsSliceRequest
+from napari.layers.labels._slice import (
+    _LabelsSliceRequest,
+    _PendingLabelsSlice,
+)
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
     _resize_to_thumbnail,
@@ -77,6 +81,7 @@ from napari.utils.status_messages import format_feature_value
 if TYPE_CHECKING:
     import pandas as pd
 
+    from napari.components.dims import Dims
     from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
     from napari.types import Vector1D
 
@@ -1930,7 +1935,7 @@ class Labels(ScalarFieldBase):
         # this is the actual write-back.
         self.data[slice_key] = region_data  # pyrefly: ignore [unsupported-operation]
 
-        if self._slicing_state._defer_edit_refresh():
+        if self._slicing_state._defer_edit_refresh(slice_key, region_data):
             return
 
         # Update caches (raw and view) for non-shared memory backends
@@ -2426,17 +2431,60 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
     layer: Labels
     _slice_request_class = _LabelsSliceRequest
     _slice_id_before_edit: int | None = None
+    _pending_slice: _PendingLabelsSlice | None = None
 
-    def _defer_edit_refresh(self) -> bool:
-        """Remember that the pending slice may have read data before the edit."""
+    def _make_slice_request(self, dims: Dims) -> _LabelsSliceRequest:
+        request = super()._make_slice_request(dims)
+        assert isinstance(request, _LabelsSliceRequest)
+        # A discarded response may never reach this layer. Avoid keeping its
+        # backing array alive just to track a pending read.
+        try:
+            source = weakref.ref(request.data)
+        except TypeError:
+            self._pending_slice = None  # This backend requires a full reread.
+        else:
+            self._pending_slice = _PendingLabelsSlice(request, source)
+        return request
+
+    def _defer_edit_refresh(
+        self,
+        key: tuple[slice, ...] | None = None,
+        region: np.ndarray | None = None,
+    ) -> bool:
+        """Account for a completed write before updating any display caches."""
         if self.loaded:
             return False
+        pending = self._pending_slice
+        if (
+            pending is not None
+            and pending.request_id == self._last_slice_id
+            and pending.source() is self.layer.data
+        ):
+            if not pending.read_started.is_set():
+                return True  # The worker will read the updated data.
+            if not pending.record_region(key, region):
+                # A full reread now covers this edit and any earlier regions.
+                self._pending_slice = None
         self._slice_id_before_edit = self._last_slice_id
         return True
 
     def _update_slice_response(
         self, response: _ScalarFieldSliceResponse
     ) -> None:
+        pending = self._pending_slice
+        if pending is not None and pending.request_id == response.request_id:
+            # Edits from callbacks during conversion/delivery need a new read.
+            self._pending_slice = None
+            if (
+                response.request_id == self._slice_id_before_edit
+                and pending.source() is self.layer.data
+                and not response.empty
+                and response.image is response.thumbnail
+                and response.image.raw.flags.writeable
+            ):
+                for key, pixels in pending.regions:
+                    response.image.raw[key] = pixels
+                self._slice_id_before_edit = None
         if (
             response.request_id == self._slice_id_before_edit
             and isinstance(self.layer.data, np.ndarray)
