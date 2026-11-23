@@ -27,7 +27,9 @@ class LayerFormLayout(QFormLayout):
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
-        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
 
 
 class QtLayerControls(QFrame):
@@ -277,17 +279,17 @@ class QtLayerControls(QFrame):
         """
         if (
             qobject == self.transform_button
-            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.type() == QMouseEvent.Type.MouseButtonRelease
             and event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             result = QMessageBox.warning(
                 self,
                 'Reset transform',
                 'Are you sure you want to reset transforms?',
-                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
-            if result == QMessageBox.Yes:
+            if result == QMessageBox.StandardButton.Yes:
                 self.layer._reset_affine()
                 return True
         return super().eventFilter(qobject, event)

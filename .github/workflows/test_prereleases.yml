@@ -19,7 +19,7 @@ env:
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
-    timeout-minutes: 60
+    timeout-minutes: 80
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: read
@@ -30,7 +30,7 @@ jobs:
       matrix:
         platform: [windows-latest, macos-15, ubuntu-latest]
         python: [3.13, 3.14]
-        backend: [pyqt5, pyqt6, pyside6]
+        backend: [pyqt6, pyside6]
         include:
           - platform: ubuntu-latest
             python: 3.13
@@ -45,14 +45,15 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-path: pyproject.toml
 
-      - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
-        continue-on-error: true
+      - name: Disable ptrace security restrictions
+        if: runner.os == 'Linux'
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
       - name: Set Windows resolution
         if: runner.os == 'Windows'
@@ -60,7 +61,7 @@ jobs:
         shell: powershell
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        uses: pyvista/setup-headless-display-action@10e6efb97af3cd1523828f0e22c39f0e4567f3e4 # v5.2.0
         with:
           qt: true
           wm: herbstluftwm
@@ -69,29 +70,31 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions tox-uv tox-min-req
+          pip install -r resources/requirements_tox.txt
 
       - name: Test with tox (with retry)
-        uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
-        with:
-          attempt_limit: 3
-          attempt_delay: 30000 # 30s
-          retry_condition: github.ref_name == 'main'  # avoid restart in PR
-          command: python -m tox -v --pre --recreate  --runner virtualenv
+        timeout-minutes: 50
+        shell: bash
+        run: |
+          python -m tox -v --pre --recreate  --runner virtualenv || {
+            echo "Tox failed, retrying in 30 seconds..."
+            sleep 30
+            python -m tox -v --pre --recreate  --runner virtualenv
+          }
         env:
           BACKEND: ${{ matrix.backend }}
           PYTHON: ${{ matrix.python }}
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
           PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
-          PIP_ONLY_BINARY: "PyQt5,PyQt6"
+          PIP_ONLY_BINARY: "PyQt6"
 
       - name: Upload leaked viewer graph
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: leaked ${{ matrix.platform }} py ${{ matrix.python }} ${{ matrix.backend }}
-          path: ./*leak-backref-graph*.pdf
+          path: ./*leak-backref-graph*.dot
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures

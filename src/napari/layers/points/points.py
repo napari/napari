@@ -95,7 +95,7 @@ class Points(Layer):
     data : array (N, D)
         Coordinates for N points in D dimensions.
     ndim : int
-        Number of dimensions for shapes. When data is not None, ndim must be D.
+        Number of dimensions for points. When data is not None, ndim must be D.
         An empty points layer can be instantiated with arbitrary ndim.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
@@ -103,7 +103,7 @@ class Points(Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
-    antialiasing: float
+    antialiasing : float
         Amount of antialiasing in canvas pixels.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
@@ -111,18 +111,19 @@ class Points(Layer):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum',
+        and 'multiplicative'}.
     border_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
     border_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
-        categorical attribute is used color the vectors.
+        categorical attribute is used to color the points.
     border_colormap : str, napari.utils.Colormap
-        Colormap to set border_color if a continuous attribute is used to set face_color.
+        Colormap to set border_color if a continuous attribute is used to set border_color.
     border_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
-        The default value is None. If set the none, the clims will be set to
+        The default value is None. If set to None, the clims will be set to
         (property.min(), property.max())
     border_width : float, array
         Width of the symbol border in pixels.
@@ -141,13 +142,13 @@ class Points(Layer):
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
-        categorical attribute is used color the vectors.
+        categorical attribute is used to color the points.
     face_colormap : str, napari.utils.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
     face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
-        The default value is None. If set the none, the clims will be set to
+        The default value is None. If set to None, the clims will be set to
         (property.min(), property.max())
     feature_defaults : dict[str, Any] or DataFrame
         The default value of each feature in a table with one row.
@@ -166,7 +167,7 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
-    property_choices : dict {str: array (N,)}
+    property_choices : dict {str: array}
         possible values for each property.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
@@ -199,7 +200,7 @@ class Points(Layer):
     text : str, dict
         Text to be displayed with the points. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
-        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}').
         A dictionary can be provided with keyword arguments to set the text values
         and display properties. See TextManager.__init__() for the valid keyword arguments.
         For example usage, see /napari/examples/add_points_with_text.py.
@@ -225,42 +226,42 @@ class Points(Layer):
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
-    text : str
-        Text to be displayed with the points. If text is set to a key in properties, the value of
+    text : TextManager
+        Manager of the text displayed with the points. If text is set to a key in properties, the value of
         that property will be displayed. Multiple properties can be composed using f-string-like
-        syntax (e.g., '{property_1}, {float_property:.2f}).
+        syntax (e.g., '{property_1}, {float_property:.2f}').
         For example usage, see /napari/examples/add_points_with_text.py.
     symbol : array of str
         Array of symbols for each point.
     size : array (N,)
-        Array of sizes for each point. Must have the same shape as the layer `data`.
+        Array of sizes for each point. Must have the same length as the layer `data`.
     border_width : array (N,)
         Width of the marker borders in pixels for all points
-    border_width : array (N,)
-        Width of the marker borders for all points as a fraction of their size.
+    border_width_is_relative : bool
+        If enabled, border_width is interpreted as a fraction of the point size.
     border_color : Nx4 numpy array
         Array of border color RGBA values, one for each point.
     border_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
-        categorical attribute is used color the vectors.
+        categorical attribute is used to color the points.
     border_colormap : str, napari.utils.Colormap
-        Colormap to set border_color if a continuous attribute is used to set face_color.
+        Colormap to set border_color if a continuous attribute is used to set border_color.
     border_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
-        The default value is None. If set the none, the clims will be set to
+        The default value is None. If set to None, the clims will be set to
         (property.min(), property.max())
     face_color : Nx4 numpy array
         Array of face color RGBA values, one for each point.
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
-        categorical attribute is used color the vectors.
+        categorical attribute is used to color the points.
     face_colormap : str, napari.utils.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
     face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
-        The default value is None. If set the none, the clims will be set to
+        The default value is None. If set to None, the clims will be set to
         (property.min(), property.max())
     current_symbol : Symbol
         Symbol for the next point to be added or the currently selected points.
@@ -274,7 +275,7 @@ class Points(Layer):
         Border color of the marker border for the next point to be added or the currently
         selected point.
     current_face_color : str
-        Face color of the marker border for the next point to be added or the currently
+        Face color of the marker for the next point to be added or the currently
         selected point.
     selected_data : Selection
         Integer indices of any selected points.
@@ -287,6 +288,9 @@ class Points(Layer):
         In SELECT mode the cursor can select points by clicking on them or
         by dragging a box around them. Once selected points can be moved,
         have their properties edited, or be deleted.
+
+        In TRANSFORM mode the layer can be translated, rescaled or rotated
+        by dragging the handles of the transform box.
     face_color_mode : str
         Face color setting mode.
 
@@ -305,13 +309,13 @@ class Points(Layer):
         COLORMAP allows color to be set via a color map over an attribute
     shading : Shading
         Shading mode.
-    antialiasing: float
+    antialiasing : float
         Amount of antialiasing in canvas pixels.
     canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether each point is shown.
-    units: tuple of pint.Unit
+    units : tuple of pint.Unit
         Units of the layer data in world coordinates.
 
     Notes
@@ -329,10 +333,6 @@ class Points(Layer):
     _view_selected :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
-    _selected_box : array (4, 2) or None
-        Four corners of any box either around currently selected points or
-        being created during a drag action. Starting in the top left and
-        going clockwise.
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
@@ -1051,7 +1051,7 @@ class Points(Layer):
 
     @property
     def border_width(self) -> np.ndarray:
-        """(N, D) array: border_width of all N points."""
+        """(N,) array: border_width of all N points."""
         return self._border_width
 
     @border_width.setter
@@ -1614,6 +1614,27 @@ class Points(Layer):
         return self.border_width[self._view_indices]
 
     @property
+    def _view_size_with_border(self) -> np.ndarray:
+        """Get the sizes of the points in view, including their border
+
+        The border is drawn centered on the edge of each point, so half of it
+        extends beyond ``size``. As in the vispy layer, absolute border widths
+        are capped to the point size.
+
+        Returns
+        -------
+        view_size_with_border : (N,) np.ndarray
+            Array of sizes plus border widths for the N points in view
+        """
+        size = self._view_size
+        border_width = self._view_border_width
+        if self.border_width_is_relative:
+            border_width = border_width * size
+        else:
+            border_width = np.minimum(border_width, size)
+        return size + border_width
+
+    @property
     def _view_face_color(self) -> np.ndarray:
         """Get the face colors of the points in view
 
@@ -1707,7 +1728,11 @@ class Points(Layer):
             # Without this implementation, point hover and selection (and anything depending
             # on self.get_value()) won't be aware of the real extent of points, causing
             # unexpected behaviour. See #3734 for details.
-            sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
+            sizes = (
+                np.expand_dims(self._view_size_with_border, axis=1)
+                / scale_ratio
+                / 2
+            )
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= sizes,
@@ -1769,7 +1794,11 @@ class Points(Layer):
             self.scale[self._slice_input.displayed] / self.scale[-1]
         )
         # find the points the click intersects
-        sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
+        sizes = (
+            np.expand_dims(self._view_size_with_border, axis=1)
+            / scale_ratio
+            / 2
+        )
         distances = abs(rotated_points - rotated_click_point)
         in_slice_matches = np.all(
             distances <= sizes,

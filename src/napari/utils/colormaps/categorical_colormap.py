@@ -97,7 +97,7 @@ class CategoricalColormap(EventedModel):
 
         return values
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (
             isinstance(other, CategoricalColormap)
             and compare_colormap_dicts(self.colormap, other.colormap)

@@ -5,7 +5,7 @@ from enum import StrEnum
 from functools import wraps
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QEvent, Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -129,10 +129,10 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
-    def _new_points(self):
+    def _new_points(self) -> None:
         new_points(self.viewer)
 
-    def _new_shapes(self):
+    def _new_shapes(self) -> None:
         new_shapes(self.viewer)
 
     def _on_selection_changed(self, event=None) -> None:
@@ -313,7 +313,7 @@ class QtViewerButtons(QFrame):
         ndb.customContextMenuRequested.connect(self.open_ndisplay_camera_popup)
 
         @self.viewer.dims.events.ndisplay.connect
-        def _set_ndisplay_mode_checkstate(event):
+        def _set_ndisplay_mode_checkstate(event) -> None:
             ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()
@@ -327,7 +327,7 @@ class QtViewerButtons(QFrame):
         layout.addStretch(0)
         self.setLayout(layout)
 
-    def eventFilter(self, qobject, event):
+    def eventFilter(self, qobject, event) -> bool:
         """Have Alt/Option key rotate layers with the transpose button."""
         modifiers = QApplication.keyboardModifiers()
         if (
@@ -345,18 +345,22 @@ class QtViewerButtons(QFrame):
         """Position the popup so that it remains with the viewer.
 
         Use the location of the button as a reference and place the popup
-        above it. move_to will adjust the position if the popup is too close
-        to the edge of the screen.
+        above it, horizontally centered on the button. The popup is shifted
+        horizontally to stay within the viewer window, and move_to will
+        adjust the position if the popup is too close to the edge of the
+        screen.
         """
+        width = popup.sizeHint().width()
+        height = popup.sizeHint().height()
         button_rect = button.rect()
-        button_pos = button.mapToGlobal(button_rect.topLeft())
+        button_top_center = button.mapToGlobal(
+            QPoint(button_rect.center().x(), button_rect.top())
+        )
+        left = button_top_center.x() - width // 2
+        window_rect = button.window().geometry()
+        left = max(min(left, window_rect.right() - width), window_rect.left())
         popup.move_to(
-            (
-                button_pos.x(),
-                button_pos.y() - popup.sizeHint().height() - 5,
-                popup.sizeHint().width(),
-                popup.sizeHint().height(),
-            )
+            (left, button_top_center.y() - height - 5, width, height)
         )
         popup.show()
 
@@ -558,9 +562,9 @@ class QtViewerButtons(QFrame):
         row = grid_layout.rowCount()
         self.camera_synced_checkbox = QCheckBox('Sync 2D/3D camera', popup)
         self.camera_synced_checkbox.setChecked(self.viewer.scene.camera.synced)
-        self.camera_synced_checkbox.stateChanged.connect(
+        self.camera_synced_checkbox.toggled.connect(
             lambda checked: setattr(
-                self.viewer.scene.camera, 'synced', bool(checked)
+                self.viewer.scene.camera, 'synced', checked
             )
         )
         synced_help_symbol = help_tooltip(
@@ -657,7 +661,7 @@ class QtViewerButtons(QFrame):
 
         self.viewer.scene.camera.perspective = value
 
-    def _open_roll_popup(self):
+    def _open_roll_popup(self) -> None:
         """Open a grid popup to manually order the dimensions"""
         pop = QtPopup(self)
 
@@ -670,13 +674,12 @@ class QtViewerButtons(QFrame):
         layout.addWidget(dim_sorter)
         pop.frame.setLayout(layout)
 
-        # show popup
-        pop.show_above_mouse()
+        self._position_popup_inside_viewer(pop, self.rollDimsButton)
 
-    def _update_grid_button(self, event):
+    def _update_grid_button(self, event) -> None:
         self.gridViewButton.setChecked(event.value)
 
-    def _open_grid_popup(self):
+    def _open_grid_popup(self) -> None:
         """Open grid options pop up widget."""
 
         # widgets
@@ -776,9 +779,9 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(spacing_help_symbol, 3, 2)
 
         popup.frame.setLayout(grid_layout)
-        popup.show_above_mouse()
+        self._position_popup_inside_viewer(popup, self.gridViewButton)
 
-    def _update_grid_width(self, value):
+    def _update_grid_width(self, value) -> None:
         """Update the width value in grid shape.
 
         Parameters
@@ -792,7 +795,7 @@ class QtViewerButtons(QFrame):
             value,
         )
 
-    def _update_grid_stride(self, value):
+    def _update_grid_stride(self, value) -> None:
         """Update stride in grid settings.
 
         Parameters
@@ -803,7 +806,7 @@ class QtViewerButtons(QFrame):
 
         self.viewer.canvas.grid.stride = value
 
-    def _update_grid_height(self, value):
+    def _update_grid_height(self, value) -> None:
         """Update height value in grid shape.
 
         Parameters

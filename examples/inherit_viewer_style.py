@@ -70,7 +70,7 @@ class MyWidget(QWidget):
 
     def show_dialog(self):
         dialog = MyDialog(self)
-        dialog.exec_()
+        dialog.exec()
 
     def show_widget(self):
         sample_add.show()

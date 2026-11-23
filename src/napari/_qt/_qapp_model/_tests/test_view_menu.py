@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import sys
 
@@ -15,7 +17,6 @@ from napari._app_model.actions._view import (
     _toggle_canvas_ndim,
     toggle_actions,
 )
-from napari._app_model.constants import MenuId
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
@@ -38,7 +39,9 @@ def check_view_menu_visibility(viewer, qtbot):
 
     assert not viewer.window.view_menu.isVisible()
     qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+        viewer.window._qt_window.menuBar(),
+        Qt.Key.Key_V,
+        modifier=Qt.KeyboardModifier.AltModifier,
     )
     qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
@@ -47,9 +50,11 @@ def check_view_menu_visibility(viewer, qtbot):
 
 @pytest.mark.parametrize(
     ('action_id', 'action_title', 'attribute_path'),
-    toggle_actions[MenuId.VIEW_SCALEBAR],
+    functools.reduce(operator.iadd, toggle_actions.values(), []),
 )
-def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
+def test_toggle_axes_scale_bar_coordinate_grid_attr(
+    action_id, action_title, attribute_path
+):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
 
@@ -64,6 +69,9 @@ def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
         * `box`
         * `colored`
         * `ticks`
+    * Viewer `coordinate_grid` attributes:
+        * `visible`
+        * `labels`
     """
     app = get_app_model()
     viewer = ViewerModel()
@@ -198,24 +206,14 @@ def _mouse_move_to(widget, pos):
     for testing the event-filter-based menubar toggle behavior.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    if QT_VERSION.startswith('5'):
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            pos,
-            global_pos,
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    else:
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            QPointF(pos),
-            QPointF(global_pos),
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
+    event = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(pos),
+        QPointF(global_pos),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
 
     QApplication.sendEvent(widget, event)
 
@@ -378,3 +376,31 @@ def test_toggle_canvas_ndim(initial, expected):
     viewer.dims.ndisplay = initial
     _toggle_canvas_ndim(viewer)
     assert viewer.dims.ndisplay == expected
+
+
+def test_toggle_grid_mode():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.canvas.grid.enabled is False
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is True
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is False
+
+
+def test_toggle_crosshair():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.scene.overlays.crosshair.visible is False
+        app.commands.execute_command('napari.scene.toggle_crosshair')
+        assert viewer.scene.overlays.crosshair.visible is True
+        app.commands.execute_command('napari.scene.toggle_crosshair')
+        assert viewer.scene.overlays.crosshair.visible is False

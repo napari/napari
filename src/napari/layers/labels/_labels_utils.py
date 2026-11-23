@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
@@ -10,8 +10,13 @@ if TYPE_CHECKING:
 
     from napari.layers import Labels
 
+_ShapeT = TypeVar('_ShapeT', bound=tuple[int, ...])
+_DTypeT = TypeVar('_DTypeT', bound=np.dtype[Any])
 
-def interpolate_coordinates(old_coord, new_coord, brush_size):
+
+def interpolate_coordinates(
+    old_coord, new_coord, brush_size
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Interpolates coordinates depending on brush size.
 
     Useful for ensuring painting is continuous in labels layer.
@@ -133,18 +138,9 @@ def get_dtype(layer):
     Returns
     -------
     dtype
-        dtype of Layer data
+        dtype of Layer data (of level 0 if multiscale)
     """
-    layer_data = layer.data
-    if not isinstance(layer_data, list):
-        layer_data = [layer_data]
-    layer_data_level = layer_data[0]
-    if hasattr(layer_data_level, 'dtype'):
-        layer_dtype = layer_data_level[0].dtype
-    else:
-        layer_dtype = type(layer_data_level)
-
-    return layer_dtype
+    return layer.data.dtype
 
 
 def first_nonzero_coordinate(data, start_point, end_point):
@@ -213,7 +209,11 @@ def mouse_event_to_labels_coordinate(
     return coordinates
 
 
-def get_contours(labels: np.ndarray, thickness: int, background_label: int):
+def get_contours(
+    labels: np.ndarray[_ShapeT, _DTypeT],
+    thickness: int,
+    background_label: int,
+) -> np.ndarray[_ShapeT, _DTypeT]:
     """Computes the contours of a 2D label image.
 
     Parameters
