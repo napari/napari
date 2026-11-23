@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import dask.array as da
 import pytest
 from qtpy.QtCore import Qt, QThread
-from qtpy.QtWidgets import QPushButton, QWidget
+from qtpy.QtWidgets import QDialog, QLabel, QPushButton, QWidget
 
 from napari._qt.dialogs.qt_notification import (
     NapariQtNotification,
@@ -328,6 +328,38 @@ def test_notification_close_restarts_timer_below(qt_viewer_, monkeypatch):
     assert NapariQtNotification._instances == [first]
     assert restarted == [first]
     first.close()
+
+
+@pytest.mark.parametrize('actions', [(), [('Action', lambda _: None)]])
+@pytest.mark.parametrize(
+    'message', ['a short message', 'a long message that needs eliding ' * 5]
+)
+def test_notification_message_is_not_clipped(
+    make_napari_viewer, qtbot, message, actions
+):
+    """The message fits its label when collapsed and when expanded."""
+    viewer = make_napari_viewer(show=True)
+    notif = NapariQtNotification(
+        message,
+        'warning',
+        actions=actions,
+        parent=viewer.window._qt_viewer.canvas.native,
+    )
+    # skip the slide-in and dismiss timer, only the layout matters here
+    QDialog.show(notif)
+    qtbot.wait(100)
+    label = notif.message
+    assert label.height() >= label.fontMetrics().height()
+    assert label.heightForWidth(label.width()) <= label.height()
+
+    notif.toggle_expansion()
+    qtbot.waitUntil(
+        lambda: notif.geom_anim.state() == notif.geom_anim.State.Stopped
+    )
+    qtbot.wait(50)
+    assert QLabel.text(label) == message
+    assert label.heightForWidth(label.width()) <= label.height()
+    notif.close()
 
 
 def test_close_button_closes_notification(qt_viewer_, monkeypatch):

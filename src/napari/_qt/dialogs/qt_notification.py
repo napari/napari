@@ -223,6 +223,7 @@ class NapariQtNotification(QDialog):
 
     def expand(self):
         """Expanded the notification so that the full message is visible."""
+        self.message.setElideMode(Qt.TextElideMode.ElideNone)
         curr = self.geometry()
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(curr)
@@ -242,6 +243,7 @@ class NapariQtNotification(QDialog):
 
     def contract(self):
         """Contract notification to a single elided line of the message."""
+        self.message.setElideMode(Qt.TextElideMode.ElideRight)
         geom = self.geometry()
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(geom)
@@ -260,7 +262,6 @@ class NapariQtNotification(QDialog):
         self.setWindowFlags(Qt.WindowType.SubWindow)
         self.setMinimumWidth(self.MIN_WIDTH)
         self.setMaximumWidth(self.MIN_WIDTH)
-        self.setMinimumHeight(40)
         self.setSizeGripEnabled(False)
         self.setModal(False)
         self.verticalLayout = QVBoxLayout(self)
@@ -280,6 +281,7 @@ class NapariQtNotification(QDialog):
         )
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
+        self.message.setIndent(0)
         self.message.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
@@ -321,7 +323,9 @@ class NapariQtNotification(QDialog):
         self.row2_widget.setMaximumHeight(34)
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', False)
-        self.resize(self.MIN_WIDTH, 40)
+        self.ensurePolished()
+        self.setMinimumHeight(self.verticalLayout.minimumSize().height())
+        self.resize(self.MIN_WIDTH, self.minimumHeight())
 
     def setup_buttons(self, actions: ActionSequence = ()):
         """Add buttons to the dialog.
@@ -364,7 +368,9 @@ class NapariQtNotification(QDialog):
         """Return the size required to show the entire message."""
         return QSize(
             super().sizeHint().width(),
-            self.row2_widget.height() + self.message.sizeHint().height(),
+            self.height()
+            - self.message.height()
+            + self.message.heightForWidth(self.message.width()),
         )
 
     @classmethod
