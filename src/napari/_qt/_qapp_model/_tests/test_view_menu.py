@@ -39,7 +39,9 @@ def check_view_menu_visibility(viewer, qtbot):
 
     assert not viewer.window.view_menu.isVisible()
     qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+        viewer.window._qt_window.menuBar(),
+        Qt.Key.Key_V,
+        modifier=Qt.KeyboardModifier.AltModifier,
     )
     qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
@@ -50,7 +52,7 @@ def check_view_menu_visibility(viewer, qtbot):
     ('action_id', 'action_title', 'attribute_path'),
     functools.reduce(operator.iadd, toggle_actions.values(), []),
 )
-def test_toggle_axes_scale_bar_grid_lines_attr(
+def test_toggle_axes_scale_bar_coordinate_grid_attr(
     action_id, action_title, attribute_path
 ):
     """
@@ -67,7 +69,7 @@ def test_toggle_axes_scale_bar_grid_lines_attr(
         * `box`
         * `colored`
         * `ticks`
-    * Viewer `grid_lines` attributes:
+    * Viewer `coordinate_grid` attributes:
         * `visible`
         * `labels`
     """

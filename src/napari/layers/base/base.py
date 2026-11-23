@@ -353,7 +353,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum',
+        and 'multiplicative'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -2145,7 +2146,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.corner_pixels = corners
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
+        self,
+        scale_factor: float,
+        corner_pixels_displayed: npt.NDArray[np.floating],
+        shape_threshold: tuple[float, float],
     ) -> None:
         """Update canvas scale and corner values on draw.
 
@@ -2159,7 +2163,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
-        shape_threshold : tuple
+        shape_threshold : tuple[float, float]
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor
