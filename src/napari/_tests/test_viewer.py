@@ -148,6 +148,7 @@ def test_add_layer_magic_name(
 
 
 @skip_on_win_ci
+@pytest.mark.slow
 def test_screenshot(make_napari_viewer, qtbot):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
