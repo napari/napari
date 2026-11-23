@@ -210,7 +210,7 @@ class NestableEventedList(EventedList[_T]):
             parent_i, index = split_nested_index(key)
             if isinstance(index, slice):
                 indices = sorted(
-                    range(*index.indices(len(parent_i))), reverse=True
+                    range(*index.indices(len(self[parent_i]))), reverse=True
                 )
             else:
                 indices = [index]
