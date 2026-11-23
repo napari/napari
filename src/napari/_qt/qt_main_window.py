@@ -1697,6 +1697,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
+        margin: float | tuple[float, float] = 0,
     ) -> QImage:
         """Capture screenshot of the currently displayed viewer.
 
@@ -1721,6 +1722,12 @@ class Window:
             Tightly fit the canvas around the data to prevent margins from
             showing in the screenshot. If False, a screenshot of the currently
             visible canvas will be generated.
+        margin : float or tuple of two floats
+            Only used if `fit_to_data_extent` is True. Blank space added on
+            each side of the data: a value of 1 or more is a number of pixels,
+            a value between 0 and 1 is a fraction of the mean data size, and
+            a (y, x) pair sets different vertical and horizontal margins.
+            Default is 0.
 
         Returns
         -------
@@ -1744,6 +1751,7 @@ class Window:
                 size=size,
                 scale=scale if scale is not None else 1.0,
                 fit_to_data_extent=fit_to_data_extent,
+                margin=margin,
             )
         else:
             img = self._qt_window.grab().toImage()
@@ -1756,6 +1764,7 @@ class Window:
         path: str | None = None,
         scale: float = 1,
         flash=True,
+        margin: float | tuple[float, float] = 0,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -1775,6 +1784,12 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
+        margin : float or tuple of two floats
+            Blank space added on each side of the data in the exported image.
+            A value of 1 or more is a number of pixels, and a value between 0
+            and 1 is a fraction of the mean size of the data (like the grid
+            spacing). A (y, x) pair sets different vertical and horizontal
+            margins. By default, 0.
 
         Returns
         -------
@@ -1782,7 +1797,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        return self._qt_viewer.export_figure(path, scale, flash)
+        return self._qt_viewer.export_figure(path, scale, flash, margin)
 
     def export_rois(
         self,

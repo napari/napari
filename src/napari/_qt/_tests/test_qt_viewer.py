@@ -18,7 +18,7 @@ from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
 from vispy.app import MouseEvent
 
-from napari._qt.qt_viewer import QtViewer
+from napari._qt.qt_viewer import QtViewer, _margin_in_pixels
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -245,6 +245,73 @@ def test_export_figure(
     layer.scale = [0.12, 0.12]
     img = qt_viewer.export_figure(flash=False)
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
+
+
+@pytest.mark.show_qt_viewer
+def test_export_figure_margin(
+    qt_viewer: QtViewer,
+    viewer_model: ViewerModel,
+    qtbot: QtBot,
+) -> None:
+    # non-square data, so that uneven margins would be visible
+    viewer_model.add_image(np.ones((250, 500)))
+
+    img = qt_viewer.export_figure(flash=False, margin=20)
+    # the data keeps its resolution, with 20 pixels added on each side
+    np.testing.assert_allclose(img.shape, (290, 540, 4), atol=1)
+    # the data (white) has the same margin on all sides
+    white = (img == [255, 255, 255, 255]).all(axis=-1)
+    rows = np.flatnonzero(white.any(axis=1))
+    cols = np.flatnonzero(white.any(axis=0))
+    np.testing.assert_allclose([rows[0], cols[0]], [20, 20], atol=1)
+    np.testing.assert_allclose([rows.size, cols.size], [250, 500], atol=1)
+
+    # different vertical and horizontal margins
+    img = qt_viewer.export_figure(flash=False, margin=(10, 40))
+    np.testing.assert_allclose(img.shape, (270, 580, 4), atol=1)
+
+    with pytest.raises(ValueError, match='margin'):
+        qt_viewer.export_figure(flash=False, margin=-1)
+
+
+@pytest.mark.show_qt_viewer
+def test_screenshot_fit_to_data_extent_margin(
+    qt_viewer: QtViewer,
+    viewer_model: ViewerModel,
+    qtbot: QtBot,
+) -> None:
+    # screenshot takes the same margin as export_figure
+    viewer_model.add_image(np.ones((250, 500)))
+
+    img = qt_viewer.screenshot(
+        flash=False, fit_to_data_extent=True, margin=(10, 40)
+    )
+    np.testing.assert_allclose(img.shape, (270, 580, 4), atol=1)
+
+
+@pytest.mark.parametrize(
+    ('margin', 'expected'),
+    [
+        (0, (0, 0)),
+        (20, (20, 20)),
+        ((10, 40), (10, 40)),
+        (0.1, (38, 38)),
+        ((0.1, 0.05), (38, 19)),
+    ],
+)
+def test_margin_in_pixels(
+    margin: float | tuple[float, float], expected: tuple[int, int]
+) -> None:
+    # a fraction is relative to the mean data size: 0.1 * 375 = 37.5 -> 38
+    np.testing.assert_array_equal(
+        _margin_in_pixels(margin, np.array([250, 500])), expected
+    )
+
+
+@pytest.mark.parametrize('margin', [-1, (1, 2, 3)])
+def test_margin_in_pixels_invalid(margin: float | tuple) -> None:
+    with pytest.raises(ValueError, match='margin'):
+        _margin_in_pixels(margin, np.array([250, 500]))
 
 
 @pytest.mark.show_qt_viewer
