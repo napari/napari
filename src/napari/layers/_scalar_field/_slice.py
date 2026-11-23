@@ -189,14 +189,14 @@ class _ScalarFieldSliceResponse:
         )
 
 
-def _read_projected(
+def _materialize_and_project(
     data: Any,
     project: _Projector,
     index: tuple[slice | int, ...],
     mode: Any,
     axis: tuple[int, ...],
 ) -> np.ndarray:
-    """Read ``data[index]`` and project ``axis``."""
+    """Materialize the data, index into it and project it."""
     array = np.asarray(data[index])
     return array if mode == 'none' else project(array, axis, mode)
 
@@ -221,7 +221,7 @@ class _ThumbnailPlaneCache:
         entry = self._entry
         if entry is not None and entry[0] == key:
             return entry[1]
-        plane = _read_projected(
+        plane = _materialize_and_project(
             self._data[level], self._project, index, mode, axis
         )
         self._entry = (key, plane)
@@ -432,7 +432,7 @@ class _ScalarFieldSliceRequest:
         ``disp_slice`` optionally crops the displayed dimensions to the
         visible tile.
         """
-        return _read_projected(
+        return _materialize_and_project(
             data,
             self._project_slice,
             self._indices(data_slice, disp_slice),
