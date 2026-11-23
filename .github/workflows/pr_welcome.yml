@@ -30,22 +30,27 @@ jobs:
             comment below and that should bring it to our attention.
             Most of our reviewers are volunteers and sometimes things fall
             through the cracks. We also ask that you please finish addressing
-            any review comments on this PR and wait for it to be merged (or
-            closed) before opening a new one, as it can be a valuable learning
-            experience to go through the review process.
+            any review comments on this PR and consider waiting for it to be
+            merged (or closed) before opening a new one, as it can be a valuable
+            learning experience to go through the review process.
 
 
-            You can also join us [on zulip chat](https://napari.zulipchat.com/)
+            You can also join us on our [Zulip
+            chat](https://napari.zulipchat.com/) or our [community
+            meetings](https://napari.org/dev/community/meeting_schedule.html)
             for real-time discussion.
 
 
             For details on testing, writing docs, and our review process,
-            please see [the developer
+            please see [the contributing
             guide](https://napari.org/dev/developers/index.html).
 
 
             **Please let us know if (and how) you use AI, it will help us give you
-            better feedback on your PR.**
+            better feedback on your PR.** [Our AI
+            policy](https://napari.org/stable/developers/contributing/ai.html)
+            reminds everyone that we are humans who enjoy working with other
+            humans.
 
 
             We strive to be a welcoming and open project. Please follow our
