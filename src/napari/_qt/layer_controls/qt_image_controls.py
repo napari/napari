@@ -44,8 +44,6 @@ class QtImageControls(QtBaseImageControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._projection_mode_control = QtProjectionModeControl(self, layer)
-        self._add_widget_controls(self._projection_mode_control)
         self._interpolation_control = QtInterpolationComboBoxControl(
             self, layer
         )
@@ -56,6 +54,8 @@ class QtImageControls(QtBaseImageControls):
         self._add_widget_controls(self._render_control)
         self._multiscale_level_control = QtMultiscaleLevelControl(self, layer)
         self._add_widget_controls(self._multiscale_level_control)
+        self._projection_mode_control = QtProjectionModeControl(self, layer)
+        self._add_widget_controls(self._projection_mode_control)
 
         self._on_ndisplay_changed()
 
