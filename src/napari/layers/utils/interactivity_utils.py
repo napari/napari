@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -12,6 +12,8 @@ from napari.utils.geometry import (
 
 if TYPE_CHECKING:
     from napari.layers.image.image import Image
+
+Vector3D: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 def displayed_plane_from_nd_line_segment(
@@ -53,7 +55,7 @@ def displayed_plane_from_nd_line_segment(
 def drag_data_to_projected_distance(
     start_position: npt.NDArray,
     end_position: npt.NDArray,
-    view_direction: npt.NDArray,
+    view_direction: Vector3D,
     vector: npt.NDArray,
 ) -> npt.NDArray:
     """Calculate the projected distance between two mouse events.
@@ -102,13 +104,46 @@ def drag_data_to_projected_distance(
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
 
 
-def orient_plane_normal_around_cursor(
-    layer: Image, plane_normal: tuple
+def move_plane_position_from_mouse(
+    layer: Image, world_position: Vector3D, view_direction: Vector3D
 ) -> None:
-    """Orient a rendering plane by rotating it around the cursor.
+    """Move the plane position to the mouse cursor, within the plane.
 
     If the cursor ray does not intersect the plane, the position will remain
     unchanged.
+    """
+    # avoid circular imports
+    from napari.layers.image._image_constants import VolumeDepiction
+
+    # early exit
+    if (
+        len(layer._slice_input.displayed) != 3
+        or layer.depiction != VolumeDepiction.PLANE
+    ):
+        return
+
+    # find cursor-plane intersection in data coordinates
+    cursor_position = layer._world_to_displayed_data(
+        position=world_position,
+        dims_displayed=layer._slice_input.displayed,
+    )
+    view_direction = layer._world_to_displayed_data_ray(
+        view_direction,
+        dims_displayed=[-3, -2, -1],
+    )
+    intersection = layer.plane.intersect_with_line(
+        line_position=cursor_position, line_direction=view_direction
+    )
+    # check if intersection is within data extents for displayed dimensions
+    bounding_box = layer.extent.data[:, layer._slice_input.displayed]
+
+    # update plane position
+    if point_in_bounding_box(intersection, bounding_box):
+        layer.plane.position = tuple(intersection)
+
+
+def reorient_plane_normal(layer: Image, plane_normal: tuple) -> None:
+    """Orient a rendering plane by rotating it around its position.
 
     Parameters
     ----------
@@ -117,41 +152,10 @@ def orient_plane_normal_around_cursor(
     plane_normal : 3-tuple
         The target plane normal in scene coordinates.
     """
-    # avoid circular imports
-    import napari
-    from napari.layers.image._image_constants import VolumeDepiction
-
-    viewer = napari.viewer.current_viewer()
-    if viewer is None:
-        return
-
-    # early exit
-    if viewer.dims.ndisplay != 3 or layer.depiction != VolumeDepiction.PLANE:
-        return
-
-    # find cursor-plane intersection in data coordinates
-    cursor_position = layer._world_to_displayed_data(
-        position=np.asarray(viewer.cursor.position),
-        dims_displayed=layer._slice_input.displayed,
-    )
-    view_direction = layer._world_to_displayed_data_ray(
-        np.asarray(viewer.scene.camera.view_direction),
-        dims_displayed=[-3, -2, -1],
-    )
-    intersection = layer.plane.intersect_with_line(
-        line_position=cursor_position, line_direction=view_direction
-    )
-
-    # check if intersection is within data extents for displayed dimensions
-    bounding_box = layer.extent.data[:, layer._slice_input.displayed]
-
-    # update plane position
-    if point_in_bounding_box(intersection, bounding_box):
-        layer.plane.position = intersection  # pyrefly: ignore [bad-assignment]
-
-    # update plane normal
-    layer.plane.normal = layer._world_to_displayed_data_normal(  # pyrefly: ignore [bad-assignment]
-        np.asarray(plane_normal), dims_displayed=layer._slice_input.displayed
+    layer.plane.normal = tuple(
+        layer._world_to_displayed_data_normal(
+            plane_normal, dims_displayed=layer._slice_input.displayed
+        )
     )
 
 

@@ -15,16 +15,28 @@ import numpy as np
 from OpenGL.error import GLError
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
+from vispy.util.event import Event as VispyEvent
 
 from napari._vispy.camera import VispyCamera
-from napari._vispy.mouse_event import NapariMouseEvent
-from napari._vispy.overlays.base import VispyCanvasOverlay
-from napari._vispy.utils.cursor import QtCursorVisual
+from napari._vispy.overlays.base import (
+    VispyCanvasOverlay,
+    VispyTiledCanvasOverlay,
+)
+from napari._vispy.utils.cursor import (
+    QtCursorVisual,
+    cursor_style_to_qcursor,
+    get_cursor_style,
+)
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay
+from napari.components.overlays import (
+    CanvasOverlay,
+    SceneOverlay,
+    TiledCanvasOverlay,
+)
+from napari.layers import Labels
 from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
@@ -36,6 +48,8 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.key_bindings import _vispy_to_appmodel_mods
+from napari.utils.mouse_event import MouseEvent, MouseEventType
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
@@ -45,16 +59,19 @@ if TYPE_CHECKING:
     from qtpy.QtCore import QEvent, Qt, pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
-    from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
+    from vispy.app.canvas import (
+        DrawEvent,
+        MouseEvent as VispyMouseEvent,
+        ResizeEvent,
+    )
     from vispy.scene import Node
     from vispy.util.event import EmitterGroup
 
-    from napari._qt.qt_viewer import QtViewer
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.mouse_event import VectorF64
     from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import BrushCircleOverlay, Overlay
     from napari.layers import Layer
     from napari.utils.key_bindings import KeymapHandler
 
@@ -64,33 +81,14 @@ class NapariSceneCanvas(SceneCanvas_):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        self.events.add(mouse_leave=VispyEvent)
 
-        orig_enterEvent = self.native.enterEvent
         orig_leaveEvent = self.native.leaveEvent
 
-        def _qtviewer(widget: CanvasBackendDesktop) -> QtViewer | None:
-            parent = widget.parentWidget()
-            while parent is not None:
-                if hasattr(parent, '_enter_canvas') and hasattr(
-                    parent, '_leave_canvas'
-                ):
-                    return parent
-                parent = parent.parentWidget()
-            return None
-
-        def enterEvent(self_: CanvasBackendDesktop, event: QEvent) -> None:
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._enter_canvas()
-            orig_enterEvent(event)
-
         def leaveEvent(self_: CanvasBackendDesktop, event: QEvent) -> None:
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._leave_canvas()
+            self.events.mouse_leave()
             orig_leaveEvent(event)
 
-        self.native.enterEvent = MethodType(enterEvent, self.native)
         self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
     def _process_mouse_event(self, event: MouseEvent) -> None:
@@ -155,10 +153,6 @@ class VispyCanvas:
     camera : napari._vispy.VispyCamera
         The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
         scene is viewed and interacted with.
-    _cursors : QtCursorVisual
-        A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
-        creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
-        contains cursors supported by Napari in Vispy.
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     _last_theme_color : Optional[npt.NDArray[np.float]]
@@ -192,6 +186,8 @@ class VispyCanvas:
         self._closing = False
         self.max_texture_sizes = None
         self._last_theme_color = None
+        self._drag_press_event = None
+        self._last_event = None
 
         self._font_info = FontInfo(face=font_family, font_manager=font_manager)
         self.viewer = viewer
@@ -256,10 +252,13 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_press.connect(self._on_mouse_press)
         self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
+        self._scene_canvas.events.mouse_leave.connect(self._on_mouse_leave)
         self._scene_canvas.events.resize.connect(self._on_vispy_size_change)
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
-        self.viewer.cursor.events.style.connect(self._on_cursor)
-        self.viewer.cursor.events.size.connect(self._on_cursor)
+        self._active_layer: Layer | None = None
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_layer_change
+        )
 
         self.viewer.events.theme.connect(self._on_bgcolor_change)
         self.viewer.canvas.events.background_color_override.connect(
@@ -316,11 +315,11 @@ class VispyCanvas:
         )
 
         self.viewer.canvas.overlay_tiling.events.connect(
-            self._update_overlay_canvas_positions
+            self._update_tiled_overlay_positions
         )
 
         self.viewer.canvas.events._overlay_positions_changed.connect(
-            self._defer_canvas_overlay_position_update
+            self._defer_tiled_overlay_position_update
         )
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
@@ -328,6 +327,8 @@ class VispyCanvas:
             self._update_font_sizes
         )
         self.destroyed.connect(self._disconnect_events)
+
+        self._on_active_layer_change()
 
     @property
     def events(self) -> EmitterGroup:
@@ -361,7 +362,9 @@ class VispyCanvas:
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.layers.events, self)
-        disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self.viewer.layers.selection.events, self)
+        if self._active_layer is not None:
+            disconnect_events(self._active_layer.events, self)
         disconnect_events(self._scene_canvas.events, self)
         disconnect_events(get_settings().appearance.events, self)
 
@@ -396,40 +399,80 @@ class VispyCanvas:
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
 
-    def _on_cursor(self) -> None:
-        """Create a QCursor based on the napari cursor settings and set in Vispy."""
-        cursor = self.viewer.cursor.style
-        brush_overlay = self.viewer.canvas.overlays._brush_circle
-        brush_overlay.visible = False
+    def _disconnect_labels_cursor(self, layer: Labels) -> None:
+        # on layer init this might not exist yet
+        if brush_circle := layer._overlays.get('brush_circle', None):
+            brush_circle.visible = False
+        layer.events.mode.disconnect(self._on_cursor)
+        layer.events.brush_size.disconnect(self._on_cursor)
+        layer.events.brush_size_is_canvas_pixels.disconnect(self._on_cursor)
 
-        if cursor in {'square', 'circle', 'circle_frozen'}:
-            # Scale size by zoom if needed
-            size = self.viewer.cursor.size
-            if self.viewer.cursor.scaled:
-                size *= self.viewer.scene.camera.zoom
+    def _connect_labels_cursor(self, layer: Labels) -> None:
+        layer.events.brush_size.connect(self._on_cursor)
+        layer.events.brush_size_is_canvas_pixels.connect(self._on_cursor)
 
-            size = int(size)
+    def _on_active_layer_change(self, event=None) -> None:
+        """Track the active layer and rewire its mode event to refresh the cursor."""
+        # at this point, self._active_layer holds the *previously* active layer;
+        # we know that's changed so we make its overlays invisible and disconnect
+        # its events.
+        if self._active_layer is not None:
+            self._active_layer.events.mode.disconnect(self._on_cursor)
+            if isinstance(self._active_layer, Labels):
+                self._disconnect_labels_cursor(self._active_layer)
+        # Now we update self._active_layer and wire its mode changes
+        # to the cursor state
+        self._active_layer = self.viewer.layers.selection.active
+        if self._active_layer is not None:
+            self._active_layer.events.mode.connect(self._on_cursor)
+            if isinstance(self._active_layer, Labels):
+                self._connect_labels_cursor(self._active_layer)
 
-            # make sure the square fits within the current canvas
-            if (
-                size < 8 or size > (min(*self.size) - 4)
-            ) and cursor != 'circle_frozen':
-                self.cursor = QtCursorVisual['cross'].value
-            elif cursor.startswith('circle'):
-                brush_overlay.size = size
-                if cursor == 'circle_frozen':
-                    self.cursor = QtCursorVisual['standard'].value
-                    brush_overlay.position_is_frozen = True
-                else:
-                    self.cursor = QtCursorVisual.blank()
-                    brush_overlay.position_is_frozen = False
-                brush_overlay.visible = True
-            else:
-                self.cursor = QtCursorVisual.square(size)
-        elif cursor == 'crosshair':
-            self.cursor = QtCursorVisual.crosshair()
+        self._on_cursor()
+
+    def _update_labels_brush_and_get_cursor(
+        self, layer: Labels, cursor: str
+    ) -> QtCursorVisual:
+        # on layer init this might not exist yet
+        if (brush_circle := layer._overlays.get('brush_circle', None)) is None:
+            return QtCursorVisual.standard
+        brush_circle = cast('BrushCircleOverlay', brush_circle)
+
+        if cursor != 'circle':
+            brush_circle.visible = False
+            return QtCursorVisual[cursor]
+
+        size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+
+        # if too big or small, show a normal cursor instead
+        if size < 8 or size > (min(*self.size) - 4):
+            brush_circle.visible = False
+            qt_cursor = QtCursorVisual.crosshair
+        elif brush_circle._is_resizing:
+            # brush is being resized: also show standard cursor
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual.standard
         else:
-            self.cursor = QtCursorVisual[cursor].value
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual.blank
+
+        return qt_cursor
+
+    def _on_cursor(self) -> None:
+        """Create a QCursor based on the active layer mode and brush overlay."""
+        layer = self.viewer.layers.selection.active
+        if layer is None:
+            cursor = QtCursorVisual.standard
+        else:
+            cursor = get_cursor_style(layer)
+            if isinstance(layer, Labels):
+                cursor = self._update_labels_brush_and_get_cursor(
+                    layer, cursor
+                )
+            else:
+                assert cursor != 'circle'
+                cursor = QtCursorVisual[cursor]
+        self.cursor = cursor_style_to_qcursor(cursor)
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
@@ -491,8 +534,12 @@ class VispyCanvas:
 
         return None, None
 
+    @property
+    def last_event(self) -> MouseEvent | None:
+        return self._last_event
+
     def _process_mouse_event(
-        self, mouse_callbacks: Callable, event: MouseEvent
+        self, mouse_callbacks: Callable, event: VispyMouseEvent
     ) -> None:
         """Add properties to the mouse event before passing the event to the
         napari events system. Called whenever the mouse moves or is clicked.
@@ -532,7 +579,9 @@ class VispyCanvas:
         else:
             viewbox_at = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = viewbox_at[1]
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            self.viewer.cursor.viewbox = viewbox_at[1]
 
         if viewbox_at[0] is None:
             # this means we're in an empty viewbox, so do nothing
@@ -540,8 +589,6 @@ class VispyCanvas:
             return
         # read after the None check so the type checker knows it is set
         grid_coords = viewbox_at[1]
-
-        canvas_position = tuple(event.pos[::-1])
 
         if (
             event.type == 'mouse_press'
@@ -555,22 +602,53 @@ class VispyCanvas:
             # events kicks in properly. Ideally this should be done by us eventually.
             self._scene_canvas.native.mouseReleaseEvent(event.native)
 
-        napari_event = NapariMouseEvent(
-            event=event,
-            view_direction=self._calculate_view_direction(event.pos),
-            up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
-                self.viewer.dims.ndim, self.viewer.dims.displayed
-            ),
+        canvas_position = tuple(event.pos[::-1])
+        viewbox_pos = self.viewer.canvas_to_viewbox(
+            canvas_position=canvas_position, viewbox=grid_coords
+        )
+
+        view_direction = self.viewer.scene.camera.calculate_nd_view_direction(
+            ndim=self.viewer.dims.ndim,
+            dims_displayed=self.viewer.dims.displayed,
+            canvas_position=tuple(viewbox_pos),
+            canvas_size=self._current_viewbox_size,
+        )
+        up_direction = self.viewer.scene.camera.calculate_nd_up_direction(
+            ndim=self.viewer.dims.ndim,
+            dims_displayed=self.viewer.dims.displayed,
+        )
+        world_position = self.viewer.canvas_to_world(
+            canvas_position, grid_coords
+        )
+
+        napari_event = MouseEvent(
+            type=MouseEventType(event.type),
+            button=event.button,
+            buttons=event.buttons,
+            delta=event.delta,
+            modifier_keys=_vispy_to_appmodel_mods(event.modifiers),
+            press_event=self._drag_press_event,
+            view_direction=np.array(view_direction),
+            up_direction=np.array(up_direction),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self.viewer.canvas_to_world(canvas_position, grid_coords),
+            canvas_position=canvas_position,
+            world_position=world_position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
 
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = tuple(napari_event.position)
+        self._last_event = napari_event
+        if self._drag_press_event is None:
+            self._drag_press_event = (
+                napari_event if napari_event.type == 'mouse_press' else None
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            # Update the cursor position
+            self.viewer.cursor._view_direction = napari_event.view_direction
+            self.viewer.cursor.position = tuple(napari_event.position)
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
@@ -584,7 +662,17 @@ class VispyCanvas:
 
         event.handled = napari_event.handled
 
-    def _on_mouse_double_click(self, event: MouseEvent) -> None:
+    def _on_mouse_leave(self, event=None) -> None:
+        """Called by qt whenever the mouse leaves the canvas, so we can do somethign about it."""
+        # TODO: should we actually just send a NapariMouseEvent with pos = None?
+        #       This way, mousemaproviders would be able to handle it either as a normal mouse_move
+        #       event, or as a separate mouse_leave event type.
+        #       And/Or maybe make vispy_overlays into a mousemapprovider?
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                vispy_overlay._on_mouse_leave()
+
+    def _on_mouse_double_click(self, event: VispyMouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
 
         Parameters
@@ -609,7 +697,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_double_click_callbacks, event)
 
-    def _on_mouse_move(self, event: MouseEvent) -> None:
+    def _on_mouse_move(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse moves over canvas.
 
         Parameters
@@ -623,7 +711,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_move_callbacks, event)
 
-    def _on_mouse_press(self, event: MouseEvent) -> None:
+    def _on_mouse_press(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse pressed in canvas.
 
         Parameters
@@ -637,7 +725,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_press_callbacks, event)
 
-    def _on_mouse_release(self, event: MouseEvent) -> None:
+    def _on_mouse_release(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse released in canvas.
 
         Parameters
@@ -651,7 +739,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_release_callbacks, event)
 
-    def _on_mouse_wheel(self, event: MouseEvent) -> None:
+    def _on_mouse_wheel(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse wheel activated in canvas.
 
         Parameters
@@ -706,7 +794,7 @@ class VispyCanvas:
             self._needs_overlay_position_update = True
 
         if self._needs_overlay_position_update:
-            self._update_overlay_canvas_positions()
+            self._update_tiled_overlay_positions()
             self._needs_overlay_position_update = False
 
         if self._needs_world_units_update:
@@ -932,33 +1020,31 @@ class VispyCanvas:
                 vispy_layer.first_visible = False
             vispy_layer._on_blending_change()
 
-        self._defer_canvas_overlay_position_update()
+        self._defer_tiled_overlay_position_update()
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _defer_canvas_overlay_position_update(self) -> None:
+    def _defer_tiled_overlay_position_update(self) -> None:
         self._needs_overlay_position_update = True
 
-    def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
+    def _connect_tiled_overlay_events(
+        self, overlay: TiledCanvasOverlay
+    ) -> None:
         overlay.events.position.connect(
-            self._update_overlay_canvas_positions, unique=True
+            self._update_tiled_overlay_positions, unique=True
         )
         overlay.events.visible.connect(
-            self._update_overlay_canvas_positions, unique=True
-        )
-        overlay.events.gridded.connect(
-            self._update_viewer_overlays, unique=True
+            self._update_tiled_overlay_positions, unique=True
         )
 
-    def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
+    def _disconnect_tiled_overlay_events(
+        self, overlay: TiledCanvasOverlay
+    ) -> None:
         overlay.events.position.disconnect(
-            self._update_overlay_canvas_positions
+            self._update_tiled_overlay_positions
         )
-        overlay.events.visible.disconnect(
-            self._update_overlay_canvas_positions
-        )
-        overlay.events.gridded.disconnect(self._update_viewer_overlays)
+        overlay.events.visible.disconnect(self._update_tiled_overlay_positions)
 
     def _create_or_update_vispy_overlay(
         self,
@@ -980,7 +1066,7 @@ class VispyCanvas:
             )
         else:
             vispy_overlay.node.parent = parent
-            if isinstance(vispy_overlay, VispyCanvasOverlay):
+            if isinstance(vispy_overlay, VispyTiledCanvasOverlay):
                 vispy_overlay._on_box_change()
         return vispy_overlay
 
@@ -991,8 +1077,8 @@ class VispyCanvas:
         )
         # delete outdated overlays
         for overlay in set(self._viewer_overlay_to_visual) - set(all_overlays):
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, TiledCanvasOverlay):
+                self._disconnect_tiled_overlay_events(overlay)
             vispy_overlays = self._viewer_overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
@@ -1009,17 +1095,20 @@ class VispyCanvas:
                 continue
             overlay.events.visible.disconnect(self._update_viewer_overlays)
 
-            canvas_overlay = isinstance(overlay, CanvasOverlay)
-            if canvas_overlay:
-                self._connect_canvas_overlay_events(overlay)
+            is_tiled_overlay = isinstance(overlay, TiledCanvasOverlay)
+            if is_tiled_overlay:
+                self._connect_tiled_overlay_events(overlay)
 
             vispy_overlays = self._viewer_overlay_to_visual.setdefault(
                 overlay, []
             )
 
+            # NOTE: scene overlays are always "gridded",
+            #       meaning they are always duplicated in each grid view!
+            is_scene_overlay = isinstance(overlay, SceneOverlay)
             gridded = (
                 self.viewer.canvas.grid.enabled
-                and (not canvas_overlay or overlay.gridded)
+                and (is_scene_overlay or overlay.gridded)
                 and len(self.viewer.layers)
             )
 
@@ -1047,7 +1136,7 @@ class VispyCanvas:
                     vispy_overlay = self._create_or_update_vispy_overlay(
                         overlay=overlay,
                         vispy_overlay=vispy_overlay,
-                        parent=viewbox if canvas_overlay else viewbox.scene,
+                        parent=viewbox if is_tiled_overlay else viewbox.scene,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
@@ -1057,12 +1146,12 @@ class VispyCanvas:
                 vispy_overlay = self._create_or_update_vispy_overlay(
                     overlay=overlay,
                     vispy_overlay=vispy_overlay,
-                    parent=viewbox if canvas_overlay else viewbox.scene,
+                    parent=viewbox.scene if is_scene_overlay else viewbox,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
 
-        self._update_overlay_canvas_positions()
+        self._update_tiled_overlay_positions()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
@@ -1087,8 +1176,8 @@ class VispyCanvas:
             )
 
         for overlay in to_remove:
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, TiledCanvasOverlay):
+                self._disconnect_tiled_overlay_events(overlay)
             if vispy_overlay := overlay_to_visual.pop(overlay, None):
                 vispy_overlay.close()
 
@@ -1110,7 +1199,8 @@ class VispyCanvas:
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
             if isinstance(overlay, CanvasOverlay):
-                self._connect_canvas_overlay_events(overlay)
+                if isinstance(overlay, TiledCanvasOverlay):
+                    self._connect_tiled_overlay_events(overlay)
 
                 if self.viewer.canvas.grid.enabled:
                     row, col = self.viewer.canvas.grid.position(
@@ -1137,7 +1227,7 @@ class VispyCanvas:
 
             overlay_to_visual[overlay] = vispy_overlay
 
-        self._update_overlay_canvas_positions()
+        self._update_tiled_overlay_positions()
 
     def _get_ordered_visible_canvas_overlays(
         self,
@@ -1153,12 +1243,10 @@ class VispyCanvas:
         free-floating (such as the cursor overlay), so those are skipped
         """
 
-        def is_visible_tileable(overlay: Overlay) -> TypeGuard[CanvasOverlay]:
-            return bool(
-                isinstance(overlay, CanvasOverlay)
-                and overlay.visible
-                and overlay.position in list(CanvasPosition)
-            )
+        def is_visible_tileable(
+            overlay: Overlay,
+        ) -> TypeGuard[TiledCanvasOverlay]:
+            return overlay.visible and isinstance(overlay, TiledCanvasOverlay)
 
         def is_gridded(overlay: CanvasOverlay) -> bool:
             return bool(
@@ -1175,9 +1263,8 @@ class VispyCanvas:
                 and is_visible_tileable(overlay)
                 and not is_gridded(overlay)
             ):
-                # the visual of a CanvasOverlay is always a VispyCanvasOverlay
-                canvas_visual = cast(VispyCanvasOverlay, vispy_overlays[0])
-                yield overlay, canvas_visual, None
+                vispy_overlay = cast('VispyCanvasOverlay', vispy_overlays[0])
+                yield overlay, vispy_overlay, None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
@@ -1210,13 +1297,13 @@ class VispyCanvas:
                         # overlays yet; `_update_scenegraph` will position
                         # them once it is done
                         continue
-                    canvas_visual = cast(
-                        VispyCanvasOverlay, vispy_overlays[viewbox_idx]
+                    vispy_overlay = cast(
+                        'VispyCanvasOverlay', vispy_overlays[viewbox_idx]
                     )
-                    yield overlay, canvas_visual, view
+                    yield overlay, vispy_overlay, view
 
             # we want to ensure that the tiling of layer overlays always looks
-            # the same as the llayerlist order, so we reverse the direction for
+            # the same as the layerlist order, so we reverse the direction for
             # some cases
             overlays_by_tiling_order: dict[
                 str,
@@ -1260,9 +1347,7 @@ class VispyCanvas:
             yield from reversed(overlays_by_tiling_order['reversed'])
             yield from overlays_by_tiling_order['direct']
 
-    def _update_overlay_canvas_positions(
-        self, event: Event | None = None
-    ) -> None:
+    def _update_tiled_overlay_positions(self, event: Event | None = None):
         x_padding, y_padding = self.viewer.canvas.overlay_tiling.padding
         x_offset_total = {}
         y_offset_total = {}

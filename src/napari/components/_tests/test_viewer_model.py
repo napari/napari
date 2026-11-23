@@ -608,48 +608,14 @@ def test_active_layer_status_update():
 
     # wait 1 s to avoid the cursor event throttling
     time.sleep(1)
-    viewer.mouse_over_canvas = True
-    viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer._calc_status_from_cursor()[
-        0
-    ] == viewer.layers.selection.active.get_status(
-        viewer.cursor.position, world=True
+    assert viewer._calc_status_from_cursor(
+        world_position=(1, 1, 1, 1, 1),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )[0] == viewer.layers.selection.active.get_status(
+        (1, 1, 1, 1, 1), world=True
     )
-
-
-def test_active_layer_cursor_size():
-    """Test cursor size update on active layer."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    viewer.add_image(np.random.random((10, 10)))
-    # Base layer has a default cursor size of 1
-    assert viewer.cursor.size == 1
-
-    viewer.add_labels(np.random.randint(0, 10, size=(10, 10)))
-    assert len(viewer.layers) == 2
-    assert viewer.layers.selection.active == viewer.layers[1]
-
-    viewer.layers[1].mode = 'paint'
-    # Labels layer has a default cursor size of 10
-    # due to paintbrush
-    assert viewer.cursor.size == 10
-
-
-def test_cursor_ndim_matches_layer():
-    """Test cursor position ndim matches viewer ndim after update."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    im = viewer.add_image(np.random.random((10, 10)))
-    assert viewer.dims.ndim == 2
-    assert len(viewer.cursor.position) == 2
-
-    im.data = np.random.random((10, 10, 10))
-    assert viewer.dims.ndim == 3
-    assert len(viewer.cursor.position) == 3
-
-    im.data = np.random.random((10, 10))
-    assert viewer.dims.ndim == 2
-    assert len(viewer.cursor.position) == 2
 
 
 def test_sliced_world_extent():
@@ -819,9 +785,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
             assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
 
-@pytest.mark.parametrize(
-    'field', ['scene', 'cursor', 'dims', 'canvas', 'layers']
-)
+@pytest.mark.parametrize('field', ['scene', 'dims', 'canvas', 'layers'])
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
     viewer = ViewerModel()
@@ -838,18 +802,8 @@ def test_not_mutable_fields(field):
     assert 'Field is frozen' in str(err.value)
 
 
-@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_status_tooltip(Layer, data, ndim):
-    viewer = ViewerModel()
-    viewer.tooltip.visible = True
-    layer = Layer(data)
-    viewer.layers.append(layer)
-    viewer.cursor.position = (1,) * ndim
-
-
 def test_viewer_object_event_sources():
     viewer = ViewerModel()
-    assert viewer.cursor.events.source is viewer.cursor
     assert viewer.scene.camera.events.source is viewer.scene.camera
 
 
@@ -1042,30 +996,55 @@ def test_make_layer_visible_after_slicing():
 
 def test_get_status_text():
     viewer = ViewerModel(ndisplay=2)
-    viewer.mouse_over_canvas = False
-    assert viewer._calc_status_from_cursor() is None
-    viewer.mouse_over_canvas = True
-    assert viewer._calc_status_from_cursor() == (' » [empty]', '')
-    viewer.cursor.position = (1, 2)
     viewer.add_labels(
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
-        sorted(
-            {
-                'coordinates': '[1, 2]: 0; a: 1',
-                'coords': '[1, 2]',
-                'layer_base': 'Labels',
-                'layer_name': 'Labels',
-                'plugin': '',
-                'source_type': '',
-                'value': '0; a: 1',
-            }.items()
-        )
+
+    status = viewer._calc_status_from_cursor(
+        world_position=(-10, -10),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+
+    assert sorted(status[0].items()) == sorted(
+        {
+            'coordinates': '[-10, -10]: [empty]',
+            'coords': '[-10, -10]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '',
+        }.items()
+    )
+
+    status = viewer._calc_status_from_cursor(
+        world_position=(1, 2),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+    assert sorted(status[0].items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
     )
     viewer.tooltip.visible = True
-    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
+    status = viewer._calc_status_from_cursor(
+        world_position=(1, 2),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+    assert sorted(status[0].items()) == sorted(
         {
             'coordinates': '[1, 2]: 0; a: 1',
             'coords': '[1, 2]',
@@ -1076,20 +1055,7 @@ def test_get_status_text():
             'value': '0; a: 1',
         }.items()
     )
-    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
-    viewer.update_status_from_cursor()
-    assert sorted(viewer.status.items()) == sorted(
-        {
-            'coordinates': '[1, 2]: 0; a: 1',
-            'coords': '[1, 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        }.items()
-    )
-    assert viewer.tooltip.text == '0\na: 1'
+    assert status[1] == '0\na: 1'
 
 
 def test_reset_view():

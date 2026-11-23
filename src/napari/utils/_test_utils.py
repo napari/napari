@@ -32,6 +32,7 @@ class MouseEvent:
     dims_point: list[int] = field(default_factory=lambda: [0, 0])
     delta: tuple[float, float] | None = None
     native: bool | None = None
+    camera_zoom: float = 1
 
 
 def read_only_mouse_event(*args, **kwargs) -> ReadOnlyWrapper:
