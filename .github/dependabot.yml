@@ -16,3 +16,18 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+
+  - package-ecosystem: pre-commit
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci(dependabot):"
+    labels:
+      - "maintenance"
+    groups:
+      pre-commit:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7

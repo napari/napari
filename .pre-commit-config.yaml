@@ -53,3 +53,6 @@ repos:
     language: python
     entry: python tools/check_groups_vs_extras.py
     files: ^pyproject.toml$
+
+ci:
+  autoupdate_schedule: quarterly
