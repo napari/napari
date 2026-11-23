@@ -44,6 +44,8 @@ PIXI_ONLY_TEST_PACKAGES = {'pytest-json-report', 'objgraph'}
 PYPI_TO_CONDA = {
     'matplotlib': 'matplotlib-base',
     'pyqt6-qt6': 'qt6-main',
+    # conda-forge `pyside6` contains both PySide6-Essentials and PySide6-Addons
+    'pyside6-essentials': 'pyside6',
     'qtconsole': 'qtconsole-base',
 }
 # (PyPI name, extra) -> additional conda-forge package
