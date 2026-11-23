@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 import numpy as np
 import numpy.typing as npt
 
+from napari.layers.base._base_constants import BaseProjectionMode
 from napari.layers.base._slice import _next_request_id
+from napari.layers.image._image_constants import ImageProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
@@ -21,7 +23,12 @@ if TYPE_CHECKING:
 
     # (data, axis, mode) -> projected data, e.g. _ImageSliceRequest._project_slice
     _Projector: TypeAlias = Callable[
-        [np.ndarray, tuple[int, ...], Any], np.ndarray
+        [
+            np.ndarray,
+            tuple[int, ...],
+            ImageProjectionMode | BaseProjectionMode,
+        ],
+        np.ndarray,
     ]
 
 
