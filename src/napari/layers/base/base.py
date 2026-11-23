@@ -11,7 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Self, TypeVar
 
 import magicgui as mgui
 import numpy as np
@@ -106,6 +106,8 @@ def no_op(layer: Layer, event: Event) -> None:
 
 
 LayerBound = TypeVar('LayerBound', bound='Layer')
+# the type a layer returns from get_value
+_ValueT = TypeVar('_ValueT')
 
 
 class PostInit(ABCMeta):
@@ -332,7 +334,9 @@ class _LayerSlicingState(ABC):
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
+class Layer(
+    KeymapProvider, MousemapProvider, ABC, Generic[_ValueT], metaclass=PostInit
+):
     """Base layer class.
 
     Parameters
@@ -586,7 +590,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._cursor_size = 1
         self._mouse_pan = True
         self._mouse_zoom = True
-        self._value = None
+        self._value: _ValueT | None = None
         self._scale_factor = 1
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
@@ -1498,7 +1502,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         raise NotImplementedError
 
     @abstractmethod
-    def _get_value(self, position):
+    def _get_value(self, position) -> _ValueT | None:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -1508,8 +1512,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Returns
         -------
-        value : tuple
-            Value of the data.
+        value : layer value type or None
+            Value of the data, or None if there is nothing at the position.
         """
         raise NotImplementedError
 
@@ -1520,10 +1524,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple[int, ...] | None:
+    ) -> _ValueT | None:
         """Value of the data at a position.
 
-        If the layer is not visible, return None.
+        If the layer is not visible, return None. What a value is depends on
+        the layer type, e.g. a point index for Points.
 
         Parameters
         ----------
@@ -1541,7 +1546,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Returns
         -------
-        value : tuple, None
+        value : layer value type or None
             Value of the data. If the layer is not visible return None.
         """
         position = np.asarray(position)
@@ -1586,14 +1591,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # used in Points and Shapes.
         if self.mode != 'pan_zoom':
             self._value = value
-        return value  # pyrefly: ignore [bad-return]
+        return value
 
     def _get_value_3d(
         self,
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> float | int | tuple[float | int | None, int | None] | None:
+    ) -> _ValueT | None:
         """Get the layer data value along a ray
 
         Parameters
