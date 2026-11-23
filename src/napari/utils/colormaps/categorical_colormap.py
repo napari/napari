@@ -1,4 +1,5 @@
-from typing import Any
+from collections.abc import Sequence
+from typing import Any, TypeAlias
 
 import numpy as np
 from pydantic import Field, field_serializer, model_validator
@@ -120,3 +121,8 @@ class CategoricalColormap(EventedModel):
             if isinstance(fallback_color.values, np.ndarray)
             else fallback_color.values,
         }
+
+
+ValidCategoricalColormapArg: TypeAlias = (
+    CategoricalColormap | dict | Sequence | np.ndarray
+)

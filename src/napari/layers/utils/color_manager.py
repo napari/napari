@@ -26,8 +26,15 @@ from napari.layers.utils.color_transformations import (
     transform_color_with_defaults,
 )
 from napari.utils.colormaps import Colormap
-from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
+from napari.utils.colormaps.categorical_colormap import (
+    CategoricalColormap,
+    ValidCategoricalColormapArg,
+)
+from napari.utils.colormaps.colormap_utils import (
+    ColorType,
+    ValidColormapArg,
+    ensure_colormap,
+)
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 
@@ -39,7 +46,7 @@ DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
 def ensure_categorical_colormap(
-    categorical_colormap: CategoricalColormap | dict | Sequence | np.ndarray,
+    categorical_colormap: ValidCategoricalColormapArg,
 ) -> CategoricalColormap:
     """Coerce a categorical colormap argument into a ``CategoricalColormap``.
 
@@ -214,11 +221,7 @@ class ColorManager(EventedModel):
     @field_validator('categorical_colormap', mode='before')
     @classmethod
     def _ensure_categorical_colormap(
-        cls,
-        categorical_colormap: CategoricalColormap
-        | dict
-        | Sequence
-        | np.ndarray,
+        cls, categorical_colormap: ValidCategoricalColormapArg
     ) -> CategoricalColormap:
         return ensure_categorical_colormap(categorical_colormap)
 
@@ -542,13 +545,9 @@ class ColorManager(EventedModel):
         colors: dict | str | list | np.ndarray,
         properties: dict[str, np.ndarray],
         n_colors: int | None = None,
-        continuous_colormap: str | Colormap | None = None,
+        continuous_colormap: ValidColormapArg | None = None,
         contrast_limits: tuple[float, float] | None = None,
-        categorical_colormap: CategoricalColormap
-        | dict
-        | list
-        | np.ndarray
-        | None = None,
+        categorical_colormap: ValidCategoricalColormapArg | None = None,
         color_mode: ColorMode | str | None = None,
         current_color: np.ndarray | None = None,
         default_color_cycle: ColorType = None,

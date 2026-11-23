@@ -10,6 +10,7 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
+    Self,
     TypeAlias,
 )
 
@@ -72,6 +73,7 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
+        Collection,
         Generator,
         Iterable,
         Mapping,
@@ -87,18 +89,13 @@ if TYPE_CHECKING:
     from napari.layers.utils.layer_utils import _CurrentPropertyValue
     from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
     from napari.utils.colormaps.categorical_colormap import (
-        CategoricalColormap,
+        ValidCategoricalColormapArg,
     )
     from napari.utils.misc import StringEnum
 
     # ``face_color``/``border_color`` in ``__init__``: a color or property
     # name, a dict of color settings, or a list/array of colors.
     _PointsColor: TypeAlias = str | dict[str, Any] | list | np.ndarray
-
-    # Mouse callbacks receive the layer they are bound to. ``dict`` is
-    # invariant, so the layer parameter is left as ``Any`` to stay
-    # compatible with ``Layer._drag_modes`` while keeping the rest checked.
-    _ModeCallable = Callable[[Any, Event], Generator[None, None, None] | None]
 
 
 _OUT_SLICE_DISP_WARNING_MSG = (
@@ -114,7 +111,7 @@ def _optional_array_equal(a: np.ndarray | None, b: np.ndarray | None) -> bool:
     """Compare two optional arrays, treating two ``None`` values as equal."""
     if a is None or b is None:
         return a is b
-    return bool(np.array_equal(a, b))
+    return np.array_equal(a, b)
 
 
 class Points(Layer):
@@ -145,7 +142,7 @@ class Points(Layer):
         and 'multiplicative'}.
     border_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
-    border_color_cycle : np.ndarray, list
+    border_color_cycle : np.ndarray, list, dict, CategoricalColormap
         Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
         categorical attribute is used to color the points.
     border_colormap : str, napari.utils.Colormap
@@ -170,7 +167,7 @@ class Points(Layer):
         Values on the negative side of the normal are discarded if the plane is enabled.
     face_color : str, array-like, dict
         Color of the point marker body. Numeric color values should be RGB(A).
-    face_color_cycle : np.ndarray, list
+    face_color_cycle : np.ndarray, list, dict, CategoricalColormap
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
         categorical attribute is used to color the points.
     face_colormap : str, napari.utils.Colormap
@@ -217,7 +214,7 @@ class Points(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    shown : 1-D array of bool
+    shown : bool or 1-D array of bool
         Whether to show each point.
     size : float, array
         Size of the point marker in data pixels. If given as a scalar, all points are made
@@ -373,14 +370,24 @@ class Points(Layer):
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[dict[StringEnum, _ModeCallable]] = {
+    _drag_modes: ClassVar[
+        dict[
+            StringEnum,
+            Callable[[Self, Event], Generator[None, None, None] | None],
+        ]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[dict[StringEnum, _ModeCallable]] = {
+    _move_modes: ClassVar[
+        dict[
+            StringEnum,
+            Callable[[Self, Event], Generator[None, None, None] | None],
+        ]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
@@ -411,12 +418,8 @@ class Points(Layer):
         axis_labels: Sequence[str] | None = None,
         blending: str = 'translucent',
         border_color: _PointsColor = 'dimgray',
-        border_color_cycle: CategoricalColormap
-        | dict
-        | list
-        | np.ndarray
-        | None = None,
-        border_colormap: str | Colormap = 'viridis',
+        border_color_cycle: ValidCategoricalColormapArg | None = None,
+        border_colormap: ValidColormapArg = 'viridis',
         border_contrast_limits: tuple[float, float] | None = None,
         border_width: float | np.ndarray | list = 0.05,
         border_width_is_relative: bool = True,
@@ -428,12 +431,8 @@ class Points(Layer):
         | ClippingPlaneList
         | None = None,
         face_color: _PointsColor = 'white',
-        face_color_cycle: CategoricalColormap
-        | dict
-        | list
-        | np.ndarray
-        | None = None,
-        face_colormap: str | Colormap = 'viridis',
+        face_color_cycle: ValidCategoricalColormapArg | None = None,
+        face_colormap: ValidColormapArg = 'viridis',
         face_contrast_limits: tuple[float, float] | None = None,
         feature_defaults: dict[str, Any] | pd.DataFrame | None = None,
         features: dict[str, np.ndarray] | pd.DataFrame | None = None,
@@ -573,13 +572,9 @@ class Points(Layer):
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
         # value is used when adding new points
-        self._current_size: int | float = (
-            typing.cast('int | float', size) if np.isscalar(size) else 10
-        )
+        self._current_size: int | float = size if np.isscalar(size) else 10
         self._current_border_width: int | float = (
-            typing.cast('int | float', border_width)
-            if np.isscalar(border_width)
-            else 0.1
+            border_width if np.isscalar(border_width) else 0.1
         )
 
         color_properties = (
@@ -642,7 +637,9 @@ class Points(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray | None) -> None:
+    def data(
+        self, data: Sequence[Sequence[float]] | np.ndarray | None
+    ) -> None:
         """Set the data array and emit a corresponding event."""
         prior_data = len(self.data) > 0
         data_not_empty = (
@@ -678,7 +675,9 @@ class Points(Layer):
         self.events.data(**kwargs)
         self.events.features()
 
-    def _set_data(self, data: np.ndarray | None) -> None:
+    def _set_data(
+        self, data: Sequence[Sequence[float]] | np.ndarray | None
+    ) -> None:
         """Set the .data array attribute, without emitting an event."""
         data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
@@ -822,7 +821,7 @@ class Points(Layer):
 
     @property
     def properties(self) -> dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: np.ndarray (N,)}: Annotations for each point"""
         return self._feature_table.properties()
 
     @staticmethod
@@ -981,7 +980,7 @@ class Points(Layer):
 
     @property
     def symbol(self) -> np.ndarray:
-        """str: symbol used for all point markers."""
+        """(N,) array of Symbol: symbol of all N points."""
         return self._symbol
 
     @symbol.setter
@@ -1006,13 +1005,11 @@ class Points(Layer):
 
     @property
     def current_symbol(self) -> Symbol:
-        """float: symbol of marker for the next added point."""
+        """Symbol: symbol of marker for the next added point."""
         return self._current_symbol
 
     @current_symbol.setter
-    def current_symbol(
-        self, symbol: str | Symbol | Sequence[str | Symbol]
-    ) -> None:
+    def current_symbol(self, symbol: str | Symbol) -> None:
         coerced_symbol: Symbol = coerce_symbols(np.array([symbol]))[0]
         self._current_symbol = coerced_symbol
         if self._update_properties and len(self.selected_data) > 0:
@@ -1101,7 +1098,7 @@ class Points(Layer):
         self.events.canvas_size_limits()
 
     @property
-    def shown(self) -> npt.NDArray:
+    def shown(self) -> npt.NDArray[np.bool_]:
         """
         Boolean array determining which points to show
         """
@@ -1172,7 +1169,7 @@ class Points(Layer):
         return self._border.colors
 
     @border_color.setter
-    def border_color(self, border_color: str | list | np.ndarray) -> None:
+    def border_color(self, border_color: ColorType) -> None:
         self._border._set_color(
             color=border_color,
             n_colors=len(self.data),
@@ -1183,14 +1180,14 @@ class Points(Layer):
 
     @property
     def border_color_cycle(self) -> np.ndarray:
-        """Union[list, np.ndarray] :  Color cycle for border_color.
-        Can be a list of colors defined by name, RGB or RGBA
+        """np.ndarray :  Color cycle for border_color.
+        Can be set with a list of colors defined by name, RGB or RGBA
         """
         return self._border.categorical_colormap.fallback_color.values
 
     @border_color_cycle.setter
     def border_color_cycle(
-        self, border_color_cycle: list | np.ndarray
+        self, border_color_cycle: ValidCategoricalColormapArg
     ) -> None:
         self._border.categorical_colormap = ensure_categorical_colormap(
             border_color_cycle
@@ -1244,8 +1241,8 @@ class Points(Layer):
         self.events.current_border_color()
 
     @property
-    def border_color_mode(self) -> str:
-        """str: border color setting mode
+    def border_color_mode(self) -> ColorMode:
+        """ColorMode: border color setting mode
 
         DIRECT (default mode) allows each point to be set arbitrarily
 
@@ -1265,7 +1262,7 @@ class Points(Layer):
         return self._face.colors
 
     @face_color.setter
-    def face_color(self, face_color: str | list | np.ndarray) -> None:
+    def face_color(self, face_color: ColorType) -> None:
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
@@ -1276,13 +1273,15 @@ class Points(Layer):
 
     @property
     def face_color_cycle(self) -> np.ndarray:
-        """Union[list, np.ndarray]:  Color cycle for face_color
-        Can be a list of colors defined by name, RGB or RGBA
+        """np.ndarray:  Color cycle for face_color
+        Can be set with a list of colors defined by name, RGB or RGBA
         """
         return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
-    def face_color_cycle(self, face_color_cycle: list | np.ndarray) -> None:
+    def face_color_cycle(
+        self, face_color_cycle: ValidCategoricalColormapArg
+    ) -> None:
         self._face.categorical_colormap = ensure_categorical_colormap(
             face_color_cycle
         )
@@ -1335,8 +1334,8 @@ class Points(Layer):
         self.events.current_face_color()
 
     @property
-    def face_color_mode(self) -> str:
-        """str: Face color setting mode
+    def face_color_mode(self) -> ColorMode:
+        """ColorMode: Face color setting mode
 
         DIRECT (default mode) allows each point to be set arbitrarily
 
@@ -1750,10 +1749,8 @@ class Points(Layer):
     def _update_draw(
         self,
         scale_factor: float,
-        corner_pixels_displayed: np.ndarray[
-            tuple[int, int], np.dtype[np.float64]
-        ],
-        shape_threshold: tuple[int, int],
+        corner_pixels_displayed: npt.NDArray[np.floating],
+        shape_threshold: tuple[float, float],
     ) -> None:
         prev_scale = self.scale_factor
         super()._update_draw(
@@ -1839,9 +1836,9 @@ class Points(Layer):
 
         Parameters
         ----------
-        start_point : np.ndarray
+        start_point : np.ndarray or None
             The start position of the ray used to interrogate the data.
-        end_point : np.ndarray
+        end_point : np.ndarray or None
             The end position of the ray used to interrogate the data.
         dims_displayed : List[int]
             The indices of the dimensions currently displayed in the Viewer.
@@ -1916,13 +1913,13 @@ class Points(Layer):
 
         Parameters
         ----------
-        position
+        position : array-like
             the position of the point in nD coordinates. World vs. data
             is set by the world keyword argument.
-        view_direction : np.ndarray
+        view_direction : array-like
             a unit vector giving the direction of the ray in nD coordinates.
             World vs. data is set by the world keyword argument.
-        dims_displayed
+        dims_displayed : List[int]
             a list of the dimensions currently being displayed in the viewer.
         world : bool
             True if the provided coordinates are in world coordinates.
@@ -1930,13 +1927,13 @@ class Points(Layer):
 
         Returns
         -------
-        start_point : np.ndarray
+        start_point : np.ndarray or None
             The point on the axis-aligned data bounding box that the cursor click
             intersects with. This is the point closest to the camera.
             The point is the full nD coordinates of the layer data.
             If the click does not intersect the axis-aligned data bounding box,
             None is returned.
-        end_point : np.ndarray
+        end_point : np.ndarray or None
             The point on the axis-aligned data bounding box that the cursor click
             intersects with. This is the point farthest from the camera.
             The point is the full nD coordinates of the layer data.
@@ -2081,7 +2078,7 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords: np.ndarray) -> None:
+    def add(self, coords: npt.ArrayLike) -> None:
         """Adds points at coordinates.
 
         Parameters
@@ -2174,7 +2171,7 @@ class Points(Layer):
             )
             self.events.features()
 
-    def get_point_info(self, index: int) -> dict:
+    def get_point_info(self, index: int) -> dict[str, Any]:
         """
         Retrieve all available information about a point at the given index.
 
@@ -2235,7 +2232,7 @@ class Points(Layer):
 
     def _move(
         self,
-        selection_indices: AbstractSet[int],
+        selection_indices: Collection[int],
         position: Sequence[float]
         | np.ndarray[tuple[int], np.dtype[np.floating]],
     ) -> None:
@@ -2243,7 +2240,7 @@ class Points(Layer):
 
         Parameters
         ----------
-        selection_indices : Sequence[int]
+        selection_indices : Collection[int]
             Integer indices of points to move in self.data
         position : tuple
             Position to move points to in data coordinates.
@@ -2270,7 +2267,7 @@ class Points(Layer):
 
     def _set_drag_start(
         self,
-        selection_indices: AbstractSet[int],
+        selection_indices: Collection[int],
         position: Sequence[float]
         | np.ndarray[tuple[int], np.dtype[np.floating]],
         center_by_data: bool = True,
@@ -2279,7 +2276,7 @@ class Points(Layer):
 
         Parameters
         ----------
-        selection_indices : set of int
+        selection_indices : collection of int
             integer indices of selected data used to index into self.data
         position : Sequence of numbers
             position of the drag start in data coordinates.
@@ -2369,10 +2366,10 @@ class Points(Layer):
     def to_mask(
         self,
         *,
-        shape: tuple,
+        shape: tuple[int, ...],
         data_to_world: Affine | None = None,
         isotropic_output: bool = True,
-    ) -> npt.NDArray:
+    ) -> npt.NDArray[np.bool_]:
         """Return a binary mask array of all the points as balls.
 
         Parameters
@@ -2462,25 +2459,27 @@ class Points(Layer):
     ) -> dict[str, str]:
         """Status message information of the data at a coordinate position.
 
-        # Parameters
-        # ----------
-        # position : tuple
-        #     Position in either data or world coordinates.
-        # view_direction : Optional[np.ndarray]
-        #     A unit vector giving the direction of the ray in nD world coordinates.
-        #     The default value is None.
-        # dims_displayed : Optional[List[int]]
-        #     A list of the dimensions currently being displayed in the viewer.
-        #     The default value is None.
-        # world : bool
-        #     If True the position is taken to be in world coordinates
-        #     and converted into data coordinates. False by default.
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+        value : Any, optional
+            Pre-computed value, passed on to the base class.
 
-        # Returns
-        # -------
-        # source_info : dict
-        #     Dict containing information that can be used in a status update.
-        #"""
+        Returns
+        -------
+        status : dict
+            Dict containing information that can be used in a status update.
+        """
         status = super().get_status(
             position,
             view_direction=view_direction,
@@ -2551,7 +2550,7 @@ class Points(Layer):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> list:
+    ) -> list[str]:
         if self.features.shape[1] == 0:
             return []
 
@@ -2590,7 +2589,7 @@ class Points(Layer):
 class _PointsSlicingState(_LayerSlicingState):
     layer: Points
 
-    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool) -> None:
         super().__init__(layer, data, cache)
         self._view_indices = np.empty(0, int)
         self._view_size = np.empty(0, float)

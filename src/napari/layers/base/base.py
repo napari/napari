@@ -8,7 +8,6 @@ import os.path
 import uuid
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
@@ -68,6 +67,14 @@ from napari.utils.status_messages import (
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 
 if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Generator,
+        Hashable,
+        Mapping,
+        Sequence,
+    )
+
     import numpy.typing as npt
 
     from napari.components.dims import Dims
@@ -514,16 +521,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     _modeclass: type[StringEnum] = Mode
     _projectionclass: type[StringEnum] = BaseProjectionMode
 
-    ModeCallable = Callable[
-        ['Layer', Event], Generator[None, None, None] | None
-    ]
-
-    _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
+    # callbacks get their own layer, so subclasses repeat this annotation
+    _drag_modes: ClassVar[
+        dict[
+            StringEnum,
+            Callable[[Self, Event], Generator[None, None, None] | None],
+        ]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
+    _move_modes: ClassVar[
+        dict[
+            StringEnum,
+            Callable[[Self, Event], Generator[None, None, None] | None],
+        ]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
