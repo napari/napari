@@ -4,7 +4,7 @@ import contextlib
 import itertools
 import typing
 import warnings
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, Literal
 
@@ -274,12 +274,13 @@ class LayerList(SelectableEventedList[Layer]):
         self, key: int | slice, value: Layer | Iterable[Layer]
     ) -> None:
         if isinstance(key, slice):
-            value = self._ensure_unique(value, self._list[key])
-        elif isinstance(key, int):
+            super().__setitem__(
+                key, self._ensure_unique(value, self._list[key])
+            )
+        else:
             layer = self._type_check(value)
-            (value,) = self._ensure_unique((layer,), (self._list[key],))
-        # EventedList.__setitem__ is annotated for a single item only
-        super().__setitem__(key, value)  # pyrefly: ignore[bad-argument-type]
+            (layer,) = self._ensure_unique((layer,), (self._list[key],))
+            super().__setitem__(key, layer)
 
     def insert(self, index: int, value: Layer) -> None:
         """Insert ``value`` before index."""
@@ -471,7 +472,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     @staticmethod
     def _convert_scale_between_units(
-        scale: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.float64]],
+        scale: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.floating]],
         from_units: tuple[pint.Unit, ...],
         to_units: tuple[pint.Unit, ...],
     ) -> np.ndarray:
@@ -570,7 +571,7 @@ class LayerList(SelectableEventedList[Layer]):
 
         Returns
         -------
-        units : list of pint.Unit or None
+        units : tuple of pint.Unit or None
             consistent units for given layer extents.
             If cannot be determined, returns None.
         """
@@ -627,12 +628,12 @@ class LayerList(SelectableEventedList[Layer]):
         return self._units or self.extent.units
 
     @units.setter
-    def units(self, units: tuple[pint.Unit, ...] | None) -> None:
+    def units(self, units: Sequence[str | pint.Unit] | None) -> None:
         """Set override of units of layers in world coordinates.
 
         Parameters
         ----------
-        units : tuple[pint.Unit, ...] or None
+        units : sequence of str or pint.Unit, or None
             Units to set for layers in world coordinates. If None, units are not changed.
         """
         if units is None:
@@ -719,7 +720,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     def _link_layers(
         self,
-        method: str,
+        method: Literal['link_layers', 'unlink_layers'],
         layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
     ) -> None:
