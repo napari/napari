@@ -105,7 +105,7 @@ def create_add_method(
     func = cast('Callable[Concatenate[ViewerModel, P], L]', execdict[name])
 
     func.__doc__ = doc
-    func.__signature__ = sig.replace(  # pyrefly: ignore [missing-attribute]
+    func.__signature__ = sig.replace(  # pyrefly: ignore[missing-attribute]
         parameters=[
             Parameter('self', Parameter.POSITIONAL_OR_KEYWORD),
             *list(sig.parameters.values()),
