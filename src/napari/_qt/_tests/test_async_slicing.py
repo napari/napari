@@ -369,40 +369,6 @@ def test_async_slice_superseded_requests_do_not_read_data(
 
 
 @pytest.mark.usefixtures('_enable_async')
-def test_async_slice_stale_response_not_applied(
-    make_napari_viewer, qtbot, rng, monkeypatch
-):
-    viewer = make_napari_viewer()
-    data = LockableData(rng.random((3, 4, 5)))
-    image = Image(data)
-    setup_viewer_for_async_slicing(viewer, image)
-
-    applied_z = []
-    update_slice_response = image._slicing_state._update_slice_response
-
-    def record_applied_z(response):
-        applied_z.append(response.slice_input.world_slice.point[0])
-        update_slice_response(response)
-
-    monkeypatch.setattr(
-        image._slicing_state, '_update_slice_response', record_applied_z
-    )
-
-    with data.lock:
-        viewer.dims.current_step = (1, 0, 0)
-        qtbot.waitUntil(
-            lambda: any(
-                task.running()
-                for task in viewer._layer_slicer._tasks
-            )
-        )
-        viewer.dims.current_step = (2, 0, 0)
-
-    qtbot.waitUntil(lambda: image.loaded)
-    assert applied_z == [2]
-
-
-@pytest.mark.usefixtures('_enable_async')
 def test_async_slice_from_before_points_removal_not_applied(
     make_napari_viewer, qtbot
 ):
@@ -581,6 +547,141 @@ def test_async_edit_hidden_image_with_pending_slice(make_napari_viewer, qtbot):
     image.visible = True
     qtbot.waitUntil(lambda: image.loaded)
     np.testing.assert_array_equal(image._slice.image.raw, new_data)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_deliver_intermediate_plane_for_current_data(
+    make_napari_viewer, qtbot
+):
+    viewer = make_napari_viewer()
+    data = LockableData(np.arange(3 * 4 * 5).reshape(3, 4, 5))
+    image = viewer.add_image(data, contrast_limits=(0, 60))
+    qtbot.waitUntil(lambda: image.loaded)
+    viewer.dims.set_current_step(0, 0)
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    with data.lock:
+        viewer.dims.set_current_step(0, 2)
+        qtbot.waitUntil(
+            lambda: np.array_equal(image._slice.image.raw, data.data[0])
+        )
+        assert not image.loaded
+    qtbot.waitUntil(lambda: image.loaded)
+    np.testing.assert_array_equal(image._slice.image.raw, data.data[2])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_transform_listener_delivering_newer_plane(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    volume = np.arange(60, dtype=np.float32).reshape(3, 4, 5)
+    image = viewer.add_image(volume, contrast_limits=(0, 60))
+    qtbot.waitUntil(lambda: image.loaded)
+
+    def slice_at(z):
+        dims = viewer.dims.model_copy(update={'point': (z, 0, 0)})
+        (future,) = viewer._layer_slicer.submit(layers=[image], dims=dims)
+        return future.result(5)
+
+    first = slice_at(0)
+    second = slice_at(2)
+    deliver = viewer.window._qt_viewer._on_slice_ready
+
+    def deliver_second(event):
+        image._transforms.events.changed.disconnect(deliver_second)
+        np.testing.assert_array_equal(image._slice.image.raw, volume[0])
+        deliver(second)
+
+    published = []
+    image.events.set_data.connect(
+        lambda: published.append(image._slice.request_id)
+    )
+    image._transforms.events.changed.connect(deliver_second)
+    deliver(first)
+    QCoreApplication.processEvents()
+    assert published == [image._slice.request_id]
+    np.testing.assert_array_equal(image._slice.image.raw, volume[2])
+    assert image._slice_input.world_slice.point[0] == 2
+    assert image.loaded
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_pending_plane_after_axis_reorder(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    data = LockableData(np.arange(60).reshape(3, 4, 5))
+    image = viewer.add_image(data, contrast_limits=(0, 60))
+    qtbot.waitUntil(lambda: image.loaded)
+    viewer.dims.set_current_step(0, 0)
+    viewer._layer_slicer.wait_until_idle(5)
+    updates = []
+    image.events.set_data.connect(
+        lambda: updates.append(image._slice_input.order)
+    )
+    with data.lock:
+        viewer.dims.order = (1, 0, 2)
+        QCoreApplication.processEvents()
+        assert not updates
+    qtbot.waitUntil(lambda: image.loaded)
+    assert updates
+    assert all(order == (1, 0, 2) for order in updates)
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('newer', ['sync', 'remove'])
+def test_async_late_plane_cannot_replace_current_view(
+    make_napari_viewer, qtbot, monkeypatch, newer
+):
+    viewer = make_napari_viewer()
+    volume = np.arange(60, dtype=np.float32).reshape(3, 4, 5)
+    image = Image(volume, contrast_limits=(0, 60))
+    visual = setup_viewer_for_async_slicing(viewer, image)
+    slicer = viewer._layer_slicer
+
+    # Let the older request finish only after the newer plane is on screen.
+    # Navigate towards decreasing Z, where comparing plane numbers is wrong.
+    started = threading.Event()
+    release = threading.Event()
+    make_request = image._slicing_state._make_slice_request
+
+    def make_blocked_request(dims):
+        request = make_request(dims)
+        if dims.current_step[0] != 2:
+            return request
+
+        def read():
+            started.set()
+            assert release.wait(10)
+            return request()
+
+        read.id = request.id
+        return read
+
+    monkeypatch.setattr(
+        image._slicing_state, '_make_slice_request', make_blocked_request
+    )
+    updates = []
+    image.events.set_data.connect(
+        lambda: updates.append(image._slice.image.raw)
+    )
+    try:
+        old_dims = viewer.dims.model_copy(update={'point': (2, 0, 0)})
+        slicer.submit(layers=[image], dims=old_dims)
+        assert started.wait(10)
+        if newer == 'remove':
+            viewer.layers.remove(image)
+        else:
+            with slicer.force_sync():
+                viewer.dims.set_current_step(0, 0)
+            wait_until_vispy_image_data_equal(qtbot, visual, volume[0])
+            assert image.loaded
+        updates.clear()
+    finally:
+        release.set()
+    slicer.wait_until_idle(10)
+    QCoreApplication.processEvents()
+    assert not updates
+    assert image.loaded
+    if newer != 'remove':
+        np.testing.assert_array_equal(image._slice.image.raw, volume[0])
+        np.testing.assert_array_equal(visual.node._data, volume[0])
 
 
 @pytest.mark.usefixtures('_enable_async')

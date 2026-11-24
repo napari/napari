@@ -636,39 +636,27 @@ class QtViewer(QSplitter):
         logging.getLogger('napari').debug(
             'QtViewer._on_slice_ready: %s', responses
         )
+        slicer = self.viewer._layer_slicer
         for weak_layer, response in responses.items():
             layer = weak_layer()
+            if layer is None:
+                continue
+            state = layer._slicing_state
             if (
-                layer is not None
-                and layer._slicing_state._last_slice_id == response.request_id
+                layer not in self.layer_to_visual
+                or not slicer._accept_slice_response(layer, response)
             ):
-                if layer._slicing_state._is_for_outdated_data(
-                    response.request_id
-                ):
-                    # A hidden layer may have no replacement request. Finish
-                    # its loading state without installing the obsolete view.
-                    layer._slicing_state._update_loaded_slice_id(
-                        response.request_id
-                    )
-                    continue
-                # Update the layer slice state to temporarily support behavior
-                # that depends on it.
-                layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
-                # Update the layer's loaded state before everything else,
-                # because they may rely on its updated value.
-                layer._slicing_state._update_loaded_slice_id(
-                    response.request_id
-                )
-                # The rest of `Layer.refresh` after `set_view_slice`, where
-                # `set_data` notifies the corresponding vispy layer of the new
-                # slice.
-                layer.events.set_data()
-                layer._refresh_sync(
-                    data_displayed=False,
-                    thumbnail=True,
-                    highlight=True,
-                    extent=False,  # already updated via Layer.refresh()
-                )
+                # Even a discarded request may be the last one for a hidden
+                # or removed layer.
+                state._update_loaded_slice_id(response.request_id)
+                continue
+
+            state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
+            state._update_loaded_slice_id(response.request_id)
+            if not slicer._can_publish_slice(layer, response.request_id):
+                continue
+            layer.events.set_data()
+            layer._refresh_sync(thumbnail=True, highlight=True)
 
     def _emit_slice_failed(self, event: Event) -> None:
         self._slice_failed.emit(event.layer, event.request_id)

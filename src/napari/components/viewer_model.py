@@ -263,12 +263,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.events.add(reset_view=Event)
 
         # Connect events
-        self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self._on_slice_layout_changed)
         self.dims.events.ndisplay.connect(
             self._save_camera_state, position='first'
         )
         self.dims.events.ndisplay.connect(self._on_ndisplay_changed)
-        self.dims.events.order.connect(self._update_layers)
+        self.dims.events.order.connect(self._on_slice_layout_changed)
         self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
         # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
@@ -796,6 +796,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             yield
         finally:
             self._slicing_deferred = previous
+
+    def _on_slice_layout_changed(self) -> None:
+        # Older planes carry coordinates for the previous axes or view rank.
+        for layer in self.layers:
+            layer._slicing_state._invalidate_async_slices()
+        self._update_layers()
 
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.

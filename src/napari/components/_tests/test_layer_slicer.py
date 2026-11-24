@@ -2,6 +2,7 @@ import time
 from concurrent.futures import Future
 from dataclasses import dataclass
 from threading import Event, RLock, current_thread, main_thread
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -11,6 +12,7 @@ from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Labels, Points
+from napari.layers.base._slice import _next_request_id
 from napari.utils.notifications import notification_manager
 
 if TYPE_CHECKING:
@@ -562,6 +564,33 @@ def test_submit_after_shutdown_raises():
     layer_slicer.shutdown()
     with pytest.raises(RuntimeError):
         layer_slicer.submit(layers=[FakeAsyncLayer()], dims=Dims())
+
+
+def test_slicers_present_slices_in_their_own_order():
+    """Each view orders its slices, and an edit invalidates them in all views."""
+    layer = Image(np.zeros((2, 2)))
+    state = layer._slicing_state
+    first, second = _LayerSlicer(), _LayerSlicer()
+    try:
+        older, newer = (
+            SimpleNamespace(request_id=_next_request_id()) for _ in range(2)
+        )
+        state._set_unloaded_slice_id(newer.request_id)
+
+        assert first._accept_slice_response(layer, newer)
+        assert not first._accept_slice_response(layer, older)
+        assert second._accept_slice_response(layer, older)
+        assert first._can_publish_slice(layer, newer.request_id)
+        assert second._can_publish_slice(layer, older.request_id)
+
+        layer.data = np.ones((2, 2))
+
+        assert not first._can_publish_slice(layer, newer.request_id)
+        assert not second._can_publish_slice(layer, older.request_id)
+        assert not second._accept_slice_response(layer, newer)
+    finally:
+        first.shutdown()
+        second.shutdown()
 
 
 def _wait_until_running(future: Future):

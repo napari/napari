@@ -136,8 +136,9 @@ class _LayerSlicingState(ABC):
         )
         self._loaded: bool = True
         self._last_slice_id: int = -1
-        # Last submitted request that predates an edit of the layer data.
-        self._discard_through_slice_id: int = -1
+        # An edit invalidates the outstanding slices of every view, even a
+        # response during its own delivery.
+        self._discard_through_slice_id = -1
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
@@ -333,18 +334,9 @@ class _LayerSlicingState(ABC):
         if self._last_slice_id == slice_id:
             self._set_loaded(True)
 
-    def _set_data_changed(self) -> None:
-        """Mark the slices requested so far as computed for outdated data.
-
-        Their responses may not match the new data (e.g. Points responses
-        hold indices of points that were removed), so they must not be
-        applied.
-        """
+    def _invalidate_async_slices(self) -> None:
+        """Discard outstanding responses after an edit or synchronous slice."""
         self._discard_through_slice_id = self._last_slice_id
-
-    def _is_for_outdated_data(self, slice_id: int) -> bool:
-        """True if the given slice was requested before the data last changed."""
-        return slice_id <= self._discard_through_slice_id
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -1158,13 +1150,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self._ndim = ndim
         self._slicing_state.update_dims()
-        self._slicing_state._set_data_changed()
+        self._slicing_state._invalidate_async_slices()
 
         self.refresh()
 
     def _refresh_indexed_data(self, *, rebuild_indices: bool = True) -> None:
         """Refresh a Points or Vectors edit that preserves layer dimensionality."""
-        self._slicing_state._set_data_changed()
+        self._slicing_state._invalidate_async_slices()
         if not get_settings().experimental.async_:
             self.refresh()
             return
@@ -1517,7 +1509,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             dims,
             force,
         )
-        changed = self._slicing_state.set_slice_input_from_dims(dims, force)
+        state = self._slicing_state
+        previous_request = state._last_slice_id
+        state._invalidate_async_slices()
+        changed = state.set_slice_input_from_dims(dims, force)
+        state._update_loaded_slice_id(previous_request)
         if force or changed:
             self._refresh_sync(
                 data_displayed=True,

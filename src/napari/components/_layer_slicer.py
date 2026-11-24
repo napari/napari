@@ -116,6 +116,12 @@ class _LayerSlicer:
         self._tasks_changed = Condition()
         self._pending: dict[weakref.ReferenceType[Layer], _SliceTask] = {}
         self._tasks: dict[Future[dict], _SliceTask] = {}
+        # Latest request presented per layer, used only on the main thread.
+        # The order of presented slices belongs to the slicer's view, while
+        # edits invalidate slices on the layer itself, for every view.
+        self._presented: weakref.WeakKeyDictionary[Layer, int] = (
+            weakref.WeakKeyDictionary()
+        )
 
     @contextmanager
     def force_sync(self) -> Generator[None, None, None]:
@@ -273,6 +279,23 @@ class _LayerSlicer:
             self._executor.submit(self._slice_layer, weak_layer)
         task.future.add_done_callback(self._on_slice_done)
         return task.future
+
+    def _accept_slice_response(self, layer: Layer, response: Any) -> bool:
+        """Claim an async response before callbacks can deliver a newer one."""
+        if response.request_id <= max(
+            layer._slicing_state._discard_through_slice_id,
+            self._presented.get(layer, -1),
+        ):
+            return False
+        self._presented[layer] = response.request_id
+        return True
+
+    def _can_publish_slice(self, layer: Layer, request_id: int) -> bool:
+        """Check again after notifying listeners that may edit or reslice."""
+        return (
+            self._presented.get(layer) == request_id
+            and request_id > layer._slicing_state._discard_through_slice_id
+        )
 
     def shutdown(self) -> None:
         """Shuts this down, preventing any new slice tasks from being submitted.
