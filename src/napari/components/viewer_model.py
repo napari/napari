@@ -38,12 +38,6 @@ from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
-from napari.components.overlays import (
-    CanvasAxesOverlay,
-    ScaleBarOverlay,
-    SceneAxesOverlay,
-    TextOverlay,
-)
 from napari.components.scene import Scene
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -104,7 +98,6 @@ from napari.utils.theme import available_themes, is_theme_available
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    import pint
     from npe2.types import SampleDataCreator
 
     from napari.components.camera import Camera
@@ -112,9 +105,17 @@ if TYPE_CHECKING:
         ExperimentalNamespace,
     )
     from napari.components.grid import GridCanvas
-    from napari.layers.utils.plane import SlicingPlane
+    from napari.components.overlays import (
+        CanvasAxesOverlay,
+        ScaleBarOverlay,
+        SceneAxesOverlay,
+        TextOverlay,
+    )
+    from napari.layers.image._image_constants import InterpolationStr
+    from napari.layers.utils.plane import ClippingPlanes, SlicingPlane
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
+    from napari.utils.transforms._units import UnitsLike
 
 
 DEFAULT_THEME = 'dark'
@@ -1112,8 +1113,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         Parameters
         ----------
-        event : :class:`napari.layers.Layer`
-            Layer to add.
+        event : napari.utils.events.Event
+            Event which will add a layer.
         """
         layer = event.value
 
@@ -1192,13 +1193,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         Parameters
         ----------
-        event : napari.utils.event.Event
+        event : napari.utils.events.Event
             Event which will remove a layer.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Layer` or list
-            The layer that was added (same as input).
         """
         layer = event.value
 
@@ -1239,18 +1235,22 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = None,
         blending: str | Sequence[str] | None = None,
         cache: bool | Sequence[bool] = True,
-        colormap: ValidColormapArg | None = None,
+        colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = None,
         contrast_limits: Sequence[float]
         | Sequence[Sequence[float]]
         | None = None,
         custom_interpolation_kernel_2d: npt.ArrayLike | None = None,
         depiction: str | Sequence[str] = 'volume',
-        experimental_clipping_planes: dict | Sequence[Any] | None = None,
+        experimental_clipping_planes: ClippingPlanes
+        | Sequence[ClippingPlanes]
+        | None = None,
         gamma: float | Sequence[float] = 1.0,
-        interpolation2d: str | Sequence[str] = 'nearest',
-        interpolation3d: str | Sequence[str] = 'linear',
+        interpolation2d: InterpolationStr
+        | Sequence[InterpolationStr] = 'nearest',
+        interpolation3d: InterpolationStr
+        | Sequence[InterpolationStr] = 'linear',
         iso_threshold: float | Sequence[float] | None = None,
-        locked_data_level: int | None = None,
+        locked_data_level: int | Sequence[int | None] | None = None,
         metadata: dict | Sequence[dict] | None = None,
         multiscale: bool | None = None,
         name: str | Sequence[str] | None = None,
@@ -1266,9 +1266,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         scale: npt.ArrayLike | None = None,
         shear: npt.ArrayLike | None = None,
         translate: npt.ArrayLike | None = None,
-        units: Sequence[str | pint.Unit]
-        | Sequence[Sequence[str | pint.Unit]]
-        | None = None,
+        units: UnitsLike | Sequence[UnitsLike] = None,
         visible: bool | Sequence[bool] = True,
     ) -> Image | list[Image]:
         """Add one or more Image layers to the layer list.
@@ -1299,7 +1297,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             top of the provided scale, rotate, and shear values.
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
-        auto_contrast : bool
+        auto_contrast : bool or list of bool
             Wether to automatically set contrast limits to the min and max of the
             currently viewed slice. If True, contrast limits will be updated
             whenever the slice changes.
@@ -1348,7 +1346,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             Same as 'interpolation2d' but for 3D rendering.
         iso_threshold : float or list of float
             Threshold for isosurface.
-        locked_data_level : int, optional
+        locked_data_level : int or list of int, optional
             Lock the multiscale resolution level to a specific index. When set,
             forces rendering at the given multiscale level instead of automatic
             level selection based on the viewport. Set to ``None`` (default) to
@@ -1371,7 +1369,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
-        projection_mode : str
+        projection_mode : str or list of str
             How data outside the viewed dimensions, but inside the thick Dims slice will
             be projected onto the viewed dimensions. Must fit to cls._projectionclass
         rendering : str or list of str
@@ -1737,16 +1735,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             keyword arguments to pass to layer adding method, by default {}
         layer_type : Optional[str], optional
             layer type for paths, by default None
-        stack : bool or list[list[str]], optional
+        stack : bool, optional
             True if files should be opened as a stack, by default False.
-            Can also be a list containing lists of files to stack.
 
         Returns
         -------
         added
             list of layers added
-        plugin
-            plugin used to try opening paths, if any
 
         Raises
         ------

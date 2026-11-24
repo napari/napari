@@ -66,6 +66,7 @@ class CanvasEventedDictNamespace(EventedDictNamespace[CanvasOverlay]):
     _brush_circle: BrushCircleOverlay
     _zoom_box: ZoomOverlay
     current_slice: CurrentSliceOverlay
+    dims_displayed: DimsDisplayedOverlay
     axes: CanvasAxesOverlay
 
 

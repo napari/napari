@@ -21,6 +21,8 @@ class SceneEventedDictNamespace(EventedDictNamespace[SceneOverlay]):
     """
 
     axes: SceneAxesOverlay
+    crosshair: CrosshairOverlay
+    coordinate_grid: CoordinateGridOverlay
 
 
 class Scene(EventedModel):
@@ -35,7 +37,7 @@ class Scene(EventedModel):
         The camera object modeling the position and view.
     overlays : SceneEventedDictNamespace
         A dictionary/namespace containing scene overlays. By default, it exposes
-        publicly 'axes' and 'crosshair'.
+        publicly 'axes', 'crosshair' and 'coordinate_grid'.
     """
 
     camera: Camera = Field(default_factory=Camera, frozen=True)

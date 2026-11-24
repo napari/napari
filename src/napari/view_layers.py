@@ -6,7 +6,7 @@ This module provides the `imshow` function.
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -18,14 +18,11 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from napari.layers.image._image_constants import InterpolationStr
-    from napari.layers.utils.plane import ClippingPlane, SlicingPlane
+    from napari.layers.utils.plane import ClippingPlanes, SlicingPlane
     from napari.types import ArrayLike
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
     from napari.utils.transforms._units import UnitsLike
-
-    # the clipping planes of one layer
-    ClippingPlanes: TypeAlias = dict | Sequence[dict | ClippingPlane]
 
 __all__ = ['imshow']
 
