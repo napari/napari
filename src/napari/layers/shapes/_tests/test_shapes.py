@@ -2568,17 +2568,26 @@ def test_get_tooltip_text_hidden_layer():
 
 
 def test_get_tooltip_text_3d():
-    """Test the tooltip is empty (and does not crash) in 3D view."""
+    """Test the tooltip shows the features of the shape hit by the ray in 3D."""
     data = [[[0, 0, 0], [0, 10, 0], [10, 10, 0], [10, 0, 0]]]
     layer = Shapes(data, features={'a': [1]})
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
+    # the view direction is perpendicular to the shape, so the ray hits it
     text = layer._get_tooltip_text(
         position=(5, 5, 5),
-        view_direction=[1, 0, 0],
+        view_direction=[0, 0, 1],
         dims_displayed=[0, 1, 2],
     )
-    assert isinstance(text, str)
+    assert text == 'a: 1'
+
+    # a ray that passes beside the shape does not hit it
+    text = layer._get_tooltip_text(
+        position=(50, 50, 5),
+        view_direction=[0, 0, 1],
+        dims_displayed=[0, 1, 2],
+        )
+    assert text == ''
 
 
 def test_thumbnail():
