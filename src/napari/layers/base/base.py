@@ -353,7 +353,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum',
+        and 'multiplicative'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -854,7 +855,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         if not name:
             name = self._basename()
-        self._name = str(name)
+        self._name = name
         self.events.name()
 
     @property
@@ -2321,8 +2322,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             # - we take a max because we don't want to go below 0 precision.
             # - we convert to int because it needs to be int to be used in a
             #   format string.
-            precision = int(
-                max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
+            precision = (
+                max(int(np.max(np.ceil(-np.log10(np.abs(self.scale))))), -2)
+                + 2
             )
             position = np.asarray(position)
             value = self.get_value(

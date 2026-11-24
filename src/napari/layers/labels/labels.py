@@ -589,7 +589,7 @@ class Labels(ScalarFieldBase):
     def contour(self, contour: int) -> None:
         if contour < 0:
             raise ValueError('contour value must be >= 0')
-        self._contour = int(contour)
+        self._contour = contour
         self.events.contour()
         self.refresh(extent=False)
 
@@ -799,7 +799,7 @@ class Labels(ScalarFieldBase):
         dtype_lims = get_dtype_limits(layer_dtype)
         if dtype_lims[0] > label or dtype_lims[1] < label:
             raise WrongSelectedLabelError(
-                dtype=layer_dtype,  # pyrefly: ignore [bad-argument-type]
+                dtype=layer_dtype,
                 value=label,
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
@@ -1002,7 +1002,7 @@ class Labels(ScalarFieldBase):
             warnings.warn('Contours are not displayed during 3D rendering')
             return None
 
-        contour_offset = max(1, int(self.contour))
+        contour_offset = max(1, self.contour)
         expanded_slice = expand_slice(data_slice, labels.shape, contour_offset)
         sliced_labels = get_contours(
             labels[expanded_slice],
@@ -1829,11 +1829,9 @@ class Labels(ScalarFieldBase):
             N-dimensional slice key. Every entry is a slice with explicit
             bounds, so indexing with it never drops dimensions.
         """
-        slice_key_list = [
-            slice(int(coord), int(coord) + 1) for coord in slice_coord
-        ]
+        slice_key_list = [slice(coord, coord + 1) for coord in slice_coord]
         for i, dim in enumerate(dims_to_paint):
-            slice_key_list[dim] = slice(int(min_vals[i]), int(max_vals[i]))
+            slice_key_list[dim] = slice(min_vals[i], max_vals[i])
         return tuple(slice_key_list)
 
     def _expand_updated_slice_for_contour(
@@ -1843,7 +1841,7 @@ class Labels(ScalarFieldBase):
         if self.contour < 1:
             return updated_slice
 
-        contour_offset = max(1, int(self.contour))
+        contour_offset = max(1, self.contour)
         return expand_slice(updated_slice, self.data.shape, contour_offset)
 
     def _accumulate_updated_slice(

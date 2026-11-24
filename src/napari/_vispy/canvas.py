@@ -717,6 +717,10 @@ class VispyCanvas:
         for camera in (self.camera, *self.grid_cameras):
             camera.on_draw(event)
 
+        # A resize repaints, so defer slicing as necessary
+        if self.viewer._slicing_deferred:
+            return
+
         # The canvas corners in full world coordinates (i.e. across all layers).
         viewbox_corners_world = self._viewbox_corners_in_world
         for layer in self.viewer.layers:
@@ -1150,7 +1154,7 @@ class VispyCanvas:
         """
 
         def is_visible_tileable(overlay: Overlay) -> TypeGuard[CanvasOverlay]:
-            return bool(
+            return (
                 isinstance(overlay, CanvasOverlay)
                 and overlay.visible
                 and overlay.position in list(CanvasPosition)

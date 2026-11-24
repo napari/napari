@@ -79,7 +79,7 @@ def crosshair_pixmap() -> QPixmap:
 
 def square_pixmap(size: int) -> QPixmap:
     """Create a white/black hollow square pixmap. For use as labels cursor."""
-    size = max(int(size), 1)
+    size = max(size, 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
