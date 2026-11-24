@@ -91,16 +91,12 @@ def delete_selected_layers(viewer: ViewerModel) -> None:
     viewer.layers.remove_selected()
 
 
-@register_viewer_action(
-    'Increment dimensions slider to the left', repeatable=True
-)
+@register_viewer_action('Increment dimensions slider to the left')
 def increment_dims_left(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_left()
 
 
-@register_viewer_action(
-    'Increment dimensions slider to the right', repeatable=True
-)
+@register_viewer_action('Increment dimensions slider to the right')
 def increment_dims_right(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_right()
 
@@ -222,7 +218,7 @@ def toggle_console_visibility(qt_viewer: QtViewer) -> None:
     else:
         # old action_manager path :( :(, where
         # toggle_console_visibility is treated as bound method...
-        qt_viewer.window._qt_viewer.toggle_console_visibility()  # type: ignore[attr-defined]
+        qt_viewer.window._qt_viewer.toggle_console_visibility()  # pyrefly: ignore [missing-attribute]
 
 
 @register_viewer_action('Press and hold for move camera mode')
@@ -236,7 +232,7 @@ def hold_for_pan_zoom(viewer: ViewerModel) -> Generator[None, None, None]:
     # but they should all have a PAN_ZOOM value. At the time of writing
     # these enums do not share a base class or protocol, so ignore the
     # attribute check for now.
-    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # pyrefly: ignore [missing-attribute]
     if previous_mode != pan_zoom:
         selected_layer.mode = pan_zoom
         yield

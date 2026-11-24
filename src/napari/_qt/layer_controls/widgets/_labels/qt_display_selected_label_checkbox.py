@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari._qt.utils import attr_to_settr
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
@@ -47,16 +47,17 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
             )
         )
         connect_setattr(
-            selected_color_checkbox.stateChanged,
+            selected_color_checkbox.toggled,
             layer,
             'show_selected_label',
-            convert_fun=checked_to_bool,
         )
         self.selected_color_checkbox = selected_color_checkbox
 
         self.selected_color_checkbox_label = QtWrappedLabel('show\nselected:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.selected_color_checkbox_label, self.selected_color_checkbox)
         ]

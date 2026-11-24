@@ -11,7 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
 
 import magicgui as mgui
 import numpy as np
@@ -105,8 +105,11 @@ def no_op(layer: Layer, event: Event) -> None:
     """
 
 
+LayerBound = TypeVar('LayerBound', bound='Layer')
+
+
 class PostInit(ABCMeta):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         sig = inspect.signature(self.__init__)
         params = tuple(sig.parameters.values())
@@ -123,7 +126,7 @@ class _LayerSlicingState(ABC):
     slice_done = Signal()
     loaded_data = Signal()
 
-    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool) -> None:
         self.layer = layer
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._slice_input = _SliceInput(
@@ -160,7 +163,7 @@ class _LayerSlicingState(ABC):
 
         return self._slice_input.data_slice(world_to_data=world_to_data)
 
-    def update_dims(self):
+    def update_dims(self) -> None:
         self._slice_input = self._slice_input.with_ndim(self.ndim)
 
     def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
@@ -350,7 +353,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum',
+        and 'multiplicative'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -529,7 +533,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     }
     events: EmitterGroup
 
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(
         self,
         data,
         ndim,
@@ -611,7 +615,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if translate is None:
             translate = [0] * ndim
         self._initial_affine = coerce_affine(
-            affine, ndim=ndim, name='physical2world'
+            affine,  # pyrefly: ignore [bad-argument-type]
+            ndim=ndim,
+            name='physical2world',
         )
         self._transforms: TransformChain[Affine] = TransformChain(
             [
@@ -639,7 +645,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
-        self.experimental_clipping_planes = experimental_clipping_planes
+        self.experimental_clipping_planes = experimental_clipping_planes  # pyrefly: ignore [bad-argument-type]
 
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
@@ -698,12 +704,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             }
         )
         self._slicing_state = self._get_layer_slicing_state(data, cache)
+        self._slicing_state.loaded_data.connect(self.events.loaded)
 
     @property
-    def _slice_input(self):
+    def _slice_input(self) -> _SliceInput:
         return self._slicing_state._slice_input
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         """Post init hook for subclasses to use."""
 
     def __str__(self) -> str:
@@ -738,8 +745,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         mode = self._modeclass(mode_in)
         # Sub-classes can have their own Mode enum, so need to get members
         # from the specific mode class set on this layer.
-        PAN_ZOOM = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
-        TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+        PAN_ZOOM = self._modeclass.PAN_ZOOM  # pyrefly: ignore [missing-attribute]
+        TRANSFORM = self._modeclass.TRANSFORM  # pyrefly: ignore [missing-attribute]
         assert mode is not None
 
         if not self.editable or not self.visible:
@@ -775,14 +782,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return mode
 
-    def update_transform_box_visibility(self, visible):
+    def update_transform_box_visibility(self, visible) -> None:
         if 'transform_box' in self._overlays:
-            TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+            TRANSFORM = self._modeclass.TRANSFORM  # pyrefly: ignore [missing-attribute]
             self._overlays['transform_box'].visible = (
                 self.mode == TRANSFORM and visible
             )
 
-    def update_highlight_visibility(self, visible):
+    def update_highlight_visibility(self, visible) -> None:
         self._highlight_visible = visible
         self._set_highlight(force=True)
 
@@ -807,7 +814,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.mode(mode=str(mode_enum))
 
     @property
-    def projection_mode(self):
+    def projection_mode(self) -> StringEnum:
         """Mode of projection of the thick slice onto the viewed dimensions.
 
         The sliced data is described by an n-dimensional bounding box ("thick slice"),
@@ -817,7 +824,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._projection_mode
 
     @projection_mode.setter
-    def projection_mode(self, mode):
+    def projection_mode(self, mode) -> None:
         mode = self._projectionclass(str(mode))
         if self._projection_mode != mode:
             self._projection_mode = mode
@@ -850,7 +857,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         if not name:
             name = self._basename()
-        self._name = str(name)
+        self._name = name
         self.events.name()
 
     @property
@@ -937,7 +944,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return str(self._blending)
 
     @blending.setter
-    def blending(self, blending):
+    def blending(self, blending) -> None:
         self._blending = Blending(blending)
         self.events.blending()
 
@@ -963,7 +970,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.mode = self._visible_mode
         else:
             self._visible_mode = self.mode
-            self.mode = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+            self.mode = self._modeclass.PAN_ZOOM  # pyrefly: ignore [missing-attribute]
 
     @property
     def editable(self) -> bool:
@@ -1016,8 +1023,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @axis_labels.setter
     def axis_labels(self, axis_labels: Sequence[str] | None) -> None:
         prev = self._transforms['data2physical'].axis_labels
-        # mypy bug https://github.com/python/mypy/issues/3004
-        self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
+        # See https://github.com/python/mypy/issues/3004
+        self._transforms['data2physical'].axis_labels = axis_labels
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
 
@@ -1034,8 +1041,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @units.setter
     def units(self, units: Sequence[pint.Unit | str] | None) -> None:
         prev = self.units
-        # mypy bug https://github.com/python/mypy/issues/3004
-        self._transforms['data2physical'].units = units  # type: ignore[assignment]
+        # See https://github.com/python/mypy/issues/3004
+        self._transforms['data2physical'].units = units
         if self.units != prev:
             self._clear_extent()
             self.refresh(extent=False)
@@ -1057,12 +1064,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.scale()
 
     @property
-    def scale_factor(self):
+    def scale_factor(self) -> float:
         """float: Conversion factor from canvas coordinates to image coordinates."""
         return self._scale_factor
 
     @scale_factor.setter
-    def scale_factor(self, scale_factor):
+    def scale_factor(self, scale_factor) -> None:
         if self._scale_factor != scale_factor:
             self._scale_factor = scale_factor
             self.events.scale_factor()
@@ -1429,7 +1436,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def bounding_box(self) -> BoundingBoxOverlay:
-        return self._overlays['bounding_box']  # type: ignore[return-value]
+        return self._overlays['bounding_box']  # pyrefly: ignore [bad-return]
 
     @property
     def name_overlay(self) -> Overlay:
@@ -1581,7 +1588,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # used in Points and Shapes.
         if self.mode != 'pan_zoom':
             self._value = value
-        return value
+        return value  # pyrefly: ignore [bad-return]
 
     def _get_value_3d(
         self,
@@ -1699,6 +1706,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
         if get_settings().experimental.async_ and data_displayed:
+            # eagerly refresh the extent, even if the layer is invisible, because
+            # the viewer needs to know if the extent changed to update the gui
+            self._refresh_sync(extent=extent, force=True)
             # full async slice reload, it will also update everything when done slicing
             # via the callback of layer.loaded which calls _refresh_sync
             self.events.reload(layer=self)
@@ -2105,7 +2115,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def _update_level_and_corners(
         self, data_bbox_int, shape_threshold, displayed_axes
-    ):
+    ) -> None:
         """Update the data level and corner pixels for the current viewport.
 
         Sets ``self.corner_pixels`` (and ``self._data_level`` for multiscale
@@ -2138,8 +2148,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.corner_pixels = corners
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
+        self,
+        scale_factor: float,
+        corner_pixels_displayed: npt.NDArray[np.floating],
+        shape_threshold: tuple[float, float],
+    ) -> None:
         """Update canvas scale and corner values on draw.
 
         For layer multiscale determining if a new resolution level or tile is
@@ -2152,7 +2165,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
-        shape_threshold : tuple
+        shape_threshold : tuple[float, float]
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor
@@ -2311,8 +2324,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             # - we take a max because we don't want to go below 0 precision.
             # - we convert to int because it needs to be int to be used in a
             #   format string.
-            precision = int(
-                max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
+            precision = (
+                max(int(np.max(np.ceil(-np.log10(np.abs(self.scale))))), -2)
+                + 2
             )
             position = np.asarray(position)
             value = self.get_value(
@@ -2392,7 +2406,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return save_layers(path, [self], plugin=plugin)
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         """Create a copy of this layer.
 
         Returns
@@ -2421,7 +2435,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         data: Any,
         meta: Mapping | None = None,
         layer_type: str | None = None,
-    ) -> Layer:
+    ) -> LayerBound:
         """Create layer from `data` of type `layer_type`.
 
         Primarily intended for usage by reader plugin hooks and creating a

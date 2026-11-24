@@ -105,7 +105,7 @@ class HistogramModel(EventedModel):
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
-    ):
+    ) -> None:
         """Initialize histogram model.
 
         Parameters
@@ -291,6 +291,10 @@ class HistogramModel(EventedModel):
             range_max = 1.0
 
         running_counts = np.zeros(self.bins, dtype=np.float64)
+        bins = np.linspace(range_min, range_max, self.bins + 1).astype(
+            np.float32
+        )
+        counts = np.zeros(self.bins, dtype=np.float32)
         for ci in order:
             # Early stale guard to abort worker early if a new compute has started.
             if self._compute_generation != generation:
@@ -313,9 +317,6 @@ class HistogramModel(EventedModel):
             )
             running_counts += chunk_counts.astype(np.float64)
 
-            bins = np.linspace(range_min, range_max, self.bins + 1).astype(
-                np.float32
-            )
             if self.log_scale:
                 counts = np.log10(running_counts + 1).astype(np.float32)
             else:
@@ -477,21 +478,23 @@ class HistogramModel(EventedModel):
             data = data[-1]
 
         if isinstance(data, np.ndarray):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Chunked arrays (dask, zarr, h5py with chunks) are returned
         # as-is for the progressive sampler in _compute_chunked_progressive.
         if self._has_chunks(data):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Last resort: cast to numpy.  Guard against accidentally
         # materializing a very large object (contiguous h5py) by
         # checking the estimated memory footprint first.
         data_size = data.size if hasattr(data, 'size') else 0
         if data_size > _MAX_MATERIALIZE_ELEMENTS:
-            dtype_size = (
-                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
-            )
+            if hasattr(data, 'dtype'):
+                dtype = np.dtype(data.dtype)
+                dtype_size = dtype.itemsize
+            else:
+                dtype_size = 8
             est_mb = (data_size * dtype_size) / (1024 * 1024)
             warnings.warn(
                 f'Skipping full-data histogram: materializing '

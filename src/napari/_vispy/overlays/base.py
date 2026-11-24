@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.utils.color import ColorValue
+from napari.utils.color import (
+    ColorValue,
+    _contrasting_color,
+    _readable_color,
+)
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -42,6 +46,7 @@ class VispyBaseOverlay:
         super().__init__()
         self.overlay = overlay
         self._font_info = font_info
+        self._default_font_size = 9
         self.viewer = viewer
 
         self.node = node
@@ -67,10 +72,26 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
+    def _get_bgcolor(self) -> ColorValue:
+        return self.viewer.canvas.background_color
+
+    def _get_fgcolor(self) -> ColorValue:
+        bgcolor = self._get_bgcolor()
+        return _readable_color(_contrasting_color(bgcolor), bgcolor)
+
+    def _on_font_size_change(self) -> None:
+        # to be implemented by subclasses that need it
+        pass
+
+    def set_default_font_size(self, font_size: int) -> None:
+        self._default_font_size = font_size
+        self._on_font_size_change()
+
     def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
+        self._on_font_size_change()
 
     def close(self) -> None:
         self.overlay.events.visible.disconnect(self._on_visible_change)
@@ -78,6 +99,11 @@ class VispyBaseOverlay:
         self.overlay.events.blending.disconnect(self._on_blending_change)
         disconnect_events(self.viewer.events, self)
         disconnect_events(self.viewer.canvas.events, self)
+        disconnect_events(self.viewer.dims.events, self)
+        disconnect_events(self.viewer.scene.events, self)
+        disconnect_events(self.viewer.scene.camera.events, self)
+        disconnect_events(self.viewer.canvas.grid.events, self)
+        disconnect_events(self.viewer.cursor.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
@@ -97,7 +123,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
 
         super().__init__(**kwargs)
         self.x_size = 0.0
@@ -144,21 +170,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_fgcolor(self) -> ColorValue:
+    def _get_bgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self.viewer.canvas.background_color
-        else:
-            bgcolor = self.overlay.box_color
-        return self._contrasting_color(bgcolor)
-
-    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
-        opposite = 1 - bgcolor
-        # shift away from mid tones for better contrast
-        opposite = 0.5 + (opposite - 0.5) * 1.2
-        opposite = np.clip(opposite, 0, 1)
-        # don't change alpha
-        opposite[-1] = bgcolor[-1]
-        return opposite
+            return super()._get_bgcolor()
+        return self.overlay.box_color
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
@@ -186,16 +201,15 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
 
-class LayerOverlayMixin:
+class LayerOverlayMixin(VispyBaseOverlay):
     layer: Layer
-    overlay: Overlay
 
-    def __init__(self, *, layer: Layer, **kwargs) -> None:
+    def __init__(self, *, layer: Layer, **kwargs: Any) -> None:
         self.layer = layer
         super().__init__(
             **kwargs,

@@ -6,6 +6,7 @@ import sys
 import traceback
 import warnings
 import weakref
+from concurrent.futures import Future
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -16,13 +17,12 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl, Signal
 from qtpy.QtGui import (
     QGuiApplication,
     QImage,
 )
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
-from superqt import ensure_main_thread
 
 from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
@@ -58,12 +58,12 @@ from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
-from napari.utils.notifications import show_info
+from napari.utils.notifications import notification_manager, show_info
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Generator, Sequence
     from types import FrameType
 
     from napari_console import QtConsole
@@ -152,6 +152,11 @@ class QtViewer(QSplitter):
     """
 
     _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
+    # Slice responses, passed from the slicing thread to the main thread.
+    _slice_ready = Signal(object)
+
+    # emitted from any thread when a future is done, handled on the main thread
+    _future_ready = Signal(Future)
 
     def __init__(
         self,
@@ -179,6 +184,8 @@ class QtViewer(QSplitter):
         self._key_map_handler.keymap_providers = [self.viewer]
         self._console_backlog: list[dict[str, Any]] = []
         self._console: QtConsole | None = None
+        # futures whose result is still to be added, see `_add_future`
+        self._futures: dict[Future, Callable[..., None]] = {}
 
         self._dockLayerList: QtViewerDockWidget | None = None
         self._dockLayerControls: QtViewerDockWidget | None = None
@@ -201,7 +208,10 @@ class QtViewer(QSplitter):
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
-            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            autoswap=get_settings().advanced.autoswap_buffers,  # see #5734
+            config={
+                'samples': 4 if get_settings().advanced.multisampling else 0
+            },
         )
 
         self._welcome_widget = QtWelcomeWidget(
@@ -217,7 +227,8 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
+        self._slice_ready.connect(self._on_slice_ready)
+        self.viewer._layer_slicer.events.ready.connect(self._emit_slice_ready)
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -230,6 +241,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
+        self._future_ready.connect(self._add_result_from_future)
 
         self.setAcceptDrops(True)
 
@@ -259,11 +271,11 @@ class QtViewer(QSplitter):
         # set up welcome screen
         self._set_welcome_visible(False)
 
-    def showEvent(self, event: QShowEvent | None) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self._update_welcome_screen()
 
-    def hideEvent(self, event: QHideEvent | None) -> None:
+    def hideEvent(self, event: QHideEvent) -> None:
         super().hideEvent(event)
 
     @property
@@ -415,7 +427,7 @@ class QtViewer(QSplitter):
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, str(shortcut))
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_performance_dock_widget(self) -> QtViewerDockWidget | None:
         """Create the dock widget that shows performance metrics."""
@@ -597,17 +609,25 @@ class QtViewer(QSplitter):
     def console(self, console: QtConsole | None) -> None:
         self._console = console
         if console is not None:
-            self.dockConsole.setWidget(console)  # type: ignore[no-untyped-call]
+            self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
-    @ensure_main_thread
-    def _on_slice_ready(self, event: Event) -> None:
+    def _emit_slice_ready(self, event: Event) -> None:
         """Callback connected to `viewer._layer_slicer.events.ready`.
 
-        Provides updates after slicing using the slice response data.
+        Pass the slice response data to the main thread via a Qt signal.
+        Do not use ensure_main_theard on Qt object because it creates
+        temporary objects that result in deadlocks on CI.
+        """
+        self._slice_ready.emit(event.value)
+
+    def _on_slice_ready(
+        self, responses: dict[weakref.ReferenceType[Layer], Any]
+    ) -> None:
+        """Provide updates on the main thread using the slice response data.
+
         This only gets triggered on the async slicing path.
         """
-        responses: dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.getLogger('napari').debug(
             'QtViewer._on_slice_ready: %s', responses
         )
@@ -615,7 +635,7 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._slicing_state._update_slice_response(response)  # type: ignore[attr-defined]
+                layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
                 layer._slicing_state._update_loaded_slice_id(
@@ -629,7 +649,7 @@ class QtViewer(QSplitter):
                     data_displayed=False,
                     thumbnail=True,
                     highlight=True,
-                    extent=True,
+                    extent=False,  # already updated via Layer.refresh()
                 )
 
     def _on_active_change(self) -> None:
@@ -650,6 +670,50 @@ class QtViewer(QSplitter):
         """
         layer = event.value
         self._add_layer(layer)
+
+    def _add_future(
+        self, future: Future, add_result: Callable[..., None]
+    ) -> None:
+        """Add the result of ``future`` to the viewer once it is done.
+
+        The future may finish in a background thread, but layers must be
+        added on the main thread. The done callback only emits
+        ``_future_ready``, whose slot runs on the main thread.
+
+        Parameters
+        ----------
+        future : Future
+            An instance of `concurrent.futures.Future` (or any third-party)
+            object with the same interface, whose result is layer data.
+        add_result : callable
+            Called on the main thread with the result of ``future`` and
+            the viewer as ``viewer`` keyword, once the future is done.
+        """
+        # Keep the future first, then add the callback. If the future is
+        # already finished, the callback runs right away and removes it.
+        self._futures[future] = add_result
+        future.add_done_callback(self._on_future_ready)
+
+    def _on_future_ready(self, future: Future) -> None:
+        """Done callback of a future added with `_add_future`.
+
+        This may run in any thread, so it only emits a signal.
+        """
+        self._future_ready.emit(future)
+
+    def _add_result_from_future(self, future: Future) -> None:
+        """Add the result of a finished future to the viewer."""
+        add_result = self._futures.pop(future)
+        if future.cancelled():
+            return
+        # Show the error to the user. If we let it raise, it would only be
+        # printed to the log.
+        if (exc := future.exception()) is not None:
+            notification_manager.receive_error(
+                type(exc), exc, exc.__traceback__
+            )
+            return
+        add_result(future.result(), viewer=self.viewer)
 
     def _update_camera_depth(self) -> None:
         """When the layer extents change, update the camera depth.
@@ -821,7 +885,7 @@ class QtViewer(QSplitter):
             str(
                 Path(hist[0]) / selected_layer_name
             ),  # directory in PyQt, dir in PySide
-            filter=ext_str,
+            filter=ext_str or '',
             options=(
                 QFileDialog.Option.DontUseNativeDialog
                 if in_ipython()
@@ -848,7 +912,7 @@ class QtViewer(QSplitter):
                 error_messages = '\n'.join(
                     str(x.message.args[0])
                     if isinstance(x.message, Warning)
-                    else str(x.message)
+                    else x.message
                     for x in wa
                 )
 
@@ -984,7 +1048,7 @@ class QtViewer(QSplitter):
     @contextlib.contextmanager
     def resize_canvas(
         self, size: tuple[int, int] | None, scale: float
-    ) -> Iterator[None]:
+    ) -> Generator[None]:
         """Temporarily, safely, resize the canvas
 
         Parameters
@@ -1004,6 +1068,8 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(prev_size)
         size_arr = (size_arr * scale).astype(np.int64)
+
+        camera.zoom = old_zoom * scale
         canvas.size = tuple(size_arr)
         try:
             yield

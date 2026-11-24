@@ -13,7 +13,7 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import checked_to_bool, qt_signals_blocked
+from napari._qt.utils import qt_signals_blocked
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -76,7 +76,9 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
                 )
             self.tail_length_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.tail_length_slider_label, self.tail_length_slider)]
 
 
@@ -136,7 +138,9 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
                 )
             self.tail_width_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.tail_width_slider_label, self.tail_width_slider)]
 
 
@@ -174,10 +178,9 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
         self.tail_checkbox.setChecked(True)
         for layer in self._layers:
             connect_setattr(
-                self.tail_checkbox.stateChanged,
+                self.tail_checkbox.toggled,
                 layer,
                 'display_tail',
-                convert_fun=checked_to_bool,
             )
 
         self._layers[0].events.display_tail.connect(self._set_display_tail)
@@ -187,5 +190,7 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
         """Receive layer model track line width change event and update checkbox."""
         self.tail_checkbox.setChecked(self._layers[0].display_tail)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.tail_checkbox_label, self.tail_checkbox)]

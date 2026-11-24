@@ -67,5 +67,7 @@ class QtColormapComboBoxControl(QtWidgetControlsBase):
                 self.colormap_combobox.findData(self._layers[0].colormap)
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.colormap_combobox_label, self.colormap_combobox)]

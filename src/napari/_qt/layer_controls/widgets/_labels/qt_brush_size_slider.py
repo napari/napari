@@ -1,4 +1,3 @@
-import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QWidget,
@@ -57,10 +56,12 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         """Receive layer model brush size change event and update the slider."""
         with qt_signals_blocked(self.brush_size_slider):
             value = self._layer.brush_size
-            value = np.maximum(1, int(value))
+            value = max(1, value)
             if value > self.brush_size_slider.maximum():
-                self.brush_size_slider.setMaximum(int(value))
+                self.brush_size_slider.setMaximum(value)
             self.brush_size_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.brush_size_slider_label, self.brush_size_slider)]

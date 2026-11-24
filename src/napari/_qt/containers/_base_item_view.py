@@ -3,7 +3,12 @@ from __future__ import annotations
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from qtpy.QtCore import QItemSelection, QModelIndex, Qt
+from qtpy.QtCore import (
+    QItemSelection,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+)
 
 from napari._qt.containers._base_item_model import (
     ItemRole,
@@ -39,7 +44,7 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
 
     This class is an adapter between that interface and Qt's
     `QAbstractItemView` interface (see `Qt Model/View Programming
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_). It allows python
     users to interact with the list in the "usual" python ways, while updating
     any Qt Views that may be connected, and also updates the python list object
     if any GUI events occur in the view.
@@ -58,7 +63,7 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
     _root: SelectableEventedList[ItemType]
 
     def model(self) -> _BaseEventedItemModel[ItemType]:
-        return super().model()  # type: ignore[return-value]
+        return super().model()  # pyrefly: ignore [bad-return]
 
     def keyPressEvent(self, e: QKeyEvent | None) -> None:
         """Delete items with delete key."""
@@ -70,7 +75,9 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
         return super().keyPressEvent(e)
 
     def currentChanged(
-        self, current: QModelIndex, previous: QModelIndex
+        self,
+        current: QModelIndex | QPersistentModelIndex,
+        previous: QModelIndex | QPersistentModelIndex,
     ) -> None:
         """The Qt current item has changed. Update the python model."""
         self._root.selection._current = current.data(ItemRole)

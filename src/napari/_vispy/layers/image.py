@@ -155,14 +155,6 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.events.set_data.connect(self._on_axis_order_change)
 
-        # display_change is special (like data_change) because it requires a
-        # self.reset(). This means that we have to call it manually. Also,
-        # it must be called before reset in order to set the appropriate node
-        # first
-        self._on_display_change()
-        self.reset()
-        self._on_data_change()
-
     def _on_axis_order_change(self, event=None) -> None:
         # Detect if order changed (transpose or roll)
         current_order = self.layer._slice_input.order
@@ -201,7 +193,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
 
     def _on_contrast_limits_change(self) -> None:
         self.node.clim = _coerce_contrast_limits(
-            self.layer.contrast_limits
+            self.layer.contrast_limits  # pyrefly: ignore [bad-argument-type]
         ).contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
@@ -221,8 +213,8 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         if isinstance(self.node, VolumeNode):
             if self.node._texture.is_normalized:
                 cmin, cmax = self.layer.contrast_limits_range
-                self.node.threshold = (self.layer.iso_threshold - cmin) / (
-                    cmax - cmin
+                self.node.threshold = (self.layer.iso_threshold - cmin) / (  # pyrefly: ignore [unsupported-operation]
+                    cmax - cmin  # pyrefly: ignore [unsupported-operation]
                 )
             else:
                 self.node.threshold = self.layer.iso_threshold

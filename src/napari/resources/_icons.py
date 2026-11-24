@@ -43,9 +43,19 @@ def get_raw_svg(path: str) -> str:
 
 @lru_cache
 def get_colorized_svg(
-    path_or_xml: str | Path, color: str | None = None, opacity=1.0
+    path_or_xml: str | Path, color: str | None = None, opacity: float = 1.0
 ) -> str:
     """Return a colorized version of the SVG XML at ``path``.
+
+    Parameters
+    ----------
+    path_or_xml : str | Path
+        Path to an SVG file, or raw SVG XML string.
+    color : str, optional
+        Color to use for the SVG, by default None. If None, the original SVG
+        is returned.  If a string, it should be a valid SVG color style.
+    opacity : float, optional
+        Opacity to use for the SVG, by default 1.0.
 
     Raises
     ------
@@ -134,7 +144,7 @@ def write_colorized_svgs(
     colors: Iterable[str | tuple[str, str]],
     opacities: Iterable[float] = (1.0,),
     theme_override: dict[str, str] | None = None,
-):
+) -> None:
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
     svgs = generate_colorized_svgs(
@@ -152,7 +162,21 @@ def _theme_path(theme_name: str) -> Path:
     return Path(user_cache_dir()) / '_themes' / theme_name
 
 
-def build_theme_svgs(theme_name: str, source) -> str:
+def build_theme_svgs(theme_name: str, source: str) -> str:
+    """Build theme-specific SVGs for a given theme and source.
+
+    Parameters
+    ----------
+    theme_name : str
+        The name of the theme.
+    source : str
+        Name of plugin providing theme.
+
+    Returns
+    -------
+    str
+        The path to the directory containing the generated SVGs.
+    """
     out = _theme_path(theme_name)
     write_colorized_svgs(
         out,

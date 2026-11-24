@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from qtpy.QtCore import QModelIndex, Qt
+from qtpy.QtCore import QModelIndex, QPersistentModelIndex, Qt
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.components import Dims
@@ -75,7 +75,7 @@ class AxisModel:
 
 
 class AxisList(SelectableEventedList[AxisModel]):
-    def __init__(self, axes: Iterable[AxisModel]):
+    def __init__(self, axes: Iterable[AxisModel]) -> None:
         super().__init__(axes)
 
     @classmethod
@@ -100,7 +100,9 @@ class AxisList(SelectableEventedList[AxisModel]):
 
 class QtAxisListModel(QtListModel[AxisModel]):
     def data(
-        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         if not index.isValid():
             return None
@@ -119,7 +121,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
 
     def setData(
         self,
-        index: QModelIndex,
+        index: QModelIndex | QPersistentModelIndex,
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
@@ -135,7 +137,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         """Returns the item flags for the given `index`.
 
         This describes the properties of a given item in the model.  We set
@@ -144,7 +146,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         (for optimization). Editable models must return a value containing
         `Qt.ItemIsEditable`.
 
-        See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
+        See Qt.ItemFlag https://doc.qt.io/qt-6/qt.html#ItemFlag-enum
 
         Parameters
         ----------
@@ -153,7 +155,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
 
         Returns
         -------
-        qtpy.QtCore.Qt.ItemFlags
+        qtpy.QtCore.Qt.ItemFlag
             ItemFlags specific to the given index.
         """
         if not index.isValid():

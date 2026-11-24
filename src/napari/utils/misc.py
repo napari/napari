@@ -39,7 +39,7 @@ def parse_version(v: str) -> packaging.version._BaseVersion:
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
+        return packaging.version.LegacyVersion(v)  # pyrefly: ignore [missing-attribute]
 
 
 def running_as_constructor_app() -> bool:
@@ -130,8 +130,8 @@ def is_sequence(arg: Any) -> bool:
         dict
         set
     """
-    return bool(
-        isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str)
+    return isinstance(arg, collections.abc.Sequence) and not isinstance(
+        arg, str
     )
 
 
@@ -204,7 +204,7 @@ def ensure_sequence_of_iterables(
 
 def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
-    frame = inspect.currentframe().f_back
+    frame = inspect.currentframe().f_back  # pyrefly: ignore [missing-attribute]
     try:
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}
@@ -527,7 +527,7 @@ def paths_hash(
     _hash = hash_func()
     for file_path in sorted(paths):
         file_path = Path(file_path)
-        if ignore_hidden and str(file_path.stem).startswith('.'):
+        if ignore_hidden and file_path.stem.startswith('.'):
             continue
         _file_hash(_hash, file_path, file_path.parent, include_paths)
     return _hash.hexdigest()
