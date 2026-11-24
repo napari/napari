@@ -2586,7 +2586,7 @@ def test_get_tooltip_text_3d():
         position=(50, 50, 5),
         view_direction=[0, 0, 1],
         dims_displayed=[0, 1, 2],
-        )
+    )
     assert text == ''
 
 
