@@ -8,12 +8,12 @@ import numpy.typing as npt
 
 from napari.layers.base._base_constants import BaseProjectionMode
 from napari.layers.base._slice import _next_request_id
+from napari.layers.image._image_constants import ImageProjectionMode
 from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDAffineSlice,
     _ThickNDSlice,
 )
-from napari.layers.image._image_constants import ImageProjectionMode
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
