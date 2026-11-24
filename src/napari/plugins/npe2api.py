@@ -55,7 +55,7 @@ def _user_agent() -> str:
 
 
 class _ShortSummaryDict(TypedDict):
-    """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
+    """Objects returned at https://api.napari.org/api/extended_summary ."""
 
     name: NotRequired[PyPIname]
     version: str
@@ -73,7 +73,7 @@ class SummaryDict(_ShortSummaryDict):
 
 def plugin_summaries() -> list[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
-    url = 'https://npe2api.vercel.app/api/extended_summary'
+    url = 'https://api.napari.org/api/extended_summary'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
@@ -81,7 +81,7 @@ def plugin_summaries() -> list[SummaryDict]:
 @lru_cache
 def conda_map() -> dict[PyPIname, str | None]:
     """Return map of PyPI package name to conda_channel/package_name ()."""
-    url = 'https://npe2api.vercel.app/api/conda'
+    url = 'https://api.napari.org/api/conda-map'
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
