@@ -27,7 +27,11 @@ from napari.layers.utils.color_transformations import (
 )
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
+from napari.utils.colormaps.colormap_utils import (
+    ColorType,
+    ValidColormapArg,
+    ensure_colormap,
+)
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 
@@ -518,10 +522,10 @@ class ColorManager(EventedModel):
     @classmethod
     def _from_layer_kwargs(
         cls,
-        colors: dict | str | np.ndarray,
+        colors: ColorType | dict,
         properties: dict[str, np.ndarray],
         n_colors: int | None = None,
-        continuous_colormap: str | Colormap | None = None,
+        continuous_colormap: ValidColormapArg | None = None,
         contrast_limits: tuple[float, float] | None = None,
         categorical_colormap: CategoricalColormap
         | dict
