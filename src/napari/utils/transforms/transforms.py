@@ -464,7 +464,9 @@ class Affine(Transform):
         self._linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
         self._translate = translate_to_vector(translate, ndim=ndim)
         self._axis_labels = tuple(f'axis {i}' for i in range(-ndim, 0))
-        self._units = (pint.get_application_registry().pixel,) * ndim
+        # Keep default pixels lazy, but bind them to the registry active now.
+        self._units: tuple[pint.Unit, ...] | None = None
+        self._unit_registry = None
 
         self.axis_labels = axis_labels
         self.units = units
@@ -484,6 +486,11 @@ class Affine(Transform):
         if append_first_axis:
             out = out[0]
         return out
+
+    def __getstate__(self) -> dict[str, object]:
+        # Store materialized units instead of the captured registry.
+        _ = self.units
+        return self.__dict__
 
     @property
     def ndim(self) -> int:
@@ -509,16 +516,30 @@ class Affine(Transform):
     @property
     def units(self) -> tuple[pint.Unit, ...]:
         """List of units for the layer."""
+        if self._units is None:
+            assert self._unit_registry is not None
+            self._units = (self._unit_registry.pixel,) * self.ndim
+            self._unit_registry = None
         return self._units
 
     @units.setter
     def units(self, units: Sequence[pint.Unit] | None) -> None:
+        if units is None:
+            self._units = None
+            registry = pint.get_application_registry()
+            if not isinstance(
+                registry, (pint.LazyRegistry, pint.UnitRegistry)
+            ):
+                registry = registry.get()
+            self._unit_registry = registry
+            return
         units = get_units_from_name(units)
         if isinstance(units, pint.Unit):
             units = (units,) * self.ndim
         if len(units) != self.ndim:
             raise ValueError(f'{units=} must have length ndim={self.ndim}.')
         self._units = units
+        self._unit_registry = None
 
     @property
     def scale(self) -> npt.NDArray:

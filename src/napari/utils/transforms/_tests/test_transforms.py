@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import numpy.testing as npt
 import pint
@@ -128,6 +130,49 @@ def test_affine_properties():
     npt.assert_allclose(transform.scale, [2, 3])
     npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
     npt.assert_almost_equal(transform.shear, [1])
+
+
+def test_default_units_use_registry_active_at_creation():
+    previous_registry = pint.get_application_registry()
+    if not isinstance(
+        previous_registry, (pint.LazyRegistry, pint.UnitRegistry)
+    ):
+        previous_registry = previous_registry.get()
+    original_registry = pint.LazyRegistry()
+    replacement_registry = pint.UnitRegistry()
+    try:
+        pint.set_application_registry(original_registry)
+        transform = Affine()
+        pint.set_application_registry(replacement_registry)
+
+        units = transform.units
+        assert all(unit._REGISTRY is original_registry for unit in units)
+        assert transform.units is units, (
+            'The materialized units should be cached'
+        )
+    finally:
+        pint.set_application_registry(previous_registry)
+
+
+@pytest.mark.parametrize('Registry', [pint.LazyRegistry, pint.UnitRegistry])
+def test_default_units_support_legacy_application_registry(
+    monkeypatch, Registry
+):
+    registry = Registry()
+    monkeypatch.setattr(pint, 'get_application_registry', lambda: registry)
+
+    transform = Affine()
+
+    assert all(unit._REGISTRY is registry for unit in transform.units)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_default_units_pickle_before_access(AffineType):
+    transform = AffineType(ndim=2)
+
+    restored = pickle.loads(pickle.dumps(transform))
+
+    assert restored.units == transform.units
 
 
 def test_affine_properties_setters():
