@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import threading
 import warnings
-from concurrent.futures import Future
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import dask.array as da
@@ -20,6 +22,9 @@ from napari.utils.notifications import (
     NotificationSeverity,
     notification_manager,
 )
+
+if TYPE_CHECKING:
+    from pytestqt.qtbot import QtBot
 
 
 def _threading_warn():
@@ -96,7 +101,7 @@ def _raise_on_show(monkeypatch, qtbot):
 
 
 @pytest.fixture
-def count_show(monkeypatch, qtbot):
+def count_show(monkeypatch: pytest.MonkeyPatch, qtbot: QtBot) -> ShowStatus:
     stat = ShowStatus()
 
     def mock_show_notif(_):
@@ -168,10 +173,17 @@ def test_notification_manager_via_gui(
             notification_manager.records = []
 
 
-@pytest.mark.usefixtures('_clean_current')
-def test_show_notification_from_thread(count_show, monkeypatch, qtbot):
+def test_show_notification_from_thread(
+    make_napari_viewer, count_show, monkeypatch, qtbot
+):
+    """A notification sent from a worker thread is shown on the main thread.
+
+    Uses a real, shown main window because the hop to the main thread is
+    done by ``_QtMainWindow`` itself.
+    """
     from napari.settings import get_settings
 
+    make_napari_viewer(show=True)
     settings = get_settings()
 
     monkeypatch.setattr(
@@ -180,6 +192,15 @@ def test_show_notification_from_thread(count_show, monkeypatch, qtbot):
         NotificationSeverity.INFO,
     )
 
+    shown_in_threads = []
+    counting_show = NapariQtNotification.show
+
+    def record_thread_show(self):
+        shown_in_threads.append(threading.current_thread())
+        counting_show(self)
+
+    monkeypatch.setattr(NapariQtNotification, 'show', record_thread_show)
+
     class CustomThread(QThread):
         def run(self):
             notif = Notification(
@@ -187,19 +208,19 @@ def test_show_notification_from_thread(count_show, monkeypatch, qtbot):
                 NotificationSeverity.INFO,
                 actions=[('click', lambda x: None)],
             )
-            res = NapariQtNotification.show_notification(notif)
-            assert isinstance(res, Future)
-            assert res.result(timeout=DEFAULT_TIMEOUT_SECS) is None
-            assert count_show.show_notification_count == 1
+            NapariQtNotification.show_notification(notif)
 
     thread = CustomThread()
     with qtbot.waitSignal(thread.finished):
         thread.start()
 
+    qtbot.waitUntil(lambda: count_show.show_notification_count == 1)
+    assert shown_in_threads == [threading.main_thread()]
+
 
 @pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
-def test_notification_display(count_show, severity, monkeypatch):
+def test_notification_display(severity, monkeypatch):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
@@ -212,6 +233,7 @@ def test_notification_display(count_show, severity, monkeypatch):
     that show_notification is capable of receiving various event types.
     (we don't need to test that )
     """
+    from napari._qt.qt_main_window import _QtMainWindow
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -224,10 +246,13 @@ def test_notification_display(count_show, severity, monkeypatch):
     )
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
+    show_in_main_thread = (
+        _QtMainWindow.current()._show_notification_in_main_thread
+    )
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:
-        assert count_show.show_notification_count == 1
+        show_in_main_thread.assert_called_once_with(notif)
     else:
-        assert count_show.show_notification_count == 0
+        show_in_main_thread.assert_not_called()
 
     dialog = NapariQtNotification.from_notification(notif)
     assert not dialog.property('expanded')
@@ -300,6 +325,34 @@ def test_notification_close_restarts_timer_below(qt_viewer_, monkeypatch):
 
     second.close()
 
+    assert NapariQtNotification._instances == [first]
+    assert restarted == [first]
+    first.close()
+
+
+def test_close_button_closes_notification(qt_viewer_, monkeypatch):
+    """Clicking the close button closes the notification and restarts the
+    dismiss timer of the notification below it.
+
+    `clicked` passes a `checked` argument, which must not be taken as
+    `start_next`.
+    """
+    canvas = qt_viewer_.canvas.native
+    first = NapariQtNotification.from_notification(
+        Notification('first'), canvas
+    )
+    second = NapariQtNotification.from_notification(
+        Notification('second'), canvas
+    )
+    NapariQtNotification._instances.extend([first, second])
+    second.setVisible(True)
+
+    restarted = []
+    monkeypatch.setattr(first, 'timer_start', lambda: restarted.append(first))
+
+    second.close_button.click()
+
+    assert second.isHidden()
     assert NapariQtNotification._instances == [first]
     assert restarted == [first]
     first.close()

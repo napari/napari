@@ -32,7 +32,7 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     See docstring of :class:`_BaseEventedItemView` for additional background.
     """
 
-    _root: Group[Node]
+    _root: Group[NodeType]
 
     def __init__(
         self, root: Group[Node], parent: QWidget | None = None
