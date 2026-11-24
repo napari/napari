@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from enum import Enum
 from functools import reduce
 from itertools import count
 from operator import ior
@@ -20,6 +19,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from typing_extensions import Sentinel
 
 from napari._qt.utils import combine_widgets, qt_signals_blocked
 from napari.settings import get_settings
@@ -32,13 +32,7 @@ if TYPE_CHECKING:
     from napari._qt.qt_viewer import QtViewer
 
 counter = count()
-
-
-class _Sentinel(Enum):
-    """Default of the deprecated ``shortcut`` argument."""
-
-    NOT_GIVEN = object()
-
+_NOT_GIVEN = Sentinel('_NOT_GIVEN')
 
 _SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
 
@@ -97,7 +91,7 @@ class QtViewerDockWidget(QDockWidget):
         name: str = '',
         area: str = 'right',
         allowed_areas: Sequence[str] | None = None,
-        shortcut: str | _Sentinel | None = _Sentinel.NOT_GIVEN,
+        shortcut: str | _NOT_GIVEN | None = _NOT_GIVEN,
         object_name: str = '',
         add_vertical_stretch: bool = True,
         close_btn: bool = True,
@@ -118,7 +112,7 @@ class QtViewerDockWidget(QDockWidget):
             raise ValueError(f'area argument must be in {list(areas.keys())}')
         self.area = area
         self.qt_area = areas[area]
-        if shortcut is not _Sentinel.NOT_GIVEN:
+        if shortcut is not _NOT_GIVEN:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
                 FutureWarning,
