@@ -48,6 +48,7 @@ from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers.qt_layer_model import (
+    ErroredRole,
     LoadedRole,
     LockedRole,
     ThumbnailRole,
@@ -57,7 +58,7 @@ from napari.resources import LOADING_GIF_PATH
 
 if TYPE_CHECKING:
     from qtpy import QtCore
-    from qtpy.QtGui import QPainter
+    from qtpy.QtGui import QIcon, QPainter, QPalette
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from napari.components.layerlist import LayerList
@@ -107,9 +108,7 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
         # paint loading indicator if needed
-        self._paint_loading(painter, option, index)
-        # paint the thumbnail
-        self._paint_thumbnail(painter, option, index)
+        self._paint_thumbnail_area(painter, option, index)
         # paint the lock icon
         self._paint_lock_icon(painter, option, index)
 
@@ -126,42 +125,62 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             icon_name = f'new_{layer._type_string}'
 
-        try:
-            icon = QColoredSVGIcon.from_resources(icon_name)
-        except ValueError:
+        icon = self._get_icon(icon_name, option.palette)
+        if icon is None:
             return
-        # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.ColorRole.Window).red()
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
+        option.icon = icon
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = (
             option.Position.Right
         )  # put icon on the right
         option.features |= option.ViewItemFeature.HasDecoration
 
-    def _paint_loading(
+    def _get_icon(self, icon_name: str, palette: QPalette) -> QIcon | None:
+        """
+        Get icon colored following current selected theme.
+        """
+        try:
+            icon = QColoredSVGIcon.from_resources(icon_name)
+        except ValueError:
+            return None
+        # guessing theme rather than passing it through.
+        red_color_component = palette.color(palette.ColorRole.Window).red()
+        return icon.colored(
+            theme='dark' if red_color_component < 128 else 'light'
+        )
+
+    def _paint_on_thumbnail_area(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
+        pixmap: QPixmap,
+        margin: int = 0,
     ):
-        """Paint loading layer indicator."""
-        loaded = index.data(LoadedRole)
-        if not loaded:
-            self._load_movie.start()
-            load_rect = option.rect.translated(4, 8)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
-            load_rect.setWidth(h)
-            load_rect.setHeight(h)
-            painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
+        """Paint on the thumbnail area."""
+        rect = option.rect.translated(-2 + margin, 2 + margin)
+        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4 - margin * 2
+        rect.setWidth(h)
+        rect.setHeight(h)
+        painter.drawPixmap(rect, pixmap)
 
-    def _paint_thumbnail(self, painter, option, index):
+    def _paint_thumbnail_area(self, painter, option, index):
         """paint the layer thumbnail."""
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
+        errored = index.data(ErroredRole)
         loaded = index.data(LoadedRole)
-        if loaded:
+        if not loaded:
+            self._load_movie.start()
+            self._paint_on_thumbnail_area(
+                painter,
+                option,
+                index,
+                self._load_movie.currentPixmap(),
+                margin=6,
+            )
+        else:
             # only pause the loading movie if all the layers are loaded. The
             # last layer that enters the loaded state will pause the load
             # movie. This is needed since there is only one instance of the
@@ -171,12 +190,21 @@ class LayerDelegate(QStyledItemDelegate):
             if all_loaded:
                 self._load_movie.setPaused(True)
 
-            thumb_rect = option.rect.translated(-2, 2)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
-            thumb_rect.setWidth(h)
-            thumb_rect.setHeight(h)
-            image = index.data(ThumbnailRole)
-            painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+            if errored:
+                icon = self._get_icon('warning', option.palette)
+                if icon:
+                    self._paint_on_thumbnail_area(
+                        painter,
+                        option,
+                        index,
+                        icon.pixmap(QSize(32, 32)),
+                        margin=6,
+                    )
+            else:
+                image = index.data(ThumbnailRole)
+                self._paint_on_thumbnail_area(
+                    painter, option, index, QPixmap.fromImage(image)
+                )
 
     def _paint_lock_icon(self, painter, option, index):
         """Paint a lock icon when the layer is locked. No icon when unlocked."""
