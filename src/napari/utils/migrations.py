@@ -238,7 +238,7 @@ def rename_argument(
         )
 
         @wraps(func)
-        def _update_from_dict(*args: Any, **kwargs: Any):
+        def _update_from_dict(*args: Any, **kwargs: Any) -> R:
             if from_name in kwargs:
                 if to_name in kwargs:
                     raise ValueError(
@@ -258,10 +258,10 @@ def rename_argument(
 
 
 def _add_deprecated_property(
-    func: Callable[_P, Callable[[type], type]],
-) -> Callable[_P, Callable[[type], type]]:
+    func: Callable[P, Callable[[type], type]],
+) -> Callable[P, Callable[[type], type]]:
     """To be used as a decorator for add_deprecated_property to support legacy positional arguments."""
-    # legacy calls are rebuilt as kwargs that cannot match `_P` statically
+    # legacy calls are rebuilt as kwargs that cannot match `P` statically
     legacy_func: Callable[..., Callable[[type], type]] = func
 
     @wraps(func)
@@ -392,7 +392,7 @@ def deprecated_constructor_arg_by_attr(
         deprecated_constructor_args.append(name)
 
         @wraps(func)
-        def _wrapper(*args: Any, **kwargs: Any):
+        def _wrapper(*args: Any, **kwargs: Any) -> R:
             value = _UNSET
             if name in kwargs:
                 value = kwargs.pop(name)
