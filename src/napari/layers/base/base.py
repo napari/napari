@@ -46,7 +46,7 @@ from napari.layers.utils.layer_utils import (
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
 from napari.types import LayerDataType
-from napari.utils._dask_utils import configure_dask
+from napari.utils._dask_utils import _dask_slice_cache, configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
     add_layers_to_viewer,
@@ -128,7 +128,8 @@ class _LayerSlicingState(ABC):
 
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool) -> None:
         self.layer = layer
-        self.dask_optimized_slicing = configure_dask(data, cache)
+        # How slices compute the data, see _asarray_for_slicing.
+        self._dask_cache = _dask_slice_cache(data, cache)
         self._slice_input = _SliceInput(
             ndisplay=2,
             world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
@@ -141,8 +142,7 @@ class _LayerSlicingState(ABC):
         self._discard_through_slice_id = -1
 
     def set_view_slice(self) -> None:
-        with self.dask_optimized_slicing():
-            self._set_view_slice()
+        self._set_view_slice()
 
     def _slice_indices(
         self, slice_input: _SliceInput, dims: Dims

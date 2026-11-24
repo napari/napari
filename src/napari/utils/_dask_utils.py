@@ -2,22 +2,157 @@
 
 import collections.abc
 import contextlib
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Hashable
+from functools import partial
+from threading import Lock
 from typing import Any
 
+import cachey
 import dask
+import numpy as np
+from dask.base import get_scheduler, named_schedulers
 from dask.cache import Cache
+from dask.callbacks import Callback
+from dask.local import get_async
 
-#: dask.cache.Cache, optional : A dask cache for opportunistic caching
-#: use :func:`~.resize_dask_cache` to actually register and resize.
-#: this is a global cache (all layers will use it), but individual layers
-#: can opt out using Layer(..., cache=False)
-_DASK_CACHE = Cache(1)
+_CACHE_LOCK = Lock()
+
+
+class _DaskCacheStorage(cachey.Cache):
+    def put(
+        self,
+        key: Hashable,
+        value: Any,
+        cost: float,
+        nbytes: int | None = None,
+    ) -> None:
+        with _CACHE_LOCK:
+            # Concurrent graphs may finish the same task before either can
+            # reuse it. cachey counts a replacement as another allocation.
+            if key not in self.data:
+                super().put(key, value, cost, nbytes)
+
+
+class _DaskSliceCache(Cache):
+    """Keep task timings per computation while sharing cached results."""
+
+    def _start(self, dsk: dict[Hashable, Any]) -> None:
+        with _CACHE_LOCK:
+            super()._start(dsk)
+
+
+#: Shared results for opportunistic caching, sized by resize_dask_cache.
+#: Individual layers can opt out using Layer(..., cache=False).
+_DASK_CACHE = _DaskSliceCache(_DaskCacheStorage(1))
 _DEFAULT_MEM_FRACTION = 0.25
 
+_FUSION_LOCK = Lock()
+_FUSION_CONTEXT = contextlib.ExitStack()
+_FUSION_USERS = 0
+# Caches napari registered globally for code that computes inside a layer's
+# dask_optimized_slicing context. Slices use their own instead.
+_REGISTERED_CACHES: set[tuple] = set()
+
 DaskIndexer = Callable[
-    [], contextlib.AbstractContextManager[tuple[dict, Cache] | None]
+    [], contextlib.AbstractContextManager[tuple[dict, Cache | None] | None]
 ]
+
+
+@contextlib.contextmanager
+def _disable_task_fusion() -> Generator[dict, None, None]:
+    global _FUSION_USERS
+    # Dask's config dictionary is global. The first slice sets the option,
+    # and the last slice restores it, regardless of the order they finish.
+    with _FUSION_LOCK:
+        if _FUSION_USERS == 0:
+            _FUSION_CONTEXT.enter_context(
+                dask.config.set({'optimization.fuse.active': False})
+            )
+        _FUSION_USERS += 1
+    try:
+        yield dask.config.config
+    finally:
+        with _FUSION_LOCK:
+            _FUSION_USERS -= 1
+            if _FUSION_USERS == 0:
+                _FUSION_CONTEXT.close()
+
+
+def _is_local_scheduler(scheduler: Callable) -> bool:
+    """Whether ``scheduler`` is Dask's local scheduler, which takes callbacks.
+
+    An Executor configured as Dask's scheduler becomes a partial of it.
+    """
+    get = scheduler.func if isinstance(scheduler, partial) else scheduler
+    return get is get_async or any(
+        get is local_scheduler for local_scheduler in named_schedulers.values()
+    )
+
+
+def _slice_callbacks(cache: bool) -> list[tuple]:
+    """Callbacks for one slice computation.
+
+    Passed explicitly, they keep the local scheduler from swapping out the
+    global ``Callback.active`` while it computes, which affects other
+    threads. The user's callbacks stay. napari's cache is scoped to this
+    computation instead of registered globally, and left out if the layer
+    opts out of caching.
+    """
+    with _CACHE_LOCK:
+        napari_caches = {_DASK_CACHE._callback, *_REGISTERED_CACHES}
+    callbacks = [
+        callback
+        for callback in Callback.active.copy()
+        if callback not in napari_caches
+    ]
+    if cache:
+        callbacks.append(_DaskSliceCache(_DASK_CACHE.cache)._callback)
+    return callbacks
+
+
+def _asarray_for_slicing(data: Any, cache: bool | None) -> np.ndarray:
+    """Compute ``data`` for a slice.
+
+    ``cache`` is None for data napari doesn't configure for Dask, which is
+    computed as ``np.asarray`` would. Otherwise it says whether napari's cache
+    keeps the chunks the slice reads.
+    """
+    if cache is None or not dask.is_dask_collection(data):
+        return np.asarray(data)
+
+    # np.asarray on a Dask-backed xarray computes its data array without
+    # computing coordinates. Do the same.
+    collection = getattr(data, 'data', None)
+    if not dask.is_dask_collection(collection):
+        collection = data
+
+    # Without task fusion, the cache keeps whole chunks, so the next plane of
+    # a chunk doesn't read it again. Dask's config is global, so fusion is
+    # off only while this graph is optimized, not while it computes.
+    with _disable_task_fusion():
+        (collection,) = dask.optimize(collection)
+
+    scheduler = get_scheduler(collections=[collection])
+    kwargs = {}
+    if _is_local_scheduler(scheduler):
+        kwargs['callbacks'] = _slice_callbacks(cache)
+    (result,) = dask.compute(
+        collection, scheduler=scheduler, optimize_graph=False, **kwargs
+    )
+    return np.asarray(result)
+
+
+def _dask_slice_cache(data: Any, cache: bool) -> bool | None:
+    """How slices of ``data`` compute, as ``_asarray_for_slicing`` takes it.
+
+    None if ``data`` isn't Dask data, otherwise ``cache``. Creates napari's
+    cache on first use, as ``configure_dask`` does.
+    """
+    if not _is_dask_data(data):
+        return None
+    if cache:
+        resize_dask_cache()
+    return cache
 
 
 def resize_dask_cache(
@@ -63,18 +198,12 @@ def resize_dask_cache(
     if nbytes is None and mem_fraction is not None:
         nbytes = int(virtual_memory().total * mem_fraction)
 
-    avail = _DASK_CACHE.cache.available_bytes
-    # if we don't have a cache already, create one.
-    if avail == 1:
-        # If neither nbytes nor mem_fraction was provided, use default
-        if nbytes is None:
+    with _CACHE_LOCK:
+        avail = _DASK_CACHE.cache.available_bytes
+        if avail == 1 and nbytes is None:
             nbytes = int(virtual_memory().total * _DEFAULT_MEM_FRACTION)
-        _DASK_CACHE.cache.resize(nbytes)
-    elif nbytes is not None and nbytes != _DASK_CACHE.cache.available_bytes:
-        # if the cache has already been registered, then calling
-        # resize_dask_cache() without supplying either mem_fraction or nbytes
-        # is a no-op:
-        _DASK_CACHE.cache.resize(nbytes)
+        if nbytes is not None and nbytes != avail:
+            _DASK_CACHE.cache.resize(nbytes)
     return _DASK_CACHE
 
 
@@ -93,6 +222,24 @@ def _is_dask_data(data: Any) -> bool:
     return isinstance(data, collections.abc.Sequence) and any(
         dask.is_dask_collection(i) for i in data
     )
+
+
+@contextlib.contextmanager
+def _registered_cache(dask_cache: Cache) -> Generator[None, None, None]:
+    """Register a cache for computations inside ``dask_optimized_slicing``.
+
+    It goes into Dask's global registry, because callers compute with Dask's
+    defaults. Slices computed meanwhile leave it out.
+    """
+    callback = _DaskSliceCache(dask_cache.cache)
+    with _CACHE_LOCK:
+        _REGISTERED_CACHES.add(callback._callback)
+    try:
+        with callback:
+            yield
+    finally:
+        with _CACHE_LOCK:
+            _REGISTERED_CACHES.discard(callback._callback)
 
 
 def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
@@ -147,16 +294,17 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     if not _is_dask_data(data):
         return contextlib.nullcontext
 
-    _cache = resize_dask_cache() if cache else contextlib.nullcontext()
+    dask_cache = resize_dask_cache() if cache else None
 
     @contextlib.contextmanager
     def dask_optimized_slicing(
         memfrac: float = 0.5,
-    ) -> Generator[tuple[Any, Any], None, None]:
-        # For debug from where the delayed slicer is called
-        # add "scheduler": "synchronous" to opts
-        opts = {'optimization.fuse.active': False}
-        with dask.config.set(opts) as cfg, _cache as c:
-            yield cfg, c
+    ) -> Generator[tuple[dict, Cache | None], None, None]:
+        with _disable_task_fusion() as cfg:
+            if dask_cache is None:
+                yield cfg, None
+            else:
+                with _registered_cache(dask_cache):
+                    yield cfg, dask_cache
 
     return dask_optimized_slicing
