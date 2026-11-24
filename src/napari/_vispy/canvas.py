@@ -1154,7 +1154,7 @@ class VispyCanvas:
         """
 
         def is_visible_tileable(overlay: Overlay) -> TypeGuard[CanvasOverlay]:
-            return bool(
+            return (
                 isinstance(overlay, CanvasOverlay)
                 and overlay.visible
                 and overlay.position in list(CanvasPosition)

@@ -2,7 +2,7 @@
 
 import collections.abc
 import contextlib
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator
 from typing import Any
 
 import dask
@@ -152,7 +152,7 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     @contextlib.contextmanager
     def dask_optimized_slicing(
         memfrac: float = 0.5,
-    ) -> Iterator[tuple[Any, Any]]:
+    ) -> Generator[tuple[Any, Any], None, None]:
         # For debug from where the delayed slicer is called
         # add "scheduler": "synchronous" to opts
         opts = {'optimization.fuse.active': False}

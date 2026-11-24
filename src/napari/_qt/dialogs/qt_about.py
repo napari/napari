@@ -133,4 +133,4 @@ class QtCopyToClipboardButton(QPushButton):
         """Copy text to the clipboard."""
         cb = QtGui.QGuiApplication.clipboard()
         if cb is not None:
-            cb.setText(str(self.text_edit.toPlainText()))
+            cb.setText(self.text_edit.toPlainText())
