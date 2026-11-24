@@ -330,8 +330,9 @@ class ReadRecordingData(LockableData):
 
 
 @pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('workers', [1, 2])
 def test_async_slice_superseded_requests_do_not_read_data(
-    make_napari_viewer, qtbot, rng
+    make_napari_viewer, qtbot, rng, workers
 ):
     """Superseded slice requests don't read data, and the newest slice of
     every layer is shown.
@@ -340,6 +341,9 @@ def test_async_slice_superseded_requests_do_not_read_data(
     change slices all layers together. Interleaving them while the slicing
     thread is busy used to queue up requests that each read their plane.
     """
+    from napari.settings import get_settings
+
+    get_settings().experimental.async_slicing_workers = workers
     viewer = make_napari_viewer()
     datas = [ReadRecordingData(rng.random((8, 4, 5))) for _ in range(2)]
     layers = [Image(data, multiscale=False) for data in datas]
@@ -351,10 +355,11 @@ def test_async_slice_superseded_requests_do_not_read_data(
     for data in datas:
         data.read_planes.clear()
 
-    with datas[0].lock:
+    with datas[0].lock, datas[1].lock:
         viewer.dims.current_step = (1, 0, 0)
-        # Wait until the slicing thread is reading the first layer.
-        qtbot.waitUntil(lambda: datas[0].read_planes == [1])
+        qtbot.waitUntil(
+            lambda: all(d.read_planes == [1] for d in datas[:workers])
+        )
         for z in (5, 6, 7):
             for layer in layers:
                 layer.refresh()
@@ -363,7 +368,7 @@ def test_async_slice_superseded_requests_do_not_read_data(
     qtbot.waitUntil(lambda: all(layer.loaded for layer in layers))
     # The read of plane 1 had already started, so only plane 7 is read again.
     assert datas[0].read_planes == [1, 7]
-    assert datas[1].read_planes == [7]
+    assert datas[1].read_planes == ([1, 7] if workers == 2 else [7])
     for data, vispy_layer in zip(datas, vispy_layers, strict=True):
         np.testing.assert_allclose(vispy_layer.node._data, data.data[7])
 
@@ -682,6 +687,120 @@ def test_async_late_plane_cannot_replace_current_view(
     if newer != 'remove':
         np.testing.assert_array_equal(image._slice.image.raw, volume[0])
         np.testing.assert_array_equal(visual.node._data, volume[0])
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('failed_z', [0, 2])
+def test_success_and_failure_of_consecutive_reads(
+    make_napari_viewer, qtbot, monkeypatch, failed_z
+):
+    from napari.utils.notifications import notification_manager
+
+    viewer = make_napari_viewer()
+    volume = np.arange(60, dtype=np.float32).reshape(3, 4, 5)
+    image = Image(volume, contrast_limits=(0, 60))
+    visual = setup_viewer_for_async_slicing(viewer, image)
+    make_request = image._slicing_state._make_slice_request
+    started = threading.Event()
+    release = threading.Event()
+    notified = threading.Event()
+    monkeypatch.setattr(
+        notification_manager, 'receive_error', lambda *args: notified.set()
+    )
+
+    def make_read(dims):
+        request = make_request(dims)
+        z = dims.point[0]
+
+        def read():
+            if z == 0:
+                started.set()
+                assert release.wait(10)
+            if z == failed_z:
+                raise ValueError('unreadable plane')
+            return request()
+
+        read.id = request.id
+        return read
+
+    monkeypatch.setattr(image._slicing_state, '_make_slice_request', make_read)
+
+    def submit(z):
+        dims = viewer.dims.model_copy(update={'point': (z, 0, 0)})
+        (future,) = viewer._layer_slicer.submit(layers=[image], dims=dims)
+        return future
+
+    def finish(future, z):
+        if z == failed_z:
+            with pytest.raises(ValueError, match='unreadable plane'):
+                future.result(5)
+        else:
+            future.result(5)
+
+    first = submit(0)
+    try:
+        assert started.wait(10)
+        # The newer request waits for the layer's running read.
+        second = submit(2)
+        assert not second.running()
+    finally:
+        release.set()
+    finish(first, 0)
+    finish(second, 2)
+    assert notified.wait(10)
+    qtbot.waitUntil(lambda: image.loaded)
+    successful_plane = 2 if failed_z == 0 else 0
+    wait_until_vispy_image_data_equal(qtbot, visual, volume[successful_plane])
+    assert image.loaded
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('workers', [1, 2, 4])
+def test_viewer_respects_slice_worker_count(
+    make_napari_viewer, qtbot, workers
+):
+    from napari.settings import get_settings
+
+    get_settings().experimental.async_slicing_workers = workers
+    viewer = make_napari_viewer()
+    started = threading.Event()
+    release = threading.Event()
+    lock = threading.Lock()
+    active = peak = 0
+
+    class SlowData(LockableData):
+        def __getitem__(self, key):
+            nonlocal active, peak
+            if threading.current_thread() is threading.main_thread():
+                return super().__getitem__(key)
+            with lock:
+                active += 1
+                peak = max(peak, active)
+                if active == workers:
+                    started.set()
+            try:
+                assert release.wait(10)
+                return super().__getitem__(key)
+            finally:
+                with lock:
+                    active -= 1
+
+    volume = np.arange(60).reshape(3, 4, 5)
+    layers = []
+    with viewer._layer_slicer.force_sync():
+        for _ in range(workers + 1):
+            layers.append(
+                viewer.add_image(SlowData(volume), contrast_limits=(0, 60))
+            )
+    try:
+        viewer.dims.set_current_step(0, 0)
+        assert started.wait(10)
+    finally:
+        release.set()
+    qtbot.waitUntil(lambda: all(layer.loaded for layer in layers))
+    assert peak == workers
+    for layer in layers:
+        np.testing.assert_array_equal(layer._slice.image.raw, volume[0])
 
 
 @pytest.mark.usefixtures('_enable_async')

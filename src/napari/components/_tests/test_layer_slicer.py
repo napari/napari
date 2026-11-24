@@ -94,6 +94,10 @@ class FakeSyncLayer:
 
 @pytest.fixture
 def layer_slicer():
+    from napari.settings import get_settings
+
+    # Queue-order tests hold the sole worker while replacing waiting requests.
+    get_settings().experimental.async_slicing_workers = 1
     layer_slicer = _LayerSlicer()
     layer_slicer._force_sync = False
     yield layer_slicer

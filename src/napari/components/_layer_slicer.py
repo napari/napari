@@ -108,8 +108,11 @@ class _LayerSlicer:
 
     def __init__(self) -> None:
         self.events = EmitterGroup(source=self, ready=Event, failed=Event)
-        self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._force_sync = not get_settings().experimental.async_
+        settings = get_settings().experimental
+        self._executor: Executor = ThreadPoolExecutor(
+            max_workers=settings.async_slicing_workers
+        )
+        self._force_sync = not settings.async_
         self._shutdown = False
         # The condition protects queued requests and unfinished tasks. Once a
         # worker takes a task out of _pending, its request is immutable.
