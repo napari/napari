@@ -154,6 +154,7 @@ class QtViewer(QSplitter):
     _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
     # Slice responses, passed from the slicing thread to the main thread.
     _slice_ready = Signal(object)
+    _slice_failed = Signal(object, object, arguments=['layer', 'request_id'])
 
     # emitted from any thread when a future is done, handled on the main thread
     _future_ready = Signal(Future)
@@ -229,6 +230,10 @@ class QtViewer(QSplitter):
 
         self._slice_ready.connect(self._on_slice_ready)
         self.viewer._layer_slicer.events.ready.connect(self._emit_slice_ready)
+        self._slice_failed.connect(self._on_slice_failed)
+        self.viewer._layer_slicer.events.failed.connect(
+            self._emit_slice_failed
+        )
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -664,6 +669,16 @@ class QtViewer(QSplitter):
                     highlight=True,
                     extent=False,  # already updated via Layer.refresh()
                 )
+
+    def _emit_slice_failed(self, event: Event) -> None:
+        self._slice_failed.emit(event.layer, event.request_id)
+        event.handled = True
+
+    def _on_slice_failed(
+        self, weak_layer: weakref.ReferenceType[Layer], request_id: int
+    ) -> None:
+        if (layer := weak_layer()) is not None:
+            layer._slicing_state._update_loaded_slice_id(request_id)
 
     def _on_active_change(self) -> None:
         """When active layer changes change keymap handler."""

@@ -19,6 +19,7 @@ from napari._vispy.layers.vectors import (
 )
 from napari.layers import Image, Layer, Points, Vectors
 from napari.utils.events import Event, EventEmitter
+from napari.utils.notifications import notification_manager
 
 
 @pytest.fixture
@@ -310,6 +311,63 @@ def test_async_slice_response_applied_on_main_thread(
     assert set(update_threads) == {threading.main_thread()}
 
 
+class ReadRecordingData(LockableData):
+    """LockableData that records the first index of each read.
+
+    A read is recorded before it may block on the lock.
+    """
+
+    def __init__(self, data: np.ndarray) -> None:
+        super().__init__(data)
+        self.read_planes: list[int] = []
+
+    def __getitem__(self, key):
+        index = key[0]
+        self.read_planes.append(
+            index.start if isinstance(index, slice) else int(index)
+        )
+        return super().__getitem__(key)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_superseded_requests_do_not_read_data(
+    make_napari_viewer, qtbot, rng
+):
+    """Superseded slice requests don't read data, and the newest slice of
+    every layer is shown.
+
+    Zooming a multiscale image refreshes each layer on its own, while a slice
+    change slices all layers together. Interleaving them while the slicing
+    thread is busy used to queue up requests that each read their plane.
+    """
+    viewer = make_napari_viewer()
+    datas = [ReadRecordingData(rng.random((8, 4, 5))) for _ in range(2)]
+    layers = [Image(data, multiscale=False) for data in datas]
+    vispy_layers = [
+        setup_viewer_for_async_slicing(viewer, layer) for layer in layers
+    ]
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    qtbot.waitUntil(lambda: all(layer.loaded for layer in layers))
+    for data in datas:
+        data.read_planes.clear()
+
+    with datas[0].lock:
+        viewer.dims.current_step = (1, 0, 0)
+        # Wait until the slicing thread is reading the first layer.
+        qtbot.waitUntil(lambda: datas[0].read_planes == [1])
+        for z in (5, 6, 7):
+            for layer in layers:
+                layer.refresh()
+            viewer.dims.current_step = (z, 0, 0)
+
+    qtbot.waitUntil(lambda: all(layer.loaded for layer in layers))
+    # The read of plane 1 had already started, so only plane 7 is read again.
+    assert datas[0].read_planes == [1, 7]
+    assert datas[1].read_planes == [7]
+    for data, vispy_layer in zip(datas, vispy_layers, strict=True):
+        np.testing.assert_allclose(vispy_layer.node._data, data.data[7])
+
+
 @pytest.mark.usefixtures('_enable_async')
 def test_async_slice_stale_response_not_applied(
     make_napari_viewer, qtbot, rng, monkeypatch
@@ -335,7 +393,7 @@ def test_async_slice_stale_response_not_applied(
         qtbot.waitUntil(
             lambda: any(
                 task.running()
-                for task in viewer._layer_slicer._unfinished
+                for task in viewer._layer_slicer._tasks
             )
         )
         viewer.dims.current_step = (2, 0, 0)
@@ -543,6 +601,49 @@ def test_layer_presented_while_sibling_is_reading(make_napari_viewer, qtbot):
         assert not slow.loaded
     wait_until_vispy_image_data_equal(qtbot, slow_visual, data[2] + 100)
     assert slow.loaded
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_failure_updates_loaded_on_main_thread(
+    make_napari_viewer, qtbot, rng, monkeypatch
+):
+    viewer = make_napari_viewer()
+    image = Image(rng.random((3, 4, 5)))
+    setup_viewer_for_async_slicing(viewer, image)
+
+    errors = []
+    loaded_threads = []
+    make_request = image._slicing_state._make_slice_request
+
+    def record_error(exctype, error, traceback):
+        errors.append(error)
+
+    def update_loaded():
+        if image.loaded:
+            loaded_threads.append(threading.current_thread())
+
+    def failing_request(dims):
+        class Request:
+            id = make_request(dims).id
+
+            def __call__(self):
+                raise RuntimeError('failed to read slice')
+
+        return Request()
+
+    monkeypatch.setattr(notification_manager, 'receive_error', record_error)
+    monkeypatch.setattr(
+        image._slicing_state, '_make_slice_request', failing_request
+    )
+    image.events.loaded.connect(update_loaded)
+
+    viewer._layer_slicer.submit(layers=[image], dims=viewer.dims)
+    assert not image.loaded
+    qtbot.waitUntil(lambda: image.loaded and bool(errors))
+
+    assert len(errors) == 1
+    assert str(errors[0]) == 'failed to read slice'
+    assert loaded_threads == [threading.main_thread()]
 
 
 def test_callback_emitting_signal_of_deleted_qobject_is_disconnected(qapp):

@@ -1,5 +1,5 @@
 import time
-from concurrent.futures import Future, wait
+from concurrent.futures import Future
 from dataclasses import dataclass
 from threading import Event, RLock, current_thread, main_thread
 from typing import TYPE_CHECKING, Any
@@ -32,9 +32,11 @@ class FakeSliceResponse:
 class FakeSliceRequest:
     id: int
     lock: RLock
+    started: Event
 
     def __call__(self) -> FakeSliceResponse:
         assert current_thread() != main_thread()
+        self.started.set()
         with self.lock:
             return FakeSliceResponse(id=self.id)
 
@@ -47,11 +49,14 @@ class FakeAsyncLayer:
         self.loaded: bool = True
         self.visible: bool = True
         self.lock: RLock = RLock()
+        self.started = Event()
 
     def _make_slice_request(self, dims: Dims) -> FakeSliceRequest:
         assert current_thread() == main_thread()
         self._slice_request_count += 1
-        return FakeSliceRequest(id=self._slice_request_count, lock=self.lock)
+        return FakeSliceRequest(
+            id=self._slice_request_count, lock=self.lock, started=self.started
+        )
 
     def _update_slice_response(self, response: FakeSliceResponse):
         self.slice_count = response.id
@@ -179,54 +184,119 @@ def test_submit_lock_blocking(layer_slicer):
     assert _wait_for_response(blocked)[layer].id == 1
 
 
-def test_submit_multiple_calls_cancels_pending(layer_slicer):
+def test_submit_replaces_pending_request_after_worker_claims_previous(
+    layer_slicer,
+):
     dims = Dims()
     layer = FakeAsyncLayer()
 
     with layer.lock:
         [blocked] = layer_slicer.submit(layers=[layer], dims=dims)
-        _wait_until_running(blocked)
+        assert layer.started.wait(DEFAULT_TIMEOUT_SECS)
         [pending] = layer_slicer.submit(layers=[layer], dims=dims)
-        assert not pending.running()
-        layer_slicer.submit(layers=[layer], dims=dims)
+        for _ in range(5):
+            [replacement] = layer_slicer.submit(layers=[layer], dims=dims)
+            assert replacement is pending
         assert not blocked.done()
+        assert not pending.running()
 
-    assert pending.cancelled()
+    assert _wait_for_response(blocked)[layer].id == 1
+    assert _wait_for_response(pending)[layer].id == 7
 
 
-def test_submit_cancels_pending_tasks_of_each_layer(layer_slicer):
+def test_submit_replaces_each_pending_request_in_queue_order(layer_slicer):
     dims = Dims()
     blocker = FakeAsyncLayer()
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
+    executed = []
+    layer_slicer.events.ready.connect(
+        lambda event: executed.extend(event.value)
+    )
 
     with blocker.lock:
-        [blocked] = layer_slicer.submit(layers=[blocker], dims=dims)
-        _wait_until_running(blocked)
-        [pending1] = layer_slicer.submit(layers=[layer1], dims=dims)
-        [pending2] = layer_slicer.submit(layers=[layer2], dims=dims)
-        layer_slicer.submit(layers=[layer1, layer2], dims=dims)
-
-    assert pending1.cancelled()
-    assert pending2.cancelled()
-
-
-def test_submit_one_layer_cancels_only_its_pending_task(layer_slicer):
-    dims = Dims()
-    blocker = FakeAsyncLayer()
-    layer1 = FakeAsyncLayer()
-    layer2 = FakeAsyncLayer()
-
-    with blocker.lock:
-        [blocked] = layer_slicer.submit(layers=[blocker], dims=dims)
-        _wait_until_running(blocked)
+        layer_slicer.submit(layers=[blocker], dims=dims)
+        assert blocker.started.wait(DEFAULT_TIMEOUT_SECS)
         pending1, pending2 = layer_slicer.submit(
             layers=[layer1, layer2], dims=dims
         )
-        layer_slicer.submit(layers=[layer1], dims=dims)
+        assert layer_slicer.submit(layers=[layer2], dims=dims) == [pending2]
+        assert layer_slicer.submit(layers=[layer2, layer1], dims=dims) == [
+            pending2,
+            pending1,
+        ]
 
-    assert pending1.cancelled()
-    assert _wait_for_response(pending2)[layer2].id == 1
+    layer_slicer.wait_until_idle(DEFAULT_TIMEOUT_SECS)
+    assert [weak_layer() for weak_layer in executed] == [
+        blocker,
+        layer1,
+        layer2,
+    ]
+    assert _wait_for_response(pending1)[layer1].id == 2
+    assert _wait_for_response(pending2)[layer2].id == 3
+
+
+def test_submit_after_pending_future_cancelled(layer_slicer):
+    dims = Dims()
+    blocker = FakeAsyncLayer()
+    layer = FakeAsyncLayer()
+
+    with blocker.lock:
+        layer_slicer.submit(layers=[blocker], dims=dims)
+        assert blocker.started.wait(DEFAULT_TIMEOUT_SECS)
+        [pending] = layer_slicer.submit(layers=[layer], dims=dims)
+        assert pending.cancel()
+        assert layer.loaded
+        [replacement] = layer_slicer.submit(layers=[layer], dims=dims)
+        assert not layer.loaded
+
+    assert _wait_for_response(replacement)[layer].id == 2
+
+
+def test_submit_skips_deleted_pending_layer(layer_slicer):
+    dims = Dims()
+    blocker = FakeAsyncLayer()
+    layer = FakeAsyncLayer()
+    started = layer.started
+
+    with blocker.lock:
+        layer_slicer.submit(layers=[blocker], dims=dims)
+        assert blocker.started.wait(DEFAULT_TIMEOUT_SECS)
+        [pending] = layer_slicer.submit(layers=[layer], dims=dims)
+        del layer
+
+    assert not _wait_for_result(pending)
+    assert not started.is_set()
+
+
+def test_submit_reentrant_unloaded_observer(layer_slicer, monkeypatch):
+    dims = Dims()
+    layer = FakeAsyncLayer()
+    submitted = []
+    responses = []
+    layer_slicer.events.ready.connect(
+        lambda event: responses.extend(event.value.values())
+    )
+    set_unloaded = layer._set_unloaded_slice_id
+
+    def on_unloaded(slice_id):
+        was_loaded = layer.loaded
+        set_unloaded(slice_id)
+        if was_loaded:
+            [nested] = layer_slicer.submit(layers=[layer], dims=dims)
+            submitted.append(nested)
+            # The outer call must respect the newer request even when its
+            # task finishes before the observer returns.
+            layer_slicer.wait_until_idle(DEFAULT_TIMEOUT_SECS)
+
+    monkeypatch.setattr(layer, '_set_unloaded_slice_id', on_unloaded)
+    assert layer_slicer.submit(layers=[layer], dims=dims) == []
+
+    [nested] = submitted
+    response = _wait_for_response(nested)[layer]
+    assert response.id == layer._last_slice_id == 2
+    layer_slicer.wait_until_idle(DEFAULT_TIMEOUT_SECS)
+    assert responses == [response]
 
 
 def test_submit_mixed_allows_sync_to_run(layer_slicer):
@@ -289,15 +359,17 @@ def test_submit_exception_main_thread(layer_slicer):
         layer_slicer.submit(layers=[layer], dims=Dims())
 
 
-def test_submit_exception_subthread_on_result(layer_slicer, monkeypatch):
+def test_failed_replacement_allows_sibling_and_retry(
+    layer_slicer, monkeypatch
+):
     """Exception is raised on the main thread from an error on a subthread
     only after result is called, not upon submission of the task."""
     errors = []
-    reported = Event()
+    error_received = Event()
 
     def _record_error(exctype, value, traceback, thread=None):
         errors.append((exctype, value))
-        reported.set()
+        error_received.set()
 
     monkeypatch.setattr(notification_manager, 'receive_error', _record_error)
 
@@ -308,28 +380,41 @@ def test_submit_exception_subthread_on_result(layer_slicer, monkeypatch):
             raise RuntimeError('FakeSliceRequestError')
 
     class FakeAsyncLayerError(FakeAsyncLayer):
-        def _make_slice_request(self, dims: Dims) -> FakeSliceRequestError:
-            self._slice_request_count += 1
+        def _make_slice_request(self, dims: Dims) -> FakeSliceRequest:
+            request = super()._make_slice_request(dims)
+            if request.id != 2:
+                return request
             return FakeSliceRequestError(
-                id=self._slice_request_count, lock=self.lock
+                id=request.id, lock=request.lock, started=request.started
             )
 
     layer = FakeAsyncLayerError()
+    blocker = FakeAsyncLayer()
     sibling = FakeAsyncLayer()
-    future, successful = layer_slicer.submit(
-        layers=[layer, sibling], dims=Dims()
+    failures = []
+    layer_slicer.events.failed.connect(
+        lambda event: failures.append(event.request_id)
     )
+    with blocker.lock:
+        layer_slicer.submit(layers=[blocker], dims=Dims())
+        assert blocker.started.wait(DEFAULT_TIMEOUT_SECS)
+        future, success = layer_slicer.submit(
+            layers=[layer, sibling], dims=Dims()
+        )
+        assert layer_slicer.submit(layers=[layer], dims=Dims()) == [future]
 
-    done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
-    assert done, 'Test future did not complete within timeout.'
+    assert _wait_for_response(success)[sibling].id == 1
     with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
         _wait_for_response(future)
-    assert _wait_for_response(successful)[sibling].id == 1
-    assert reported.wait(DEFAULT_TIMEOUT_SECS)
+    assert error_received.wait(DEFAULT_TIMEOUT_SECS)
+    assert failures == [2]
     assert layer.loaded
     assert len(errors) == 1
     assert errors[0][0] is RuntimeError
     assert str(errors[0][1]) == 'FakeSliceRequestError'
+
+    [retry] = layer_slicer.submit(layers=[layer], dims=Dims())
+    assert _wait_for_response(retry)[layer].id == 3
 
 
 def test_wait_until_idle(layer_slicer, single_threaded_executor):
@@ -338,10 +423,9 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
 
     with layer.lock:
         [slice_future] = layer_slicer.submit(layers=[layer], dims=dims)
-        _wait_until_running(slice_future)
-        # The slice task has started, but has not finished yet
-        # because we are holding the layer's slicing lock.
-        assert len(layer_slicer._layer_to_task) > 0
+        assert layer.started.wait(DEFAULT_TIMEOUT_SECS)
+        with pytest.raises(TimeoutError, match='Slicing 1 tasks'):
+            layer_slicer.wait_until_idle(timeout=0)
         # We can't call wait_until_idle on this thread because we're
         # holding the layer's slice lock, so submit it to be executed
         # on another thread and also wait for it to start.
@@ -439,6 +523,37 @@ def test_submit_with_one_3d_points(layer_slicer):
     with lockable_internal_data.lock:
         [future] = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
+
+
+def test_shutdown_cancels_pending_replacements(layer_slicer, monkeypatch):
+    dims = Dims()
+    blocker = FakeAsyncLayer()
+    pending_layer = FakeAsyncLayer()
+    release = Event()
+
+    class BlockingRequest(FakeSliceRequest):
+        def __call__(self) -> FakeSliceResponse:
+            self.started.set()
+            assert release.wait(DEFAULT_TIMEOUT_SECS)
+            return FakeSliceResponse(id=self.id)
+
+    monkeypatch.setattr(
+        blocker,
+        '_make_slice_request',
+        lambda dims: BlockingRequest(1, blocker.lock, blocker.started),
+    )
+    [active] = layer_slicer.submit(layers=[blocker], dims=dims)
+    assert blocker.started.wait(DEFAULT_TIMEOUT_SECS)
+    [pending] = layer_slicer.submit(layers=[pending_layer], dims=dims)
+    assert layer_slicer.submit(layers=[pending_layer], dims=dims) == [pending]
+    pending.add_done_callback(lambda _: release.set())
+
+    layer_slicer.shutdown()
+
+    layer_slicer.wait_until_idle(timeout=0)
+    assert active.done()
+    assert pending.cancelled()
+    assert not pending_layer.started.is_set()
 
 
 def test_submit_after_shutdown_raises():

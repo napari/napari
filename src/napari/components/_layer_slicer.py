@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import logging
 import weakref
-from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from functools import partial
-from threading import RLock
+from dataclasses import dataclass, field
+from threading import Condition
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -78,6 +78,13 @@ class _AsyncSliceable(Protocol):
         """
 
 
+@dataclass
+class _SliceTask:
+    layer: weakref.ReferenceType[Layer]
+    request: _SliceRequest
+    future: Future[dict] = field(default_factory=Future)
+
+
 class _LayerSlicer:
     """
     High level class to control the creation of a slice (via a slice request),
@@ -93,15 +100,22 @@ class _LayerSlicer:
         on the main thread, actions should be taken to ensure that the callback
         is also executed on the main thread (e.g. by emitting a Qt signal from
         the callback, as `QtViewer._emit_slice_ready` does).
+    failed
+        emitted with a weak layer reference and request ID when a slice ends
+        without a response. A GUI marks the event handled when it schedules
+        completion on the main thread. Otherwise the slicer completes it here.
     """
 
     def __init__(self) -> None:
-        self.events = EmitterGroup(source=self, ready=Event)
+        self.events = EmitterGroup(source=self, ready=Event, failed=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
-        self._layer_to_task: dict[weakref.ReferenceType[Layer], Future] = {}
-        self._unfinished: set[Future] = set()
-        self._lock = RLock()
+        self._shutdown = False
+        # The condition protects queued requests and unfinished tasks. Once a
+        # worker takes a task out of _pending, its request is immutable.
+        self._tasks_changed = Condition()
+        self._pending: dict[weakref.ReferenceType[Layer], _SliceTask] = {}
+        self._tasks: dict[Future[dict], _SliceTask] = {}
 
     @contextmanager
     def force_sync(self) -> Generator[None, None, None]:
@@ -111,7 +125,7 @@ class _LayerSlicer:
 
         >>> layer_slicer = _LayerSlicer()
         >>> layer = Image(...)  # an async-ready layer
-        >>> with layer_slice.force_sync():
+        >>> with layer_slicer.force_sync():
         >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
         prev = self._force_sync
@@ -135,14 +149,13 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
-        with self._lock:
-            futures = tuple(self._unfinished)
-        _, not_done_futures = wait(futures, timeout=timeout)
-
-        if len(not_done_futures) > 0:
-            raise TimeoutError(
-                f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
-            )
+        with self._tasks_changed:
+            if not self._tasks_changed.wait_for(
+                lambda: not self._tasks, timeout=timeout
+            ):
+                raise TimeoutError(
+                    f'Slicing {len(self._tasks)} tasks did not complete within timeout ({timeout}s).'
+                )
 
     def submit(
         self,
@@ -153,8 +166,11 @@ class _LayerSlicer:
     ) -> list[Future[dict]]:
         """Slices the given layers with the given dims.
 
-        Each layer has its own task and ready event. A new request cancels
-        any pending task for that layer. A running read can finish.
+        Each layer is sliced in its own task. A layer has at most one waiting
+        request. A newer request replaces the waiting one in place, keeping
+        its turn in the queue. The worker reads requests in queue order, so a
+        layer's responses arrive in request order, but a response can be
+        superseded by the time it arrives.
 
         This should only be called from the main thread.
 
@@ -171,9 +187,10 @@ class _LayerSlicer:
         Returns
         -------
         list of futures
-            One future per async slicing task, with a result that maps from
-            the task's layer to its async slice response. Empty if no async
-            slicing tasks were submitted.
+            One future per async layer scheduled by this call. Requests that
+            replace a pending request share its future, whose result maps from
+            a weak reference to the layer to the response of the request the
+            worker claimed.
         """
         logger.debug(
             '_LayerSlicer.submit: layers=%s, dims=%s, force=%s',
@@ -186,7 +203,7 @@ class _LayerSlicer:
         # The following logic gives us a way to handle those in the short
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
-        requests: dict[weakref.ref, _SliceRequest] = {}
+        tasks: dict[weakref.ReferenceType[Layer], Future[dict]] = {}
         sync_layers = []
         for layer in layers:
             # Slicing of non-visible layers is handled differently by sync
@@ -196,58 +213,66 @@ class _LayerSlicer:
             # to fetch data yet (only if/when it becomes visible in the future).
             # Further development should allow us to remove this special case
             # by making the sync and async slicing code paths almost identical.
+            slicing_state = layer._slicing_state
             if (
-                isinstance(layer._slicing_state, _AsyncSliceable)
+                isinstance(slicing_state, _AsyncSliceable)
                 and not self._force_sync
                 and layer.visible
             ):
-                logger.debug('Making async slice request for %s', layer)
-                request = layer._slicing_state._make_slice_request(dims)
                 weak_layer = weakref.ref(layer)
-                requests[weak_layer] = request
-                layer._slicing_state._set_unloaded_slice_id(request.id)
+                if weak_layer in tasks:
+                    continue
+                if self._shutdown:
+                    raise RuntimeError(
+                        'cannot schedule new slices after shutdown'
+                    )
+                logger.debug('Making async slice request for %s', layer)
+                request = slicing_state._make_slice_request(dims)
+                slicing_state._set_unloaded_slice_id(request.id)
+                # A loaded-state observer can submit again before we queue
+                # this request. Keep the newer request in that case.
+                if slicing_state._last_slice_id != request.id:
+                    continue
+                try:
+                    tasks[weak_layer] = self._queue_request(
+                        weak_layer, request
+                    )
+                except BaseException:
+                    self._finish_without_response(weak_layer, request.id)
+                    raise
             else:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
 
-        # First submit async slicing tasks to start them ASAP.
-        tasks = [
-            self._submit_layer_task(weak_layer, request)
-            for weak_layer, request in requests.items()
-        ]
-
-        # Then execute sync slicing tasks to run concurrent with async ones.
+        # Synchronous slicing can run concurrently with the async tasks.
         for layer in sync_layers:
             layer._slice_dims(
                 dims=dims,
                 force=force,
             )
 
-        return tasks
+        return list(tasks.values())
 
-    def _submit_layer_task(
+    def _queue_request(
         self,
         weak_layer: weakref.ReferenceType[Layer],
         request: _SliceRequest,
     ) -> Future[dict]:
-        """Submit a task that slices one layer, cancelling its pending task."""
-        with self._lock:
-            previous_task = self._layer_to_task.get(weak_layer)
-        if previous_task is not None:
-            logger.debug('Cancelling task %s', id(previous_task))
-            previous_task.cancel()
+        with self._tasks_changed:
+            if self._shutdown:
+                raise RuntimeError('cannot schedule new slices after shutdown')
+            task = self._pending.get(weak_layer)
+            if task is not None:
+                task.request = request
+                logger.debug('Replaced pending request with %s', request.id)
+                return task.future
 
-        task = self._executor.submit(self._slice_layer, weak_layer, request)
-        logger.debug('Submitted task %s', id(task))
-        # Store task before adding done callback to ensure there is always
-        # a task to remove in the done callback.
-        with self._lock:
-            self._layer_to_task[weak_layer] = task
-            self._unfinished.add(task)
-        task.add_done_callback(
-            partial(self._on_slice_done, weak_layer, request.id)
-        )
-        return task
+            task = _SliceTask(weak_layer, request)
+            self._pending[weak_layer] = task
+            self._tasks[task.future] = task
+            self._executor.submit(self._slice_layer, weak_layer)
+        task.future.add_done_callback(self._on_slice_done)
+        return task.future
 
     def shutdown(self) -> None:
         """Shuts this down, preventing any new slice tasks from being submitted.
@@ -257,34 +282,57 @@ class _LayerSlicer:
         This should only be called from the main thread.
         """
         logger.debug('_LayerSlicer.shutdown')
+        with self._tasks_changed:
+            if self._shutdown:
+                return
+            self._shutdown = True
+            queued = list(self._pending.values())
+        for task in queued:
+            task.future.cancel()
         self._executor.shutdown(wait=True, cancel_futures=True)
         self.events.disconnect()
         self.events.ready.disconnect()
+        self.events.failed.disconnect()
 
-    def _slice_layer(
-        self, weak_layer: weakref.ReferenceType[Layer], request: _SliceRequest
-    ) -> dict:
-        result = {weak_layer: request()}
-        self.events.ready(value=result)
-        return result
+    def _slice_layer(self, weak_layer: weakref.ReferenceType[Layer]) -> None:
+        """Claim the layer's latest pending request and slice it."""
+        with self._tasks_changed:
+            task = self._pending.pop(weak_layer, None)
+            if task is None or not task.future.set_running_or_notify_cancel():
+                return
+            request = task.request
+        try:
+            result = {}
+            if weak_layer() is not None:
+                result = {weak_layer: request()}
+                self.events.ready(value=result)
+        except BaseException as exc:  # noqa: BLE001 - delivered via the future
+            task.future.set_exception(exc)
+        else:
+            task.future.set_result(result)
 
-    def _on_slice_done(
-        self,
-        weak_layer: weakref.ReferenceType[Layer],
-        request_id: int,
-        task: Future,
-    ) -> None:
-        with self._lock:
-            self._unfinished.remove(task)
-            if self._layer_to_task.get(weak_layer) is task:
-                del self._layer_to_task[weak_layer]
+    def _on_slice_done(self, future: Future[dict]) -> None:
+        with self._tasks_changed:
+            task = self._tasks.pop(future)
+            if self._pending.get(task.layer) is task:
+                del self._pending[task.layer]
+            self._tasks_changed.notify_all()
 
-        if not task.cancelled() and (exception := task.exception()):
-            if (layer := weak_layer()) is not None:
-                layer._slicing_state._update_loaded_slice_id(request_id)
+        if future.cancelled():
+            if not self._shutdown:
+                self._finish_without_response(task.layer, task.request.id)
+        elif (exception := future.exception()) is not None:
+            self._finish_without_response(task.layer, task.request.id)
 
             from napari.utils.notifications import notification_manager
 
             notification_manager.receive_error(
                 type(exception), exception, exception.__traceback__
             )
+
+    def _finish_without_response(
+        self, weak_layer: weakref.ReferenceType[Layer], request_id: int
+    ) -> None:
+        event = self.events.failed(layer=weak_layer, request_id=request_id)
+        if not event.handled and (layer := weak_layer()) is not None:
+            layer._slicing_state._update_loaded_slice_id(request_id)
