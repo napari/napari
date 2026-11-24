@@ -1391,3 +1391,20 @@ def test_dims_axis_labels_default_when_all_layers_default():
 
     layer0.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
+
+
+def test_navigation_submits_once_per_world_point(monkeypatch):
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((5, 4, 3)))
+    points = []
+    monkeypatch.setattr(
+        viewer._layer_slicer,
+        'submit',
+        lambda *, dims, **kwargs: points.append(dims.point),
+    )
+
+    viewer.dims.set_current_step(0, 3)
+    viewer.dims.set_point(0, 3.25)
+    # Shrinking the range can also change the world point.
+    viewer.dims.range = ((0, 1, 1), *viewer.dims.range[1:])
+    assert [p[0] for p in points] == [3, 3.25, 1]
