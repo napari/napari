@@ -412,14 +412,14 @@ def test_reset_contrast_limits_percentiles():
     data = np.arange(101, dtype=float).reshape(1, 101)  # 0, 1, ..., 100
     data[0, -1] = 60_000  # one outlier
     layer = Image(data)
-    assert layer.contrast_limits == [0, 60_000]
+    assert layer.contrast_limits == (0, 60_000)
 
     layer.reset_contrast_limits(percentiles=(1, 99))
-    assert layer.contrast_limits == [1, 99]
+    assert layer.contrast_limits == (1, 99)
 
     # without percentiles, the full data range is used again
     layer.reset_contrast_limits()
-    assert layer.contrast_limits == [0, 60_000]
+    assert layer.contrast_limits == (0, 60_000)
 
 
 def test_reset_contrast_limits_percentiles_int16():
@@ -428,7 +428,7 @@ def test_reset_contrast_limits_percentiles_int16():
     data[0, 0] = -30_000
     layer = Image(data)
     layer.reset_contrast_limits(percentiles=(1, 99))
-    np.testing.assert_allclose(layer.contrast_limits, [29_400, 30_000])
+    np.testing.assert_allclose(layer.contrast_limits, (29_400, 30_000))
 
 
 def test_contrast_limits_range():
