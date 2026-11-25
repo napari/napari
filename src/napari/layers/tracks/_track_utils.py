@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -63,7 +65,7 @@ class TrackManager:
     hide_completed_tracks : bool
         Whether to hide track segments that have completed before the current
         time point, regardless of tail_length value.
-    current_time : int, optional
+    current_time : float, optional
         Current time point for determining which tracks have completed. Required
         when hide_completed_tracks is enabled.
     track_end_times : array (M,)
@@ -94,7 +96,7 @@ class TrackManager:
 
         # Parameters for hide_completed_tracks functionality
         self._hide_completed_tracks: bool = False
-        self._current_time: int | None = None
+        self._current_time: float | None = None
         self._track_end_times: np.ndarray | None = (
             None  # Cache for track end times (1D array ordered by unique_track_ids)
         )
@@ -124,7 +126,7 @@ class TrackManager:
         return self._data
 
     @data.setter
-    def data(self, data: list | np.ndarray) -> None:
+    def data(self, data: npt.ArrayLike) -> None:
         """set the vertex data and build the vispy arrays for display"""
         from scipy.sparse import coo_matrix
         from scipy.spatial import cKDTree
@@ -167,7 +169,7 @@ class TrackManager:
         self._track_end_times = None
 
     @property
-    def features(self) -> 'pd.DataFrame':
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -187,10 +189,10 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame | None,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
-        self._feature_table.reorder(self._order)  # pyrefly: ignore [bad-argument-type]
+        self._feature_table.reorder(self._order)
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
 
@@ -225,12 +227,12 @@ class TrackManager:
         self._hide_completed_tracks = value
 
     @property
-    def current_time(self) -> int | None:
+    def current_time(self) -> float | None:
         """Current time point for determining completed tracks"""
         return self._current_time
 
     @current_time.setter
-    def current_time(self, value: int | None) -> None:
+    def current_time(self, value: float | None) -> None:
         """Set current time point"""
         self._current_time = value
 
@@ -468,7 +470,7 @@ class TrackManager:
         return None
 
     def track_labels(
-        self, current_time: int
+        self, current_time: float
     ) -> tuple[None, None] | tuple[list[str], np.ndarray]:
         """return track labels at the current time"""
         if self._points_id is None:
@@ -486,7 +488,7 @@ class TrackManager:
 
 
 def prepare_tracks_data(
-    data: 'pd.DataFrame',
+    data: pd.DataFrame,
     track_id: int | str = 'track_id',
     t: int | str = 't',
     y: int | str = 'y',

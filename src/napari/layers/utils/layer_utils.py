@@ -1150,7 +1150,10 @@ class _FeatureTable:
             drop=True
         )
 
-    def reorder(self, order: Sequence[int]) -> None:
+    def reorder(
+        self,
+        order: Sequence[int] | np.ndarray[tuple[int], np.dtype[np.integer]],
+    ) -> None:
         """Reorders the rows of the feature values table."""
         self._values = self._values.iloc[order].reset_index(drop=True)
 
