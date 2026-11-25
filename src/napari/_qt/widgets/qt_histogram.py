@@ -276,8 +276,8 @@ class QtHistogramWidget(QWidget):
                 bin_edges=bin_edges,
                 counts=counts,
                 gamma=gamma,
-                clims=clims,  # pyrefly: ignore [bad-argument-type]
-                data_range=clims_range,  # pyrefly: ignore [bad-argument-type]
+                clims=clims,
+                data_range=clims_range,
             )
             self.canvas.update()
         finally:

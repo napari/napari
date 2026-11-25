@@ -116,9 +116,9 @@ def test_auto_contrast_buttons(qtbot):
     layer = Image(np.arange(8**3).reshape(8, 8, 8), contrast_limits=(0, 1))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
-    assert layer.contrast_limits == [0, 1]
+    assert layer.contrast_limits == (0, 1)
     qtctrl._contrast_limits_control.auto_scale_buttons.once_btn.click()
-    assert layer.contrast_limits == [0, 63]
+    assert layer.contrast_limits == (0, 63)
 
     # change slice
     dims = Dims(
@@ -126,23 +126,23 @@ def test_auto_contrast_buttons(qtbot):
     )
     layer._slice_dims(dims)
     # hasn't changed yet
-    assert layer.contrast_limits == [0, 63]
+    assert layer.contrast_limits == (0, 63)
 
     # with auto_btn, it should always change
     qtctrl._contrast_limits_control.auto_scale_buttons.auto_btn.click()
-    assert layer.contrast_limits == [64, 127]
+    assert layer.contrast_limits == (64, 127)
     dims.point = (2, 8, 8)
     layer._slice_dims(dims)
-    assert layer.contrast_limits == [128, 191]
+    assert layer.contrast_limits == (128, 191)
     dims.point = (3, 8, 8)
     layer._slice_dims(dims)
-    assert layer.contrast_limits == [192, 255]
+    assert layer.contrast_limits == (192, 255)
 
     # once button turns off continuous
     qtctrl._contrast_limits_control.auto_scale_buttons.once_btn.click()
     dims.point = (4, 8, 8)
     layer._slice_dims(dims)
-    assert layer.contrast_limits == [192, 255]
+    assert layer.contrast_limits == (192, 255)
 
 
 def test_histogram_button_toggles_inline_histogram(qtbot):

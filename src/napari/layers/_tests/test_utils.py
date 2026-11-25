@@ -3,6 +3,7 @@ import pytest
 from numpy.testing import assert_array_equal
 from skimage.util import img_as_ubyte
 
+from napari.layers.intensity_mixin import _validate_contrast_limits
 from napari.layers.utils.layer_utils import convert_to_uint8
 
 
@@ -56,3 +57,24 @@ def test_bool():
     converted = convert_to_uint8(data)
     assert converted.dtype == np.uint8
     assert_array_equal(img_as_ubyte(data), converted)
+
+
+@pytest.mark.parametrize(
+    ('clims', 'expected'),
+    [
+        ((0, 1), (0, 1)),
+        ([-1, 1], (-1, 1)),
+        (np.array([100, 10000]), (100, 10000)),
+    ],
+)
+def test_validate_contrast_limits_valid(clims, expected):
+    validated = _validate_contrast_limits(clims, 'test')
+    assert validated == validated
+
+
+@pytest.mark.parametrize(
+    'clims', [(0, 1, 1), [None, 1], np.array([100, -100])]
+)
+def test_validate_contrast_limits_invalid(clims):
+    with pytest.raises((ValueError, TypeError)):
+        _validate_contrast_limits(clims, 'test')
