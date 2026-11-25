@@ -1624,7 +1624,7 @@ class ShapeList:
         """
         pairs: Iterable[tuple[int, int]]
         if isinstance(z_indices, (int, np.integer)):
-            pairs = zip(indices, repeat(int(z_indices)), strict=False)
+            pairs = zip(indices, repeat(z_indices), strict=False)
         else:
             pairs = zip(indices, z_indices, strict=True)
         for index, z_index in pairs:

@@ -712,6 +712,12 @@ class AnimationThread(QThread):
         Takes dims scale into account and restricts the animation to the
         requested frame_range, if entered.
         """
+        dims = self.dims
+        axis = self.axis
+        if dims is None or axis is None:
+            # The slider was destroyed while playing (e.g. ``dims.ndim``
+            # changed), so there is nothing left to animate.
+            return self.finish()
         self.current += self.step * self.dims_range[2]
         if self.current < self.min_point:
             if (
@@ -735,8 +741,8 @@ class AnimationThread(QThread):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.current_step.blocker(self._on_axis_changed):
-            self.frame_requested.emit(self.axis, self.current)
+        with dims.events.current_step.blocker(self._on_axis_changed):
+            self.frame_requested.emit(axis, self.current)
         # self.timer.start()
         return None
 

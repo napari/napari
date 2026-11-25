@@ -47,7 +47,10 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
 )
 from napari.layers.labels._slice import _LabelsSliceRequest
-from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import (
+    _FeatureTable,
+    _resize_to_thumbnail,
+)
 from napari.types import LayerDataType
 from napari.utils._dtype import (
     get_dtype_limits,
@@ -586,7 +589,7 @@ class Labels(ScalarFieldBase):
     def contour(self, contour: int) -> None:
         if contour < 0:
             raise ValueError('contour value must be >= 0')
-        self._contour = int(contour)
+        self._contour = contour
         self.events.contour()
         self.refresh(extent=False)
 
@@ -796,7 +799,7 @@ class Labels(ScalarFieldBase):
         dtype_lims = get_dtype_limits(layer_dtype)
         if dtype_lims[0] > label or dtype_lims[1] < label:
             raise WrongSelectedLabelError(
-                dtype=layer_dtype,  # pyrefly: ignore [bad-argument-type]
+                dtype=layer_dtype,
                 value=label,
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
@@ -999,7 +1002,7 @@ class Labels(ScalarFieldBase):
             warnings.warn('Contours are not displayed during 3D rendering')
             return None
 
-        contour_offset = max(1, int(self.contour))
+        contour_offset = max(1, self.contour)
         expanded_slice = expand_slice(data_slice, labels.shape, contour_offset)
         sliced_labels = get_contours(
             labels[expanded_slice],
@@ -1059,8 +1062,6 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        from scipy import ndimage as ndi
-
         if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
@@ -1073,16 +1074,7 @@ class Labels(ScalarFieldBase):
             # use max projection. For labels, ideally we would use "first
             # nonzero projection", but we leave that for a future PR. (TODO)
             image = np.max(image, axis=0)
-        imshape = np.array(image.shape[:2])
-        thumbshape = np.array(self._thumbnail_shape[:2])
-
-        raw_zoom_factor = np.min(thumbshape / imshape)
-        new_shape = np.clip(
-            raw_zoom_factor * imshape, a_min=1, a_max=thumbshape
-        )
-        zoom_factor = tuple(new_shape / imshape)
-
-        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        downsampled = _resize_to_thumbnail(image, self._thumbnail_shape[:2])
         color_array = self.colormap.map(downsampled)
         color_array[..., 3] *= self.opacity
 
@@ -1837,11 +1829,9 @@ class Labels(ScalarFieldBase):
             N-dimensional slice key. Every entry is a slice with explicit
             bounds, so indexing with it never drops dimensions.
         """
-        slice_key_list = [
-            slice(int(coord), int(coord) + 1) for coord in slice_coord
-        ]
+        slice_key_list = [slice(coord, coord + 1) for coord in slice_coord]
         for i, dim in enumerate(dims_to_paint):
-            slice_key_list[dim] = slice(int(min_vals[i]), int(max_vals[i]))
+            slice_key_list[dim] = slice(min_vals[i], max_vals[i])
         return tuple(slice_key_list)
 
     def _expand_updated_slice_for_contour(
@@ -1851,7 +1841,7 @@ class Labels(ScalarFieldBase):
         if self.contour < 1:
             return updated_slice
 
-        contour_offset = max(1, int(self.contour))
+        contour_offset = max(1, self.contour)
         return expand_slice(updated_slice, self.data.shape, contour_offset)
 
     def _accumulate_updated_slice(

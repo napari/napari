@@ -25,7 +25,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QElidingLabel, ensure_main_thread
+from superqt import QElidingLabel
 from superqt.utils import CodeSyntaxHighlight
 
 from napari._qt.qt_resources import QColoredSVGIcon
@@ -181,7 +181,7 @@ class NapariQtNotification(QDialog):
         """Expand the notification on double click."""
         self.toggle_expansion()
 
-    def close(self, start_next: bool = True):
+    def close(self, *, start_next: bool = True):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
@@ -397,8 +397,7 @@ class NapariQtNotification(QDialog):
         )
 
     @classmethod
-    @ensure_main_thread
-    def show_notification(cls, notification: Notification):
+    def show_notification(cls, notification: Notification) -> None:
         from napari._qt.qt_main_window import _QtMainWindow
         from napari.settings import get_settings
 
@@ -406,14 +405,14 @@ class NapariQtNotification(QDialog):
 
         # after https://github.com/napari/napari/issues/2370,
         # the os.getenv can be removed (and NAPARI_CATCH_ERRORS retired)
+
         if (
             notification.severity
             >= settings.application.gui_notification_level
-            and _QtMainWindow.current()
-            and _QtMainWindow.current().isVisible()
+            and (main_window := _QtMainWindow.current())
+            and main_window.isVisible()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer.canvas.native
-            cls.from_notification(notification, canvas).show()
+            main_window._show_notification_in_main_thread(notification)
 
 
 def _debug_tb(tb):

@@ -25,7 +25,7 @@ StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 
 @runtime_checkable
-class StyleEncoding(Protocol[StyleValue, StyleArray]):
+class StyleEncoding(Protocol[StyleValue, StyleArray]):  # pyrefly: ignore[variance-mismatch]
     """Encodes generic style values, like colors and strings, from layer features.
 
     The public API of any StyleEncoding is just __call__, such that it can

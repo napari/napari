@@ -260,6 +260,37 @@ def _nanpercentile(
     return low, high
 
 
+def _resize_to_thumbnail(
+    image: np.ndarray, thumbnail_shape: tuple[int, int]
+) -> np.ndarray:
+    """Nearest-neighbor resize of ``image`` to fit ``thumbnail_shape``.
+
+    Preserves aspect ratio (each side at least 1 pixel) and trailing dims.
+    Equivalent to ``scipy.ndimage.zoom(image, ..., order=0, prefilter=False)``,
+    except that the last output pixel along each axis always comes from the
+    last input pixel (scipy's can land just outside ``image`` and become 0).
+
+    Note: this reimplementation was done to avoid costly scipy import.
+    """
+    in_shape = np.array(image.shape[:2])
+    scale = np.min(np.divide(thumbnail_shape, in_shape))
+    # rint rounds ties to even, like scipy's output-shape rounding.
+    out_shape = np.rint(np.clip(scale * in_shape, 1, thumbnail_shape)).astype(
+        np.intp
+    )
+
+    # Evenly spaced positions from the first to the last input pixel.
+    row_positions = np.linspace(0, in_shape[0] - 1, out_shape[0])
+    col_positions = np.linspace(0, in_shape[1] - 1, out_shape[1])
+    # Round half up (not to even), matching scipy's order-0 sampling.
+    rows = np.floor(row_positions + 0.5).astype(np.intp)
+    cols = np.floor(col_positions + 0.5).astype(np.intp)
+
+    resized = image[np.ix_(rows, cols)]
+    # numba-backed label colormaps reject non-native byte order.
+    return resized.astype(resized.dtype.newbyteorder('='), copy=False)
+
+
 def calc_data_range(
     data: LayerDataProtocol,
     rgb: bool = False,
@@ -318,7 +349,7 @@ def calc_data_range(
     samples: list | None = None
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
-        center = int(data.shape[0] // 2)
+        center = data.shape[0] // 2
         slices = [
             slice(0, 4096),
             slice(center - 2048, center + 2048),
@@ -343,7 +374,7 @@ def calc_data_range(
             and data.shape[-offset + 1] > 64
         ):
             # Find a central patch of the image to take
-            center = [int(s // 2) for s in data.shape[-offset:]]
+            center = [s // 2 for s in data.shape[-offset:]]
             central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
             samples = [data[idx + central_slice] for idx in idxs]
         else:
@@ -717,7 +748,7 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
     # edge chunk may be smaller than this size.
     try:
-        chunk_size = operator.index(axis_chunks)  # pyrefly: ignore [bad-argument-type]
+        chunk_size = operator.index(axis_chunks)
     except TypeError:
         return None
     if chunk_size <= 0:

@@ -160,7 +160,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
     def _on_depiction_change(self) -> None:
         if isinstance(self.node, VolumeNode):
-            self.node.raycasting_mode = str(self.layer.depiction)
+            self.node.raycasting_mode = self.layer.depiction
 
     def _on_blending_change(self, event=None) -> None:
         super()._on_blending_change()
