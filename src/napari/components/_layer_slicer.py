@@ -6,11 +6,14 @@ See the NAP for more details: https://napari.org/dev/naps/4-async-slicing.html
 from __future__ import annotations
 
 import logging
+import math
+import time
 import weakref
 from collections import deque
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from statistics import fmean, variance
 from threading import Condition
 from typing import (
     TYPE_CHECKING,
@@ -25,7 +28,7 @@ from napari.utils._dask_utils import _slice_pool_size
 from napari.utils.events.event import EmitterGroup, Event
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterable
+    from collections.abc import Callable, Generator, Iterable
 
     from napari.components import Dims
 
@@ -87,6 +90,226 @@ class _SliceTask:
     future: Future[dict] = field(default_factory=Future)
 
 
+@dataclass
+class _Read:
+    """A read in flight, as the read limit saw it start."""
+
+    limit: int
+    started: float
+    turn: int
+    full: bool  # every slot was busy when the read started
+    layers: int  # layers reading from storage or waiting for a slot
+
+
+class _ReadLimit:
+    """Choose how many layers read at once, up to ``max_reads``.
+
+    Storage that serves one read at a time (a single file handle, a library
+    lock) gains nothing from parallel reads, and a read handed to a worker
+    before the storage is free reads an outdated plane. The limit moves to
+    where displayed slices stay freshest.
+
+    A displayed slice is about as old as its read took, plus half the time
+    until its layer's next read lands. With ``m`` layers taking turns and
+    ``n`` reads of mean duration ``d`` in flight, reads complete at ``n / d``
+    per second (Little's law), so that age is about ``d * (1 + m / (2 * n))``.
+    Parallel storage keeps ``d`` as ``n`` grows. Serial storage stretches it
+    in proportion, so an extra slot only adds waiting. Read durations show
+    that queueing even where the number of reads per second hardly changes.
+    Only reads from storage count: copies from memory come round more often
+    with more slots and would pull ``d`` down.
+
+    Starting from two reads, the limit is compared with double the number,
+    and if that does not help, with half, and moves whenever the other
+    predicts an age shorter by ``MIN_GAIN``. The two limits take turns, so
+    both see the same part of the workload, and only reads that started with
+    every slot busy and finished in their turn count. Between comparisons,
+    the limit is compared again after ``PERIOD`` reads, or sooner when reads
+    at the chosen limit clearly slow down or speed up.
+
+    .NET's thread pool chooses its number of threads similarly, by comparing
+    neighboring counts (PortableThreadPool.HillClimbing.cs in dotnet/runtime).
+
+    Callers hold the slicer's lock.
+    """
+
+    MIN_WINDOW = 12  # measured reads per limit before deciding
+    # Measured reads per limit at which the estimate decides even if the
+    # difference doesn't stand out from the spread of read durations.
+    MAX_WINDOW = 48
+    CONFIDENCE = 1.0  # standard errors between the estimate and the threshold
+    MIN_GAIN = 0.05  # relative age improvement needed to change the limit
+    SHIFT = 1.5  # change in read duration at the chosen limit that re-compares
+    SHIFT_WINDOW = 32  # latest reads compared with all since the choice
+    PERIOD = 384  # completed reads at the chosen limit between comparisons
+
+    def __init__(
+        self, max_reads: int, clock: Callable[[], float] = time.perf_counter
+    ) -> None:
+        self.max_reads = max_reads
+        self.limit = self._settled = min(2, max_reads)
+        self._clock = clock
+        self._candidate: int | None = None
+        self._active = 0
+        self._turn = 0
+        self._started = 0
+        self._reads = 0
+        # Durations of measured reads per limit, and the layers they saw.
+        self._durations: dict[int, list[float]] = {}
+        self._layers = 0
+        # Read durations at the chosen limit since it was chosen, and the
+        # latest of them.
+        self._total = 0.0
+        self._count = 0
+        self._recent: deque[float] = deque(maxlen=self.SHIFT_WINDOW)
+        if max_reads > 1:
+            self._compare(1 if self._settled < max_reads else -1)
+
+    def start(self, layers: int) -> _Read:
+        """Record a read starting while ``layers`` layers read or wait."""
+        self._active += 1
+        read = _Read(
+            self.limit,
+            self._clock(),
+            self._turn,
+            self._active == self.limit,
+            layers,
+        )
+        if self._candidate is not None:
+            self._started += 1
+            # A turn lasts long enough that most of its reads finish in it.
+            if self._started >= 3 * max(self._settled, self._candidate):
+                self.limit = (
+                    self._candidate
+                    if self.limit == self._settled
+                    else self._settled
+                )
+                self._turn += 1
+                self._started = 0
+        return read
+
+    def finish(self, read: _Read) -> None:
+        """Record a read finishing, and adjust the limit if it is time."""
+        self._active -= 1
+        self._reads += 1
+        if self._candidate is None:
+            if self.max_reads == 1:
+                return
+            up = 1 if self._settled < self.max_reads else -1
+            shift = self._shift(read)
+            if shift:
+                # Slower reads suggest the storage is busy: try fewer first.
+                self._compare(-1 if shift > 0 and self._settled > 1 else up)
+            elif self._reads >= self.PERIOD:
+                self._compare(up)
+            return
+        if read.full and read.turn == self._turn:
+            self._durations.setdefault(read.limit, []).append(
+                self._clock() - read.started
+            )
+            self._layers += read.layers
+            wins = self._verdict()
+            if wins is not None:
+                self._decide(wins)
+        elif self._reads >= 4 * self.MAX_WINDOW:
+            # Too few reads with every slot busy: the slots outnumber the
+            # work, so there is nothing to learn about the storage.
+            self._decide(None)
+
+    def _shift(self, read: _Read) -> int:
+        """1 or -1 if reads at the chosen limit got clearly slower or faster.
+
+        The latest reads are compared with all reads since the limit was
+        chosen, so a change of storage or data is noticed before the next
+        periodic comparison. Netflix's Gradient2Limit compares short- and
+        long-term latency in the same way.
+        """
+        if not read.full or not self._count:
+            return 0
+        duration = self._clock() - read.started
+        self._recent.append(duration)
+        self._total += duration
+        self._count += 1
+        if len(self._recent) < self.SHIFT_WINDOW:
+            return 0
+        ratio = fmean(self._recent) * self._count / max(self._total, 1e-9)
+        return 1 if ratio > self.SHIFT else -1 if ratio < 1 / self.SHIFT else 0
+
+    def _verdict(self) -> bool | None:
+        """Whether the candidate wins, or None while the reads can't tell.
+
+        Read durations vary a lot from plane to plane. A comparison continues
+        until the difference stands out from that spread, or until it has so
+        many reads that the remaining doubt costs little either way.
+        """
+        n, c = self._settled, self._candidate
+        a = self._durations.get(n, ())
+        b = self._durations.get(c, ())
+        if min(len(a), len(b)) < self.MIN_WINDOW:
+            return None
+        mean_a, mean_b = max(fmean(a), 1e-9), max(fmean(b), 1e-9)
+        m = self._layers / (len(a) + len(b))
+        # Log of the current limit's display age over the candidate's.
+        gain = math.log(
+            mean_a * (1 + m / (2 * n)) / (mean_b * (1 + m / (2 * c)))
+        )
+        margin = gain - math.log(1 + self.MIN_GAIN)
+        # Standard error of the gain, from the relative spread of durations.
+        spread = (
+            variance(a) / mean_a**2 * (len(a) - 1)
+            + variance(b) / mean_b**2 * (len(b) - 1)
+        ) / (len(a) + len(b) - 2)
+        noise = math.sqrt(spread * (1 / len(a) + 1 / len(b)))
+        if (
+            abs(margin) < self.CONFIDENCE * noise
+            and min(len(a), len(b)) < self.MAX_WINDOW
+        ):
+            return None
+        return margin > 0
+
+    def _neighbor(self, limit: int, step: int) -> int:
+        """Double the limit, or halve it to a power of two.
+
+        Like the multiplicative steps of TCP congestion control, this
+        reaches large limits in a few comparisons, and neighbouring limits
+        differ enough to tell apart quickly.
+        """
+        if step > 0:
+            return min(2 * limit, self.max_reads)
+        return 1 << ((limit - 1).bit_length() - 1)
+
+    def _compare(self, step: int) -> None:
+        self._candidate = self._neighbor(self._settled, step)
+        self.limit = self._settled
+        self._durations = {}
+        self._layers = self._reads = self._started = 0
+        self._turn += 1
+
+    def _decide(self, wins: bool | None) -> None:
+        n, c = self._settled, self._candidate
+        logger.debug('Read limit %s against %s: %s', n, c, wins)
+        self._candidate = None
+        self._reads = 0
+        self._turn += 1
+        self.limit = n
+        self._recent.clear()
+        if wins is None or c is None:
+            return
+        durations = self._durations.get(c if wins else n, ())
+        self._total, self._count = sum(durations), len(durations)
+        if c > n:
+            if wins:
+                self._settled = self.limit = c
+                if c < self.max_reads:
+                    self._compare(1)
+            elif n > 1:
+                self._compare(-1)
+        elif wins:
+            self._settled = self.limit = c
+            if c > 1:
+                self._compare(-1)
+
+
 def _chunk_count(request: _SliceRequest) -> int:
     """Dask chunks a request reads, 0 for other data, 1 if counting fails."""
     count = getattr(request, 'chunk_count', None)
@@ -96,6 +319,21 @@ def _chunk_count(request: _SliceRequest) -> int:
         return max(0, count())
     except Exception:  # noqa: BLE001 - the read itself reports errors
         return 1
+
+
+def _reads_storage(request: _SliceRequest) -> bool:
+    """Whether a request reads from storage, not just from memory.
+
+    Requests that don't say, such as those of points or vectors, read from
+    memory. True if asking fails.
+    """
+    reads_storage = getattr(request, 'reads_storage', None)
+    if reads_storage is None:
+        return False
+    try:
+        return bool(reads_storage())
+    except Exception:  # noqa: BLE001 - the read itself reports errors
+        return True
 
 
 class _LayerSlicer:
@@ -131,17 +369,19 @@ class _LayerSlicer:
         # worker takes a task out of _pending, its request is immutable.
         # A layer has at most one read in flight, so its slices are read and
         # delivered in request order. Workers parallelize across layers, as
-        # far as the shared Dask pool allows.
+        # many at once as the read limit and the shared Dask pool allow.
         self._tasks_changed = Condition()
         self._pending: dict[weakref.ReferenceType[Layer], _SliceTask] = {}
         self._reading: set[weakref.ReferenceType[Layer]] = set()
         self._tasks: dict[Future[dict], _SliceTask] = {}
         # Layers with a waiting request and no read in flight, in turn order.
         self._ready: deque[weakref.ReferenceType[Layer]] = deque()
-        self._max_reads = settings.async_slicing_workers
+        self._read_limit = _ReadLimit(settings.async_slicing_workers)
         # Dask chunks of each read in flight. Another read starts only while
         # they leave threads of Dask's shared slicing pool idle.
         self._reading_chunks: dict[weakref.ReferenceType[Layer], int] = {}
+        # Layers reading from storage, the reads the read limit measures.
+        self._reading_storage: set[weakref.ReferenceType[Layer]] = set()
         self._chunk_budget = _slice_pool_size()
         # Latest request presented per layer, used only on the main thread.
         # The order of presented slices belongs to the slicer's view, while
@@ -347,11 +587,11 @@ class _LayerSlicer:
         self.events.failed.disconnect()
 
     def _dispatch(self) -> None:
-        """Hand ready layers to idle workers in turn."""
+        """Hand ready layers to workers while the read limit allows."""
         index = 0
         while (
             index < len(self._ready)
-            and len(self._reading) < self._max_reads
+            and len(self._reading) < self._read_limit.limit
             and not self._shutdown
         ):
             weak_layer = self._ready[index]
@@ -380,9 +620,16 @@ class _LayerSlicer:
         with self._tasks_changed:
             task = self._pending.pop(weak_layer, None)
             if task is None or not task.future.set_running_or_notify_cancel():
-                self._release(weak_layer)
+                self._release(weak_layer, None)
                 return
             request = task.request
+            # A copy from memory says nothing about the storage. Cheap reads
+            # also come round more often with more slots, which would make
+            # more slots look faster on storage that serves one read at once.
+            read = None
+            if _reads_storage(request):
+                self._reading_storage.add(weak_layer)
+                read = self._read_limit.start(self._storage_layers())
             # A newer request can replace the admitted one before a worker
             # claims it, so count the chunks of the request it reads.
             chunks = _chunk_count(request)
@@ -395,22 +642,37 @@ class _LayerSlicer:
                 result = {weak_layer: request()}
                 self.events.ready(value=result)
         except BaseException as exc:  # noqa: BLE001 - delivered via the future
-            self._finish_reading(weak_layer)
+            self._finish_reading(weak_layer, read)
             task.future.set_exception(exc)
         else:
-            self._finish_reading(weak_layer)
+            self._finish_reading(weak_layer, read)
             task.future.set_result(result)
 
+    def _storage_layers(self) -> int:
+        """Layers reading from storage or waiting for a slot to."""
+        waiting = sum(
+            1
+            for weak_layer in self._ready
+            if (task := self._pending.get(weak_layer)) is not None
+            and _reads_storage(task.request)
+        )
+        return len(self._reading_storage) + waiting
+
     def _finish_reading(
-        self, weak_layer: weakref.ReferenceType[Layer]
+        self, weak_layer: weakref.ReferenceType[Layer], read: _Read | None
     ) -> None:
         """Hand the layer's next request, if any, to a worker."""
         with self._tasks_changed:
-            self._release(weak_layer)
+            self._release(weak_layer, read)
 
-    def _release(self, weak_layer: weakref.ReferenceType[Layer]) -> None:
+    def _release(
+        self, weak_layer: weakref.ReferenceType[Layer], read: _Read | None
+    ) -> None:
         self._reading.discard(weak_layer)
         self._reading_chunks.pop(weak_layer, None)
+        self._reading_storage.discard(weak_layer)
+        if read is not None:
+            self._read_limit.finish(read)
         if weak_layer in self._pending:
             self._ready.append(weak_layer)
         self._dispatch()

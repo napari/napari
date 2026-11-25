@@ -763,6 +763,9 @@ def test_viewer_respects_slice_worker_count(
 
     get_settings().experimental.async_slicing_workers = workers
     viewer = make_napari_viewer()
+    # The read limit starts at two reads and adapts up to the setting.
+    assert viewer._layer_slicer._read_limit.max_reads == workers
+    expected = min(2, workers)
     started = threading.Event()
     release = threading.Event()
     lock = threading.Lock()
@@ -776,7 +779,7 @@ def test_viewer_respects_slice_worker_count(
             with lock:
                 active += 1
                 peak = max(peak, active)
-                if active == workers:
+                if active == expected:
                     started.set()
             try:
                 assert release.wait(10)
@@ -798,7 +801,7 @@ def test_viewer_respects_slice_worker_count(
     finally:
         release.set()
     qtbot.waitUntil(lambda: all(layer.loaded for layer in layers))
-    assert peak == workers
+    assert peak == expected
     for layer in layers:
         np.testing.assert_array_equal(layer._slice.image.raw, volume[0])
 

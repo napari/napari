@@ -480,6 +480,32 @@ def test_slice_request_counts_dask_chunks():
         assert request.chunk_count() == chunks
 
 
+@pytest.mark.parametrize(
+    ('make', 'expected'),
+    [
+        (lambda path: np.zeros((2, 4, 4)), False),
+        (lambda path: da.zeros((2, 4, 4)), True),
+        (
+            lambda path: np.memmap(
+                path / 'data.raw', mode='w+', shape=(2, 4, 4)
+            ),
+            True,
+        ),
+        (lambda path: [np.zeros((2, 8, 8)), np.zeros((2, 4, 4))], False),
+        (lambda path: [da.zeros((2, 8, 8)), da.zeros((2, 4, 4))], True),
+    ],
+    ids=['numpy', 'dask', 'memmap', 'numpy pyramid', 'dask pyramid'],
+)
+def test_slice_request_says_if_it_reads_storage(make, expected, tmp_path):
+    """Only NumPy arrays in memory are read without the storage."""
+    data = make(tmp_path)
+    layer = layers.Image(data, multiscale=isinstance(data, list))
+    request = layer._slicing_state._make_slice_request(
+        Dims(ndim=3, point=(1, 0, 0))
+    )
+    assert request.reads_storage() is expected
+
+
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
     # we start with a cache...but then intentionally turn it off per-layer.

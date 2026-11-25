@@ -412,6 +412,17 @@ class _ScalarFieldSliceRequest:
             self.data[level], self._indices(data_slice, self._tile_slice())
         )
 
+    def reads_storage(self) -> bool:
+        """Whether the displayed data isn't a NumPy array in memory.
+
+        The slicer's read limit adapts to the storage, so it measures only
+        such reads. A ``np.memmap`` reads from a file.
+        """
+        if self._slice_out_of_bounds():
+            return False
+        data = self.data[self.data_level] if self.multiscale else self.data
+        return not isinstance(data, np.ndarray) or isinstance(data, np.memmap)
+
     def _tile_slice(self) -> list[slice]:
         """Slices of the displayed tile; full extent outside 2D display."""
         disp_slice = [slice(None)] * self.slice_input.ndim

@@ -1,3 +1,5 @@
+import heapq
+import itertools
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
@@ -11,7 +13,12 @@ import pytest
 
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
-from napari.components._layer_slicer import _chunk_count, _LayerSlicer
+from napari.components._layer_slicer import (
+    _chunk_count,
+    _LayerSlicer,
+    _ReadLimit,
+    _reads_storage,
+)
 from napari.layers import Image, Labels, Points
 from napari.layers.base._slice import _next_request_id
 from napari.utils.notifications import notification_manager
@@ -66,6 +73,26 @@ def _read_chunks(layer: 'FakeAsyncLayer', chunks: int):
     return make_slice_request
 
 
+@dataclass(frozen=True)
+class StorageSliceRequest(FakeSliceRequest):
+    """A request that reads from storage."""
+
+    def reads_storage(self) -> bool:
+        return True
+
+
+def _read_storage(layer: 'FakeAsyncLayer'):
+    """Make the layer's requests read from storage."""
+
+    def make_slice_request(dims):
+        layer._slice_request_count += 1
+        return StorageSliceRequest(
+            layer._slice_request_count, layer.lock, layer.started
+        )
+
+    return make_slice_request
+
+
 class FakeAsyncLayer:
     def __init__(self) -> None:
         self._last_slice_id: int = 0
@@ -113,6 +140,32 @@ class FakeSyncLayer:
     @property
     def _slicing_state(self):
         return self
+
+
+class FixedReadLimit:
+    """Lets a fixed number of layers read at once."""
+
+    def __init__(self, limit: int) -> None:
+        self.limit = limit
+
+    def start(self, layers: int) -> None:
+        return None
+
+
+class RecordingReadLimit(FixedReadLimit):
+    """A fixed limit that records the reads it measures."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(limit)
+        self.started: list[int] = []
+        self.finished = 0
+
+    def start(self, layers: int) -> int:
+        self.started.append(layers)
+        return len(self.started)
+
+    def finish(self, read: int) -> None:
+        self.finished += 1
 
 
 @pytest.fixture
@@ -486,7 +539,7 @@ def test_layer_reads_one_request_at_a_time(layer_slicer, monkeypatch):
     monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
     with ThreadPoolExecutor(max_workers=2) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
-        monkeypatch.setattr(layer_slicer, '_max_reads', 2)
+        monkeypatch.setattr(layer_slicer, '_read_limit', FixedReadLimit(2))
         with layer.lock:
             [first] = layer_slicer.submit(layers=[layer], dims=dims)
             assert started[0].wait(DEFAULT_TIMEOUT_SECS)
@@ -513,7 +566,7 @@ def test_read_of_many_chunks_runs_alone(layer_slicer, monkeypatch):
     monkeypatch.setattr(light, '_make_slice_request', _read_chunks(light, 1))
     with ThreadPoolExecutor(max_workers=2) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
-        monkeypatch.setattr(layer_slicer, '_max_reads', 2)
+        monkeypatch.setattr(layer_slicer, '_read_limit', FixedReadLimit(2))
         monkeypatch.setattr(layer_slicer, '_chunk_budget', 8)
         with heavy.lock:
             _, light_read = layer_slicer.submit(
@@ -534,7 +587,7 @@ def test_reads_of_few_chunks_share_the_pool(layer_slicer, monkeypatch):
         )
     with ThreadPoolExecutor(max_workers=4) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
-        monkeypatch.setattr(layer_slicer, '_max_reads', 4)
+        monkeypatch.setattr(layer_slicer, '_read_limit', FixedReadLimit(4))
         monkeypatch.setattr(layer_slicer, '_chunk_budget', 7)
         with ExitStack() as stack:
             for layer in layers:
@@ -558,7 +611,7 @@ def test_read_without_dask_chunks_passes_a_full_pool(
     monkeypatch.setattr(light, '_make_slice_request', _read_chunks(light, 1))
     with ThreadPoolExecutor(max_workers=3) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
-        monkeypatch.setattr(layer_slicer, '_max_reads', 3)
+        monkeypatch.setattr(layer_slicer, '_read_limit', FixedReadLimit(3))
         monkeypatch.setattr(layer_slicer, '_chunk_budget', 8)
         with heavy.lock:
             _, light_read, other_read = layer_slicer.submit(
@@ -586,6 +639,41 @@ def test_chunk_count_of_request(request_, expected):
     assert _chunk_count(request_) == expected
 
 
+def test_read_limit_measures_only_reads_from_storage(
+    layer_slicer, monkeypatch
+):
+    """A copy from memory says nothing about the storage, so the read limit
+    neither measures it nor counts its layer among those with work."""
+    stored, in_memory = FakeAsyncLayer(), FakeAsyncLayer()
+    monkeypatch.setattr(stored, '_make_slice_request', _read_storage(stored))
+    limit = RecordingReadLimit(2)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        monkeypatch.setattr(layer_slicer, '_executor', executor)
+        monkeypatch.setattr(layer_slicer, '_read_limit', limit)
+        for future in layer_slicer.submit(
+            layers=[stored, in_memory], dims=Dims()
+        ):
+            _wait_for_response(future)
+    assert limit.started == [1]
+    assert limit.finished == 1
+
+
+@pytest.mark.parametrize(
+    ('request_', 'expected'),
+    [
+        (object(), False),
+        (SimpleNamespace(reads_storage=lambda: True), True),
+        (SimpleNamespace(reads_storage=lambda: False), False),
+        (SimpleNamespace(reads_storage=lambda: 1 / 0), True),
+    ],
+    ids=['unsaid', 'storage', 'memory', 'error'],
+)
+def test_reads_storage_of_request(request_, expected):
+    """Requests that don't say read from memory, like those of points. One
+    that fails to say counts as reading from storage."""
+    assert _reads_storage(request_) is expected
+
+
 def test_cancelled_request_leaves_no_second_reader(layer_slicer, monkeypatch):
     """A worker scheduled for a cancelled request does not start a second
     read of a layer whose next request is already being read."""
@@ -604,7 +692,7 @@ def test_cancelled_request_leaves_no_second_reader(layer_slicer, monkeypatch):
     monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
     with ThreadPoolExecutor(max_workers=2) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
-        monkeypatch.setattr(layer_slicer, '_max_reads', 2)
+        monkeypatch.setattr(layer_slicer, '_read_limit', FixedReadLimit(2))
         layer.lock.acquire()
         for blocker in blockers:
             blocker.lock.acquire()
@@ -843,7 +931,7 @@ def _replace_before_claim(layer_slicer, monkeypatch, admitted, read):
     monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
     executor = _GatedExecutor(max_workers=2)
     monkeypatch.setattr(layer_slicer, '_executor', executor)
-    monkeypatch.setattr(layer_slicer, '_max_reads', 2)
+    monkeypatch.setattr(layer_slicer, '_read_limit', FixedReadLimit(2))
     monkeypatch.setattr(layer_slicer, '_chunk_budget', 8)
     [first] = layer_slicer.submit(layers=[layer], dims=Dims())
     [second] = layer_slicer.submit(layers=[layer], dims=Dims())
@@ -887,3 +975,72 @@ def test_replaced_request_of_fewer_chunks_frees_the_pool(
         assert light.started.wait(DEFAULT_TIMEOUT_SECS)
     assert _wait_for_response(heavy_read)[heavy].id == 2
     assert _wait_for_response(light_read)[light].id == 1
+
+
+class SimulatedReads:
+    """Reads for layers that always have a request waiting, on a fake clock."""
+
+    def __init__(self, max_reads: int, layers: int = 4) -> None:
+        self.now = 0.0
+        self.read_limit = _ReadLimit(max_reads, clock=lambda: self.now)
+        self.layers = layers
+        self._in_flight: list = []
+        self._order = itertools.count()
+
+    def run(self, duration, reads: int) -> None:
+        """Complete reads. One starting at a limit takes duration(limit) s."""
+        for _ in range(reads):
+            while len(self._in_flight) < min(
+                self.read_limit.limit, self.layers
+            ):
+                read = self.read_limit.start(self.layers)
+                finish = self.now + duration(read.limit)
+                heapq.heappush(
+                    self._in_flight, (finish, next(self._order), read)
+                )
+            self.now, _, read = heapq.heappop(self._in_flight)
+            self.read_limit.finish(read)
+
+
+def parallel(limit):
+    return 0.1
+
+
+def serial(limit):
+    return 0.1 * limit
+
+
+def test_read_limit_rises_on_parallel_storage():
+    reads = SimulatedReads(4)
+    assert reads.read_limit.limit == 2
+    reads.run(parallel, 300)
+    assert reads.read_limit._settled == 4
+
+
+def test_read_limit_falls_on_serial_storage():
+    reads = SimulatedReads(4)
+    reads.run(serial, 300)
+    assert reads.read_limit._settled == 1
+
+
+def test_read_limit_compares_again_when_reads_slow_down():
+    reads = SimulatedReads(4)
+    reads.run(parallel, 300)
+    assert reads.read_limit._settled == 4
+    # Well before the periodic comparison.
+    reads.run(serial, 150)
+    assert reads.read_limit._settled == 1
+
+
+def test_read_limit_keeps_limit_without_enough_work():
+    """With one layer to read, extra slots stay idle and teach nothing."""
+    reads = SimulatedReads(4, layers=1)
+    reads.run(parallel, 500)
+    assert reads.read_limit._settled == 2
+
+
+def test_read_limit_of_one_does_not_compare():
+    reads = SimulatedReads(1)
+    reads.run(serial, 500)
+    assert reads.read_limit.limit == 1
+    assert reads.read_limit._candidate is None

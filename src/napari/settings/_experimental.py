@@ -54,12 +54,11 @@ class ExperimentalSettings(EventedSettings):
         description=(
             'Maximum simultaneous slice reads per viewer. Each layer reads '
             'one slice at a time, so extra workers load different layers '
-            'in parallel. This helps with data sources that serve reads in '
-            'parallel, such as object stores, and makes slices older on '
-            'sources that serve one read at a time, such as HDF5 files. '
-            'Slices of Dask data with many chunks are read one at a time, '
-            "because one of them already keeps all of Dask's slicing "
-            'threads busy. '
+            'in parallel. Up to this maximum, the viewer adjusts the number '
+            'of reads to what the data source serves in parallel, so '
+            'serial sources settle at one read at a time. Slices of Dask '
+            'data with many chunks are read one at a time, because one of '
+            "them already keeps all of Dask's slicing threads busy. "
             'Applies to newly opened viewers.'
         ),
     )
