@@ -61,5 +61,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.shading_combobox):
             self.shading_combobox.setCurrentEnum(Shading(self._layer.shading))
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.shading_combobox_label, self.shading_combobox)]

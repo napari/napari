@@ -1,18 +1,13 @@
-.PHONY: typestubs pre watch dist settings-schema
+.PHONY: pre watch dist settings-schema
 
-typestubs:
-	tox -e typestub
-
-# note: much faster to run mypy as daemon,
-# dmypy run -- ...
-# https://mypy.readthedocs.io/en/stable/mypy_daemon.html
+# run the pyrefly type checker via tox
 typecheck:
-	tox -e mypy
+	tox -e pyrefly
 
 check-manifest:
 	tox -e check-manifest
 
-dist: typestubs check-manifest
+dist: check-manifest
 	pip install -U build
 	python -m build
 

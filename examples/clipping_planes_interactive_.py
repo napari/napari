@@ -184,9 +184,9 @@ def shift_plane_along_normal(viewer, event):
     vectors_layer.mouse_pan = True
 
 
-viewer.axes.visible = True
-viewer.camera.angles = (45, 45, 45)
-viewer.camera.zoom = 5
+viewer.scene.overlays.axes.visible = True
+viewer.scene.camera.angles = (45, 45, 45)
+viewer.scene.camera.zoom = 5
 viewer.canvas.overlays.text.update({
     'text': 'Drag the clipping plane surface to move it along its normal.',
     'font_size': 20,

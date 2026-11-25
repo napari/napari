@@ -32,6 +32,7 @@ Notes for using the plugin-related fixtures here:
 from __future__ import annotations
 
 import contextlib
+import gc
 import os
 import sys
 import threading
@@ -39,11 +40,12 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
+from importlib.metadata import version
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypedDict
 from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
@@ -61,6 +63,8 @@ from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
     from npe2._pytest_plugin import TestPluginManager
     from pytestqt.qtbot import QtBot
 
@@ -104,6 +108,44 @@ def layer_data_and_types():
         layer.name + e for layer, e in zip(layers, extensions, strict=False)
     ]
     return layers, layer_data, layer_types, filenames
+
+
+@pytest.fixture
+def surface_data() -> tuple[
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.float32]],
+    np.ndarray[tuple[int], np.dtype[np.int32]],
+    np.ndarray[tuple[int], np.dtype[np.float32]],
+]:
+    data = np.array([[0, 0], [0, 20], [10, 0], [10, 10]], dtype=np.float32)
+    faces = np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int32)
+    values = np.linspace(0, 1, len(data), dtype=np.float32)
+    return (data, faces, values)
+
+
+class TrackDataDict(TypedDict):
+    data: np.ndarray[tuple[int, Literal[4]], np.dtype[np.float32]]
+    properties: dict[Literal['track_id', 'time', 'speed'], list]
+
+
+@pytest.fixture
+def tracks_data() -> TrackDataDict:
+    data = np.array(
+        [[0, 0, 0, 0], [0, 1, 0, 20], [1, 0, 10, 0], [1, 1, 10, 10]],
+        dtype=np.float32,
+    )
+    properties: dict[Literal['track_id', 'time', 'speed'], list[int]] = {
+        'track_id': [0, 0, 1, 1],
+        'time': [0, 1, 0, 1],
+        'speed': [50, 30, 20, 10],
+    }
+    return {'data': data, 'properties': properties}
+
+
+@pytest.fixture
+def vectors_data() -> np.ndarray[
+    tuple[int, Literal[2], Literal[2]], np.dtype[np.float32]
+]:
+    return np.array([[[0, 0], [0, 20]], [[10, 0], [10, 10]]], dtype=np.float32)
 
 
 @pytest.fixture(
@@ -160,7 +202,7 @@ def layer(request):
 
 
 @pytest.fixture
-def layers():
+def layers() -> LayerList:
     """Fixture that supplies a layers list for testing.
 
     Returns
@@ -180,7 +222,7 @@ def layers():
 
 
 @pytest.fixture(autouse=True)
-def _skip_examples(request):
+def _skip_examples(request) -> None:
     """Skip examples test if ."""
     if request.node.get_closest_marker(
         'examples'
@@ -203,7 +245,7 @@ if os.getenv('_PYTEST_RAISE', '0') != '0':
 
 
 @pytest.fixture(autouse=True)
-def _fresh_settings(monkeypatch):
+def _fresh_settings(monkeypatch) -> None:
     """This fixture ensures that default settings are used for every test.
 
     and ensures that changes to settings in a test are reverted, and never
@@ -228,7 +270,7 @@ def _fresh_settings(monkeypatch):
     # here we just have save() return if called without a valid path
     NapariSettings.__original_save__ = NapariSettings.save
 
-    def _mock_save(self, path=None, **dict_kwargs):
+    def _mock_save(self, path=None, **dict_kwargs) -> None:
         if not (path or self.config_path):
             return
         NapariSettings.__original_save__(self, path, **dict_kwargs)
@@ -269,7 +311,7 @@ HistoryManager.enabled = False
 
 
 @pytest.fixture
-def napari_svg_name():
+def napari_svg_name() -> str:
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
 
@@ -283,6 +325,50 @@ def napari_svg_name():
 def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
     return npe2pm
+
+
+if parse_version(version('npe2')) < parse_version('0.10.0'):
+
+    @pytest.fixture
+    def manifest_path() -> str:
+        path_to = (
+            Path(__file__)
+            .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+            .resolve()
+        )
+        assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+        return str(path_to)
+
+    @pytest.fixture
+    def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+        from napari.plugins import _initialize_plugins
+
+        _initialize_plugins.cache_clear()
+        mock_reg = MagicMock()
+        npe2pm._command_registry = mock_reg
+        with npe2pm.tmp_plugin(manifest=manifest_path):
+            yield npe2pm
+
+else:
+
+    @pytest.fixture
+    def mock_pm(npe2pm_w_plugin: TestPluginManager):
+        from napari.plugins import _initialize_plugins
+
+        _initialize_plugins.cache_clear()
+        return npe2pm_w_plugin
+
+
+@pytest.fixture(autouse=True)
+def plugin_settings_(plugin_settings):
+    """Autouse `plugin_settings` so `get_plugin_settings` is fresh for each test.
+
+    Without this, whichever test happens to call `get_plugin_settings`
+    first (e.g. by constructing a `PreferencesDialog`) would populate and
+    freeze `_PLUGIN_SETTINGS` for the rest of the session, against the
+    real user config directory.
+    """
+    return plugin_settings
 
 
 @pytest.fixture
@@ -316,55 +402,55 @@ def qt_viewer_(
 
     viewer = QtViewer(viewer_model)
 
-    original_controls = viewer.__class__.controls.fget  # type: ignore[attr-defined]
-    original_layers = viewer.__class__.layers.fget  # type: ignore[attr-defined]
-    original_layer_buttons = viewer.__class__.layerButtons.fget  # type: ignore[attr-defined]
-    original_viewer_buttons = viewer.__class__.viewerButtons.fget  # type: ignore[attr-defined]
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget  # type: ignore[attr-defined]
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget  # type: ignore[attr-defined]
-    original_dock_console = viewer.__class__.dockConsole.fget  # type: ignore[attr-defined]
-    original_dock_performance = viewer.__class__.dockPerformance.fget  # type: ignore[attr-defined]
+    original_controls = viewer.__class__.controls.fget
+    original_layers = viewer.__class__.layers.fget
+    original_layer_buttons = viewer.__class__.layerButtons.fget
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
+    original_dock_console = viewer.__class__.dockConsole.fget
+    original_dock_performance = viewer.__class__.dockPerformance.fget
 
-    def hide_widget(widget):
+    def hide_widget(widget) -> None:
         widget.hide()
 
-    def hide_and_clear_qt_viewer(viewer: QtViewer):
+    def hide_and_clear_qt_viewer(viewer: QtViewer) -> None:
         viewer._instances.clear()
         viewer.hide()
 
     def patched_controls(self):
         if self._controls is None:
-            self._controls = original_controls(self)
+            self._controls = original_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._controls, before_close_func=hide_widget)
         return self._controls
 
     def patched_layers(self):
         if self._layers is None:
-            self._layers = original_layers(self)
+            self._layers = original_layers(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layers, before_close_func=hide_widget)
         return self._layers
 
     def patched_layer_buttons(self):
         if self._layersButtons is None:
-            self._layersButtons = original_layer_buttons(self)
+            self._layersButtons = original_layer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layersButtons, before_close_func=hide_widget)
         return self._layersButtons
 
     def patched_viewer_buttons(self):
         if self._viewerButtons is None:
-            self._viewerButtons = original_viewer_buttons(self)
+            self._viewerButtons = original_viewer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
         return self._viewerButtons
 
     def patched_dock_layer_list(self):
         if self._dockLayerList is None:
-            self._dockLayerList = original_dock_layer_list(self)
+            self._dockLayerList = original_dock_layer_list(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
         return self._dockLayerList
 
     def patched_dock_layer_controls(self):
         if self._dockLayerControls is None:
-            self._dockLayerControls = original_dock_layer_controls(self)
+            self._dockLayerControls = original_dock_layer_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockLayerControls, before_close_func=hide_widget
             )
@@ -372,13 +458,13 @@ def qt_viewer_(
 
     def patched_dock_console(self):
         if self._dockConsole is None:
-            self._dockConsole = original_dock_console(self)
+            self._dockConsole = original_dock_console(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
         return self._dockConsole
 
     def patched_dock_performance(self):
         if self._dockPerformance is None:
-            self._dockPerformance = original_dock_performance(self)
+            self._dockPerformance = original_dock_performance(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockPerformance, before_close_func=hide_widget
             )
@@ -427,7 +513,7 @@ def qt_viewer(
 
 
 @pytest.fixture
-def mock_qt_method(monkeypatch):
+def mock_qt_method(monkeypatch) -> Callable[..., MagicMock]:
     """Since PySide6 6.10, the tests deterministically segfault when mocking
     methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
 
@@ -439,7 +525,7 @@ def mock_qt_method(monkeypatch):
     Currently, this fixture is only used in tests where that look not necessary.
     """
 
-    def _mock_fun(obj: str | object, method: str | None = None):
+    def _mock_fun(obj: str | object, method: str | None = None) -> MagicMock:
         mock = MagicMock()
 
         def _mocked_method(_self, *args, **kwargs):
@@ -455,7 +541,9 @@ def mock_qt_method(monkeypatch):
 
 
 @pytest.fixture
-def mock_qt_method_ctx(monkeypatch, qtbot):
+def mock_qt_method_ctx(
+    monkeypatch, qtbot
+) -> Callable[..., contextlib.AbstractContextManager[MagicMock]]:
     """Since PySide6 6.10, the tests deterministically segfault when mocking
     methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
 
@@ -496,7 +584,7 @@ def mock_qt_method_ctx(monkeypatch, qtbot):
 
 
 @pytest.fixture(autouse=True)
-def _clear_cached_action_injection():
+def _clear_cached_action_injection() -> None:
     """Automatically clear cached property `Action.injected`.
 
     Allows action manager actions to be injected using current provider/processors
@@ -511,8 +599,8 @@ def _clear_cached_action_injection():
 
 
 def _event_check(instance):
-    def _prepare_check(name, no_event_):
-        def check(instance, no_event=no_event_):
+    def _prepare_check(name, no_event_) -> Callable[..., None]:
+        def check(instance, no_event=no_event_) -> None:
             if name in no_event:
                 assert not hasattr(instance.events, name), (
                     f'event {name} defined'
@@ -534,7 +622,7 @@ def _event_check(instance):
             yield _prepare_check(name, no_event_set), instance, name
 
 
-def pytest_generate_tests(metafunc):
+def pytest_generate_tests(metafunc) -> None:
     """Generate separate test for each test toc check if all events are defined."""
     if 'event_define_check' in metafunc.fixturenames:
         res = []
@@ -548,7 +636,13 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
 
-def pytest_collection_modifyitems(session, config, items):
+# used to store the section of a test in pytest.Item.stash
+_TEST_SECTION_KEY = pytest.StashKey[str]()
+
+
+def pytest_collection_modifyitems(
+    session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+) -> None:
     test_subset = os.environ.get('NAPARI_TEST_SUBSET')
 
     test_order_prefix = [
@@ -559,6 +653,13 @@ def pytest_collection_modifyitems(session, config, items):
         os.path.join('napari', 'plugins'),
         os.path.join('napari', '_vispy'),
         os.path.join('napari', '_qt'),
+        # Slowest `_qt` folders in separate sections after the rest of `_qt`,
+        # so failures there stop the run early. The last matching prefix wins.
+        os.path.join('napari', '_qt', '_qapp_model'),
+        os.path.join('napari', '_qt', '_tests'),
+        # `test_trace_on_start` starts napari in a subprocess, which on macOS
+        # may leave the test app inactive; run it after focus-dependent tests.
+        os.path.join('napari', '_qt', 'perf'),
         os.path.join('napari', 'qt'),
         os.path.join('napari', '_tests'),
         os.path.join('napari', '_tests', 'test_examples.py'),
@@ -581,12 +682,109 @@ def pytest_collection_modifyitems(session, config, items):
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
                 index = i
+        item.stash[_TEST_SECTION_KEY] = (
+            test_order_prefix[index] if index >= 0 else '<other>'
+        )
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
 
 
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_protocol(
+    item: pytest.Item, nextitem: pytest.Item | None
+) -> Generator[None, object, object]:
+    """Stop the run once a test section that had failures is finished.
+
+    ``pytest_collection_modifyitems`` groups tests into sections ordered
+    from low-level to high-level code. Failures in an early section usually
+    cascade into later ones, so running them only wastes CI time. When the
+    ``CI`` environment variable is set to ``1`` (or ``true``, as set by
+    GitHub Actions), stop after the last test of a section that had
+    failures, even if the ``--maxfail`` limit is not reached.
+    """
+    result = yield
+    if nextitem is None or os.environ.get('CI', '').lower() not in {
+        '1',
+        'true',
+    }:
+        return result
+    session = item.session
+    section = item.stash.get(_TEST_SECTION_KEY, None)
+    if nextitem.stash.get(_TEST_SECTION_KEY, None) == section:
+        return result
+    # `item` was the last test of its section. A failure in an earlier
+    # section would already have stopped the run, so any failure counted
+    # so far happened in this section.
+    if session.testsfailed and not session.shouldfail:
+        session.shouldfail = (
+            f'stopping after {session.testsfailed} failure(s) '
+            f'in test section {section!r}'
+        )
+    return result
+
+
+@pytest.fixture
+def colorbox_painted_colors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[tuple[int, ...]]:
+    """Record the colors that QtColorBox paints with, in painting order.
+
+    The painter still draws, so this observes real paint events. It lets tests
+    check that a change reached the swatch shown to the user, which needs the
+    event loop to run because QtColorBox only requests a repaint with update().
+    """
+    from qtpy.QtGui import QColor, QPainter
+
+    from napari._qt.layer_controls.widgets._labels import qt_label_color
+
+    colors: list[tuple[int, ...]] = []
+
+    class RecordingPainter(QPainter):
+        def __init__(self, device) -> None:
+            super().__init__(device)
+            self._record = type(device).__name__ == 'QtColorBox'
+
+        def setBrush(self, brush) -> None:
+            if self._record:
+                color = QColor(brush)
+                colors.append(
+                    (color.red(), color.green(), color.blue(), color.alpha())
+                )
+            super().setBrush(brush)
+
+    monkeypatch.setattr(qt_label_color, 'QPainter', RecordingPainter)
+    return colors
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtestloop(
+    session: pytest.Session,
+) -> Generator[None, bool | None, bool | None]:
+    """Freeze objects created by imports and collection before running tests.
+
+    Each full ``gc.collect()`` (for example, the one done when a layer is
+    removed from the canvas) has to traverse every object tracked by the
+    garbage collector. Imports and test collection create over a million
+    objects that live for the whole session, so moving them to the permanent
+    generation makes these collections about twice as fast.
+
+    Frozen objects are skipped by ``gc.get_objects`` and ``gc.get_referrers``,
+    so this is done only for napari's own test suite and not in the
+    ``napari.utils._testsupport`` plugin used by plugin developers.
+    """
+    # we run gc.collect() before freezing the list of created objects
+    # to remove all leftovers from phase of collecting tests (some temporal objects)
+    # and reduce peak of consumed memory.
+    gc.collect()
+    gc.freeze()
+    try:
+        return (yield)
+    finally:
+        gc.unfreeze()
+
+
 @pytest.fixture(autouse=True)
-def _disable_notification_dismiss_timer(monkeypatch):
+def _disable_notification_dismiss_timer(monkeypatch) -> None:
     """
     This fixture disables starting timer for closing notification
     by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
@@ -613,7 +811,7 @@ def _disable_notification_dismiss_timer(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _prevent_thread(request, monkeypatch):
+def _prevent_thread(request, monkeypatch) -> None:
     if 'allow_animation_thread' in request.keywords:
         return
     if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
@@ -640,7 +838,7 @@ def single_threaded_executor():
     executor.shutdown()
 
 
-def _get_calling_stack():  # pragma: no cover
+def _get_calling_stack() -> str:  # pragma: no cover
     stack = []
     for i in range(2, sys.getrecursionlimit()):
         try:
@@ -651,7 +849,7 @@ def _get_calling_stack():  # pragma: no cover
     return '\n'.join(stack)
 
 
-def _get_calling_place(depth=1):  # pragma: no cover
+def _get_calling_place(depth=1) -> str:  # pragma: no cover
     if not hasattr(sys, '_getframe'):
         return ''
     frame = sys._getframe(1 + depth)
@@ -675,7 +873,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     thread_dict = WeakKeyDictionary()
     base_constructor = QThread.__init__
 
-    def run_with_trace(self):  # pragma: no cover
+    def run_with_trace(self) -> None:  # pragma: no cover
         """
         QThread.run but adding execution to sys.settrace when measuring coverage.
 
@@ -685,10 +883,10 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
         """
         if 'coverage' in sys.modules:
             # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
-            sys.settrace(threading._trace_hook)
+            sys.settrace(threading._trace_hook)  # pyrefly: ignore [missing-attribute]
         self._base_run()
 
-    def init_with_trace(self, *args, **kwargs):
+    def init_with_trace(self, *args, **kwargs) -> None:
         """Constructor for QThread adding tracing for coverage measurements.
 
         Functions running in QThreads don't get measured by coverage.py, see
@@ -704,12 +902,16 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     if 'disable_qthread_start' in request.keywords:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(
+            self, priority=QThread.Priority.InheritPriority
+        ) -> None:
             """Dummy function to prevent thread starts."""
 
     else:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(
+            self, priority=QThread.Priority.InheritPriority
+        ) -> None:
             """Thread start function with logs to detect hanging threads.
 
             Saves a weak reference to the thread and detects hanging threads,
@@ -771,12 +973,12 @@ def _dangling_qthread_pool(monkeypatch, request):
 
     if 'disable_qthread_pool_start' in request.keywords:
 
-        def my_start(self, runnable, priority=0):
+        def my_start(self, runnable, priority=0) -> None:
             """dummy function to prevent thread start"""
 
     else:
 
-        def my_start(self, runnable, priority=0):
+        def my_start(self, runnable, priority=0) -> None:
             if self not in threadpool_dict:
                 threadpool_dict[self] = []
             threadpool_dict[self].append(_get_calling_place())
@@ -828,13 +1030,13 @@ def _dangling_qtimers(monkeypatch, request):
     if 'disable_qtimer_start' in request.keywords:
         from pytestqt.qt_compat import qt_api
 
-        def my_start(self, msec=None):
+        def my_start(self, msec=None) -> None:
             """dummy function to prevent timer start"""
 
         _single_shot = my_start
 
         class OldTimer(QTimer):
-            def start(self, time=None):
+            def start(self, time=None) -> None:
                 if time is not None:
                     base_start(self, time)
                 else:
@@ -845,7 +1047,7 @@ def _dangling_qtimers(monkeypatch, request):
 
     else:
 
-        def my_start(self, msec=None):
+        def my_start(self, msec=None) -> None:
             calling_place = _get_calling_place()
             if 'superqt' in calling_place and 'throttler' in calling_place:
                 calling_place += f' - {_get_calling_place(2)}'
@@ -855,7 +1057,7 @@ def _dangling_qtimers(monkeypatch, request):
             else:
                 base_start(self)
 
-        def single_shot(msec, reciver, method=None):
+        def single_shot(msec, reciver, method=None) -> None:
             t = QTimer()
             t.setSingleShot(True)
             if method is None:
@@ -868,7 +1070,7 @@ def _dangling_qtimers(monkeypatch, request):
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 
-        def _single_shot(self, *args):
+        def _single_shot(self, *args) -> None:
             if isinstance(self, QTimer):
                 single_shot(*args)
             else:
@@ -882,8 +1084,9 @@ def _dangling_qtimers(monkeypatch, request):
     dangling_timers = []
 
     for timer, calling in chain(timer_dkt.items(), single_shot_list):
-        if timer.isActive():
-            dangling_timers.append((timer, calling))
+        with contextlib.suppress(RuntimeError):
+            if timer.isActive():
+                dangling_timers.append((timer, calling))
 
     for timer, _ in dangling_timers:
         with suppress(RuntimeError):
@@ -915,16 +1118,16 @@ def _dangling_qtimers(monkeypatch, request):
     )
 
 
-def _throttle_mock(self):
+def _throttle_mock(self) -> None:
     self.triggered.emit()
 
 
-def _flush_mock(self):
+def _flush_mock(self) -> None:
     """There are no waiting events."""
 
 
 @pytest.fixture
-def _disable_throttling(monkeypatch):
+def _disable_throttling(monkeypatch) -> None:
     """Disable qthrottler from superqt.
 
     This is sometimes necessary to avoid flaky failures in tests
@@ -949,12 +1152,12 @@ def _dangling_qanimations(monkeypatch, request):
 
     if 'disable_qanimation_start' in request.keywords:
 
-        def my_start(self):
+        def my_start(self) -> None:
             """dummy function to prevent thread start"""
 
     else:
 
-        def my_start(self):
+        def my_start(self) -> None:
             animation_dkt[self] = _get_calling_place()
             base_start(self)
 
@@ -964,7 +1167,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:
+        if animation.state() == QPropertyAnimation.State.Running:
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:
@@ -991,8 +1194,6 @@ with contextlib.suppress(ImportError):
     # So we cannot inherit from QtBot and declare the fixture
 
     from pytestqt.qtbot import QtBot
-    from qtpy import PYQT5
-    from qtpy.QtCore import Qt
     from qtpy.QtWidgets import QApplication
 
     class QtBotWithOnCloseRenaming(QtBot):
@@ -1013,7 +1214,7 @@ with contextlib.suppress(ImportError):
         .. [1] https://czaki.github.io/blog/2024/09/16/preventing-segfaults-in-test-suite-that-has-qt-tests/
         """
 
-        def addWidget(self, widget, *, before_close_func=None):
+        def addWidget(self, widget, *, before_close_func=None) -> None:
             if widget.objectName() == '':
                 # object does not have a name, so we can set it
                 widget.setObjectName('handled_widget')
@@ -1022,20 +1223,20 @@ with contextlib.suppress(ImportError):
                 # there is no custom teardown function,
                 # so we provide one that will set object name
 
-                def before_close_func_(w):
+                def before_close_func_(w) -> None:
                     w.setObjectName('handled_widget')
             else:
                 # user provided custom teardown function,
                 # so we need to wrap it to set object name
 
-                def before_close_func_(w):
+                def before_close_func_(w) -> None:
                     before_close_func(w)
                     w.setObjectName('handled_widget')
 
             super().addWidget(widget, before_close_func=before_close_func_)
 
     @pytest.fixture
-    def qtbot(qapp, request):  # pragma: no cover
+    def qtbot(qapp, request) -> QtBotWithOnCloseRenaming:  # pragma: no cover
         """Fixture to create a QtBotWithOnCloseRenaming instance for testing.
 
         Make sure to call addWidget for each top-level widget you create to
@@ -1047,7 +1248,7 @@ with contextlib.suppress(ImportError):
         return QtBotWithOnCloseRenaming(request)
 
     @pytest.fixture(scope='session')
-    def qapp_cls():
+    def qapp_cls() -> type[QApplication]:
         """The qapp fixture uses the qapp_cls fixture to select
         the class to use for create the QApplication instance.
 
@@ -1056,15 +1257,10 @@ with contextlib.suppress(ImportError):
 
         We need to set attributte before the QApplication is created.
         """
-        if PYQT5:
-            # As Qt6 autodetect High dpi scaling, we need to
-            # enable it only on Qt5 bindings.
-            # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         return QApplication
 
     @pytest.fixture(autouse=True)
-    def disable_get_log_level_value(monkeypatch):
+    def disable_get_log_level_value(monkeypatch) -> None:
         """Enforce to not set logging to logging.NOTSET,
         that crashes current tests
         """
@@ -1127,7 +1323,7 @@ def _find_dangling_widgets(request, qtbot):
 
 
 @pytest.fixture(autouse=True)
-def _fix_magic_name(monkeypatch, request):
+def _fix_magic_name(monkeypatch, request) -> None:
     """Fix napari.utils.naming.magic_name to handle test as as internal napari module."""
 
     from napari.utils import naming
@@ -1149,7 +1345,7 @@ def _reset_colormaps(monkeypatch):
     colormap_utils.AVAILABLE_COLORMAPS.update(prev)
 
 
-def pytest_runtest_setup(item):
+def pytest_runtest_setup(item) -> None:
     """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
 
     Because we have headless test suite that does not include Qt, we cannot
@@ -1214,7 +1410,7 @@ class NapariTerminalReporter(CustomTerminalReporter):
 
 
 @pytest.hookimpl(trylast=True)
-def pytest_configure(config):
+def pytest_configure(config) -> None:
     # Get the standard terminal reporter plugin and replace it with our
     standard_reporter = config.pluginmanager.getplugin('terminalreporter')
     custom_reporter = NapariTerminalReporter(config, sys.stdout)

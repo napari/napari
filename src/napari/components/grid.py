@@ -15,6 +15,8 @@ from napari.utils.events import EventedModel
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from napari.layers import Layer
+
 
 class GridCanvas(EventedModel):
     """Grid for canvas.
@@ -51,7 +53,7 @@ class GridCanvas(EventedModel):
     enabled: bool = False
     spacing: GridSpacing = 0.0
 
-    def actual_shape(self, layers: Sequence | None = None) -> tuple[int, int]:
+    def actual_shape(self, layers: Sequence[Layer]) -> tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -63,7 +65,7 @@ class GridCanvas(EventedModel):
 
         Parameters
         ----------
-        layers : Sequence | None
+        layers : Sequence[Layer]
             List of layers that need to be placed in the grid.
 
         Returns
@@ -73,14 +75,19 @@ class GridCanvas(EventedModel):
         """
         if (
             not self.enabled  # grid is off
+            or not layers  # no layers
             or not self._effective_indices(layers)  # no visible layers
         ):
             return (1, 1)
 
         n_row, n_column = self.shape
-        n_grid_squares = np.ceil(
-            len(self._effective_indices(layers)) / abs(self.stride)
-        ).astype(int)
+
+        # Number of viewboxes is the number of stride-groups that contain at
+        # least one visible layer. Stacking within a viewbox is determined by
+        # original indices (see _viewbox_groups), while groups with no visible
+        # layers are omitted so hidden layers never leave empty viewboxes.
+        _, occupied = self._viewbox_groups(layers)
+        n_grid_squares = len(occupied)
 
         if n_row == -1 and n_column == -1:
             n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
@@ -95,9 +102,7 @@ class GridCanvas(EventedModel):
 
         return (int(n_row), int(n_column))
 
-    def position(
-        self, index: int, layers: Sequence | None = None
-    ) -> tuple[int, int]:
+    def position(self, index: int, layers: Sequence[Layer]) -> tuple[int, int]:
         """Return the position of a given linear index in the grid, or (-1, -1) if the layer is hidden/excluded.
 
         If the grid is not enabled, this will return (0, 0).
@@ -106,7 +111,7 @@ class GridCanvas(EventedModel):
         ----------
         index : int
             Position of current layer in layer list.
-        layers : Sequence | None
+        layers : Sequence[Layer]
             List of layers that need to be placed in the grid.
 
         Returns
@@ -122,28 +127,10 @@ class GridCanvas(EventedModel):
                 f'Index {index} is out of bounds for number of layers {len(layers)}.'
             )
 
-        effective_indices = self._effective_indices(layers)
-        if index not in effective_indices:
-            return (-1, -1)
-
-        n_row, n_column = self.actual_shape(layers)
-
-        # Adjust for forward or reverse ordering
-        adj_i = (
-            effective_indices.index(index)
-            if self.stride > 0
-            else len(effective_indices) - effective_indices.index(index) - 1
-        )
-
-        adj_i = adj_i // abs(self.stride)
-        adj_i = adj_i % (n_row * n_column)
-        i_row = adj_i // n_column
-        i_column = adj_i % n_column
-        # convert to python int from np int
-        return (int(i_row), int(i_column))
+        return self._positions(layers)[index]
 
     def contents_at(
-        self, position: tuple[int, int], layers: Sequence | None = None
+        self, position: tuple[int, int], layers: Sequence[Layer]
     ) -> tuple[int, ...]:
         """Return the indices contained in the viewbox at the given position.
 
@@ -158,22 +145,20 @@ class GridCanvas(EventedModel):
         indices : tuple of int
             Position of current layer in layer list.
         """
-        if not layers:
-            return ()
         return tuple(
             i
-            for i in range(len(layers))
-            if self.position(i, layers) == position
+            for i, pos in enumerate(self._positions(layers))
+            if pos == position
         )
 
     def iter_viewboxes(
-        self, layers: Sequence | None = None
+        self, layers: Sequence[Layer]
     ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
         """Iterate over each viewbox and its contained indices.
 
         Parameters
         ----------
-        layers : Sequence | None
+        layers : Sequence[Layer]
             List of layers that need to be placed in the grid.
 
         Yields
@@ -183,13 +168,16 @@ class GridCanvas(EventedModel):
         indices : tuple of int
             Position of current layer in layer list.
         """
+        contents: dict[tuple[int, int], list[int]] = {}
+        for i, pos in enumerate(self._positions(layers)):
+            contents.setdefault(pos, []).append(i)
         for row, col in np.ndindex(self.actual_shape(layers)):
-            yield (row, col), self.contents_at((row, col), layers)
+            yield (row, col), tuple(contents.get((row, col), ()))
 
     def _compute_canvas_spacing(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None,
+        layers: Sequence[Layer],
     ) -> int:
         """Compute the spacing between viewboxes in canvas pixels.
 
@@ -228,7 +216,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing_raw(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None,
+        layers: Sequence[Layer],
     ) -> int:
         """Compute the raw spacing between viewboxes in canvas pixels.
 
@@ -252,12 +240,65 @@ class GridCanvas(EventedModel):
 
         return spacing
 
-    def _effective_indices(self, layers: Sequence | None = None) -> list[int]:
-        """Return a list of original layer indices that are "active" in the grid."""
-        if layers is None:
-            return []
-        if abs(self.stride) >= 2:
-            return list(range(len(layers)))
-        if abs(self.stride) == 1:
-            return [i for i, layer in enumerate(layers) if layer.visible]
-        return list(range(len(layers)))
+    def _effective_indices(self, layers: Sequence[Layer]) -> list[int]:
+        """Return indices of layers that are active (visible) in the grid.
+
+        Only visible layers occupy grid viewboxes, so hidden layers never
+        create empty viewboxes. Stacking within a viewbox is still determined
+        by each layer's original index and the stride sign.
+        """
+        return [i for i, layer in enumerate(layers) if layer.visible]
+
+    def _viewbox_groups(
+        self, layers: Sequence[Layer]
+    ) -> tuple[dict[int, int], list[int]]:
+        """Return the viewbox grouping for the given layers.
+
+        Parameters
+        ----------
+        layers : Sequence[Layer]
+            List of layers that need to be placed in the grid.
+
+        Returns
+        -------
+        group_of : dict[int, int]
+            Maps each layer index to its viewbox group. Positive stride uses
+            contiguous ranges of original indices (``i // stride``) so toggling
+            visibility never moves a layer. Negative stride follows napari's
+            reference behavior of reversing the sequence, then packing
+            ``stride`` layers per viewbox (``(len(layers) - 1 - i) // stride``)
+            so hidden layers never collapse or re-pack visible layers.
+        occupied : list[int]
+            Sorted viewbox groups that contain at least one visible layer.
+        """
+
+        stride = abs(self.stride)
+        n = len(layers)
+        if self.stride > 0:
+            group_of = {i: i // stride for i in range(n)}
+        else:
+            group_of = {i: (n - 1 - i) // stride for i in range(n)}
+        visible = self._effective_indices(layers)
+        occupied = sorted({group_of[i] for i in visible})
+        return group_of, occupied
+
+    def _positions(self, layers: Sequence[Layer]) -> list[tuple[int, int]]:
+        """Return the grid position of every layer, computed in one pass.
+
+        Hidden/excluded layers get (-1, -1). If the grid is not enabled,
+        every layer gets (0, 0).
+        """
+        if not self.enabled or not layers:
+            return [(0, 0)] * len(layers)
+
+        n_row, n_column = self.actual_shape(layers)
+        visible = set(self._effective_indices(layers))
+
+        group_of, occupied = self._viewbox_groups(layers)
+        linear = {
+            group: i % (n_row * n_column) for i, group in enumerate(occupied)
+        }
+        return [
+            divmod(linear[group_of[i]], n_column) if i in visible else (-1, -1)
+            for i in range(len(layers))
+        ]

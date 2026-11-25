@@ -33,12 +33,9 @@ napari.run()
 CONFIG = {
     'trace_qt_events': True,
     'trace_file_on_start': '',
-    'trace_callables': ['chunk_loader'],
+    'trace_callables': ['viewer'],
     'callable_lists': {
-        'chunk_loader': [
-            'napari.components.experimental.chunk._loader.ChunkLoader.load_request',
-            'napari.components.experimental.chunk._loader.ChunkLoader._on_done',
-        ]
+        'viewer': ['napari.components.viewer_model.ViewerModel.add_points'],
     },
 }
 
@@ -86,6 +83,7 @@ def test_trace_on_start(tmp_path: Path, perf_config, perfmon_script):
         for event in data:
             for field in ['pid', 'tid', 'name', 'ph', 'ts', 'args']:
                 assert field in event
+        assert any(event['name'] == 'ViewerModel.add_points' for event in data)
 
 
 def test_qt_performance(qtbot, monkeypatch):

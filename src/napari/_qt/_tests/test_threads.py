@@ -36,7 +36,7 @@ def test_terminate_no_ref(monkeypatch):
 
 def test_waiting_on_no_request(monkeypatch, qtbot):
     def _check_status(value):
-        return value == ('Ready', '')
+        return value == (' » [empty]', '')
 
     model = ViewerModel()
     model.mouse_over_canvas = True

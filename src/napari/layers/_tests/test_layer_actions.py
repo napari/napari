@@ -3,17 +3,21 @@ import pint
 import pytest
 import zarr
 
+from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _extract_multiscale_level,
+    _extract_multiscale_level_from_selection,
     _hide_selected,
     _hide_unselected,
     _link_selected_layers,
     _merge_stack,
     _project,
+    _project_points,
     _show_selected,
     _show_unselected,
     _split_rgb,
@@ -303,6 +307,56 @@ def test_projections(mode):
     assert ll[-1].axis_labels == ('y', 'x')
 
 
+def test_project_points():
+    ll = LayerList()
+    data = np.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
+    ll.append(
+        Points(
+            data,
+            size=7,
+            symbol='cross',
+            features={'label': ['a', 'b']},
+            scale=(3, 2, 2),
+            translate=(10, 5, 5),
+            units=('nm', 'um', 'um'),
+            axis_labels=('z', 'y', 'x'),
+        )
+    )
+    assert len(ll) == 1
+    assert ll[-1].ndim == 3
+
+    _project_points(ll)
+
+    assert len(ll) == 2
+    new = ll[-1]
+    # the leading (z) axis is dropped; every point is kept
+    assert new.ndim == 2
+    np.testing.assert_array_equal(new.data, data[:, 1:])
+    # transforms/units/labels drop the projected axis
+    assert tuple(new.scale) == (2, 2)
+    assert tuple(new.translate) == (5, 5)
+    assert new.units == (REG.um, REG.um)
+    assert new.axis_labels == ('y', 'x')
+    # per-point state is preserved
+    np.testing.assert_array_equal(new.size, [7, 7])
+    assert list(new.symbol) == list(ll[0].symbol)
+    assert list(new.features['label']) == ['a', 'b']
+
+
+def test_project_points_rejects_non_points():
+    ll = LayerList()
+    ll.append(Image(np.random.rand(4, 5, 5)))
+    with pytest.raises(NotImplementedError):
+        _project_points(ll)
+
+
+def test_project_points_no_active_layer():
+    # with nothing selected the action is a no-op, matching image projection
+    ll = LayerList()
+    _project_points(ll)
+    assert len(ll) == 0
+
+
 @pytest.mark.parametrize(
     'mode',
     ['int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'],
@@ -407,6 +461,35 @@ def test_convert_warns_with_projection_mode():
     assert isinstance(ll['Image [1]'], Labels)
 
 
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_in_any_ndisplay(ndisplay):
+    polygon = np.array([[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]])
+    ll = LayerList([Image(np.zeros((20, 100, 100))), Shapes([polygon])])
+    ll.selection = {ll[1]}
+    ll[1]._slice_dims(Dims(ndim=3, ndisplay=ndisplay))
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels.shape == (20, 100, 100)
+    assert labels[5, 30, 30] == 1
+    assert np.count_nonzero(labels[:5]) == 0
+    assert np.count_nonzero(labels[6:]) == 0
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_with_rolled_dims(ndisplay):
+    shapes = Shapes(ndim=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=ndisplay, order=(2, 0, 1)))
+    shapes.add_polygons(
+        [np.array([[5, 10, 7], [5, 50, 7], [50, 50, 7], [50, 10, 7]])]
+    )
+    ll = LayerList([Image(np.zeros((60, 60, 20))), shapes])
+    ll.selection = {shapes}
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels[30, 30, 7] == 1
+    assert np.count_nonzero(labels) == np.count_nonzero(labels[:, :, 7])
+
+
 def make_three_layer_layerlist():
     layer_list = LayerList()
     layer_list.append(Points([[0, 0]], name='test'))
@@ -414,3 +497,199 @@ def make_three_layer_layerlist():
     layer_list.append(Image(np.random.rand(8, 8, 8)))
 
     return layer_list
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_multiscale_projection(mode):
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+    assert np.array_equal(
+        projected_layer.data[0], getattr(np, mode)(data[0], axis=0)
+    )
+    assert np.array_equal(
+        projected_layer.data[1], getattr(np, mode)(data[1], axis=0)
+    )
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_nondecreasing_pyramid_multiscale_projection(mode, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(
+        'napari.layers._layer_actions.show_warning',
+        warnings.append,
+    )
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 8 * 8).reshape(2, 8, 8),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+
+    for projected, original in zip(projected_layer.data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected,
+            getattr(np, mode)(original, axis=0),
+        )
+
+    assert len(warnings) == 1
+    assert 'Projection warning' in warnings[0]
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_zarr_projection_is_lazy(mode):
+    import dask.array as da
+
+    projecting_axis = 0
+
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+
+    zarr_data = tuple(zarr.array(array, chunks=(1, 2, 2)) for array in data)
+    ll = LayerList([Image(data=zarr_data, multiscale=True)])
+
+    _project(ll, mode=mode, axis=projecting_axis)
+
+    projected_data = ll[-1].data
+    assert all(isinstance(level, da.Array) for level in projected_data)
+
+    if mode != 'median':
+        for projected_level, zarr_level in zip(
+            projected_data, zarr_data, strict=True
+        ):
+            expected_chunk = tuple(
+                chunk
+                for index, chunk in enumerate(zarr_level.chunks)
+                if projecting_axis != index
+            )
+            assert projected_level.chunksize == expected_chunk
+
+    for projected, original in zip(projected_data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected.compute(),
+            getattr(np, mode)(original, axis=projecting_axis),
+        )
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
+@pytest.mark.parametrize(('level', 'expected_level'), [(0, 0), (None, 1)])
+def test_extract_multiscale_level(layer_type, level, expected_level):
+    layer_name = 'test_layer'
+    data = (
+        np.zeros((16, 16, 16), dtype=int),
+        np.zeros((8, 8, 8), dtype=int),
+    )
+    layer = layer_type(
+        data,
+        name=layer_name,
+        scale=[2, 3, 4],
+        translate=[10, 20, 30],
+    )
+    layer.data_level = 1
+
+    new_layer = _extract_multiscale_level((layer,), level=level)[0]
+
+    np.testing.assert_array_equal(new_layer.data, data[expected_level])
+    assert not new_layer.multiscale
+    assert new_layer.locked_data_level is None  # type: ignore
+    assert new_layer.name == f'{layer_name}-level({expected_level})'
+    np.testing.assert_array_equal(
+        new_layer.scale,
+        np.asarray(layer.scale) * layer.downsample_factors[expected_level],
+    )
+    np.testing.assert_array_equal(
+        new_layer.translate,
+        np.asarray(layer.translate)
+        + (layer.downsample_factors[expected_level] - 1)
+        / 2
+        * np.asarray(layer.scale),
+    )
+    assert new_layer.source.parent() is layer  # type: ignore
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
+def test_extract_multiscale_level_uses_locked_data_level(layer_type):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    layer = layer_type(data)
+    layer.locked_data_level = 1
+    assert layer.data_level == 1
+    extracted_layer = _extract_multiscale_level((layer,))[0]
+    np.testing.assert_array_equal(extracted_layer.data, layer.data[1])
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
+def test_extract_multiscale_level_from_selection(layer_type):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    multiscale_layers_indexes = [0, 2]
+    layers = [
+        layer_type(data, name='test_layer1'),
+        Points(),
+        layer_type(data, name='test_layer2'),
+        Shapes(),
+    ]
+
+    ll = LayerList(layers)
+    ll.selection = {layers[index] for index in multiscale_layers_indexes}
+
+    _extract_multiscale_level_from_selection(ll, level=1)
+
+    assert len(ll) == len(layers) + len(multiscale_layers_indexes)
+    for offset, layer_index in enumerate(multiscale_layers_indexes):
+        original_index = layer_index + offset
+        extracted_index = original_index + 1
+
+        assert ll[original_index] is layers[layer_index]
+        assert ll[extracted_index].name == (
+            f'{layers[layer_index].name}-level(1)'
+        )
+
+
+def test_extract_multiscale_level_from_selection_invalid_selection(
+    monkeypatch,
+):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    layers = [Points(), Image(data=data)]
+
+    warnings = []
+    monkeypatch.setattr(
+        'napari.layers._layer_actions.show_warning',
+        warnings.append,
+    )
+
+    ll = LayerList(layers)
+    ll.selection = set(layers)
+
+    _extract_multiscale_level_from_selection(ll, level=1)
+
+    assert len(ll) == len(layers)
+    assert list(ll) == layers
+    assert warnings == [
+        'Only multiscale Image and Labels layers can extract data levels'
+    ]

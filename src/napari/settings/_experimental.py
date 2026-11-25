@@ -1,5 +1,4 @@
 from enum import StrEnum
-from typing import Any
 
 from pydantic import AliasChoices, Field
 
@@ -28,9 +27,8 @@ class PaletteFuzzySearch(StrEnum):
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(validation_alias=...) for some of its attributes
 class ExperimentalSettings(EventedSettings):
-    def __init__(self, **data: dict[str, Any]):
-        super().__init__(**data)
-
+    def _connect_events(self) -> None:
+        """Connects the events for the triangulation and colormap backends to their respective update functions."""
         self.events.triangulation_backend.connect(
             _update_triangulation_backend
         )
@@ -41,16 +39,12 @@ class ExperimentalSettings(EventedSettings):
     async_: bool = Field(
         False,
         title='Render Layers Asynchronously',
-        description='Asynchronous loading of layers. \nThis setting partially loads data while viewing.',
+        description=(
+            'When enabled, layers are loaded in a background thread, improving responsiveness,\n'
+            'especially for remote and multiscale data.'
+        ),
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
-    )
-    autoswap_buffers: bool = Field(
-        False,
-        title='Enable autoswapping rendering buffers.',
-        description='Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.',
-        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
-        json_schema_extra={'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
@@ -65,9 +59,9 @@ class ExperimentalSettings(EventedSettings):
         10,
         title='Minimum distance threshold of shapes lasso and path tool',
         description='Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
-        'or path.',
-        gt=0,
-        lt=50,
+        ' or path.',
+        ge=1,
+        le=50,
     )
 
     completion_radius: int = Field(
@@ -110,6 +104,13 @@ class ExperimentalSettings(EventedSettings):
         '"triangulation backend" instead.',
     )
 
+    autoswap_buffers: bool = Field(
+        default=False,
+        title='Unused option. Use advanced.autoswap_buffers instead.',
+        description='This option was removed in napari 0.10.0. Use \n'
+        '"advanced.autoswap_buffers" instead.',
+    )
+
     command_palette_fuzzy_search: PaletteFuzzySearch = Field(
         default=PaletteFuzzySearch.enabled_if_available,
         title='Enable fuzzy search in the command palette',
@@ -130,9 +131,23 @@ class ExperimentalSettings(EventedSettings):
         le=100,
     )
 
+    dynamic_layer_controls: bool = Field(
+        default=False,
+        title='Generate GUI layer controls dynamically.',
+        description=(
+            'Based on the attributes of the currently selected layers, generate layer controls\n'
+            'dynamically (even when a single layer is selected).\n'
+            'Happens by default with multiple layers.'
+        ),
+    )
+
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version', 'compiled_triangulation')
+        preferences_exclude = (
+            'schema_version',
+            'compiled_triangulation',
+            'autoswap_buffers',
+        )
 
 
 def _update_triangulation_backend(event: Event) -> None:

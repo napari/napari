@@ -52,10 +52,10 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         # Setup widgets
         # dropdown to select the feature for mapping edge_color
         self.color_feature_box = QComboBox(parent)
+        self.color_feature_box.addItems(self._layer.features.columns)
         self.color_feature_box.currentTextChanged.connect(
             self.change_edge_color_feature
         )
-        self.color_feature_box.addItems(self._layer.features.columns)
         self.edge_feature_label = QtWrappedLabel('edge feature:')
 
         # vector direct color mode adjustment and widget
@@ -106,7 +106,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             Edge color for vectors. Must be: 'direct', 'cycle', or 'colormap'
         """
         old_mode = self._layer.edge_color_mode
-        with self._layer.events.edge_color_mode.blocker():
+        with self._layer.events.edge_color_mode.blocker(
+            self._on_edge_color_mode_change
+        ):
             try:
                 self._layer.edge_color_mode = mode
                 self._update_edge_color_gui(mode)
@@ -126,7 +128,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.color_mode_combobox):
             mode = self._layer._edge.color_mode
             index = self.color_mode_combobox.findText(
-                mode, Qt.MatchFixedString
+                mode, Qt.MatchFlag.MatchFixedString
             )
             self.color_mode_combobox.setCurrentIndex(index)
 
@@ -147,7 +149,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             with qt_signals_blocked(self.color_feature_box):
                 prop = self._layer._edge.color_properties.name
                 index = self.color_feature_box.findText(
-                    prop, Qt.MatchFixedString
+                    prop, Qt.MatchFlag.MatchFixedString
                 )
                 self.color_feature_box.setCurrentIndex(index)
 
@@ -173,7 +175,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             self.color_feature_box.setHidden(True)
             self.edge_feature_label.setHidden(True)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.color_mode_label, self.color_mode_combobox),
             (self.edge_color_label, self.edge_color_edit),

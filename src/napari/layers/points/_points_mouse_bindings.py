@@ -60,9 +60,10 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
 
     # Set _drag_start value here to prevent an offset when mouse_move happens
     # https://github.com/napari/napari/pull/4999
+    coordinates = layer.world_to_data(event.position)
     layer._set_drag_start(
         layer.selected_data,
-        layer.world_to_data(event.position),
+        coordinates,
         center_by_data=not modify_selection,
     )
     yield
@@ -256,10 +257,10 @@ def _select_points_from_drag(
 
     # If shift combine drag selection with existing selected ones
     if modify_selection:
-        new_selected = layer._indices_view[selection]
+        new_selected = layer._view_indices[selection]
         target = set(layer.selected_data).symmetric_difference(
             set(new_selected)
         )
         layer.selected_data = list(target)
     else:
-        layer.selected_data = layer._indices_view[selection]
+        layer.selected_data = layer._view_indices[selection]

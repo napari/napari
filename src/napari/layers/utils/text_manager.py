@@ -63,8 +63,8 @@ class TextManager(EventedModel):
         The encoded string values.
     visible : bool
         True if the text should be displayed, False otherwise.
-    size : float
-        Font size of the text, which must be positive. Default value is 12.
+    size : float, optional
+        Font size of the text, which must be positive.
     scaling : bool
         True if the text should be scaled with the zoom level, False otherwise.
         Default value is False.
@@ -87,7 +87,7 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: PositiveFloat = 12
+    size: PositiveFloat | None = None
     scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
@@ -125,12 +125,6 @@ class TextManager(EventedModel):
             self.string = value
         else:
             super().__setattr__(key, value)
-
-    def _get_scaled_size(self, scale_factor: float | None = None) -> float:
-        """Calculate the scaled text size based on zoom level."""
-        if not self.scaling or scale_factor is None:
-            return self.size
-        return self.size / scale_factor
 
     def refresh(self, features: Any) -> None:
         """Refresh all encoded values using new layer features.
@@ -277,12 +271,12 @@ class TextManager(EventedModel):
         text_coords = anchor_coords + translation
         return text_coords, anchor_x, anchor_y
 
-    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+    def view_text(self, view_indices: np.ndarray) -> np.ndarray:
         """Get the values of the text elements in view
 
         Parameters
         ----------
-        indices_view : (N x 1) np.ndarray
+        view_indices : (N x 1) np.ndarray
             Indices of the text elements in view
 
         Returns
@@ -290,16 +284,16 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        values = _get_style_values(self.string, indices_view)
+        values = _get_style_values(self.string, view_indices)
         return (
-            np.broadcast_to(values, len(indices_view))
+            np.broadcast_to(values, len(view_indices))
             if values.ndim == 0
             else values
         )
 
-    def _view_color(self, indices_view: np.ndarray) -> np.ndarray:
+    def _view_color(self, view_indices: np.ndarray) -> np.ndarray:
         """Get the colors of the text elements at the given indices."""
-        return _get_style_values(self.color, indices_view, value_ndim=1)
+        return _get_style_values(self.color, view_indices, value_ndim=1)
 
     @classmethod
     def _from_layer(

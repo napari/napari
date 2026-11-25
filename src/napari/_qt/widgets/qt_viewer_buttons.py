@@ -5,7 +5,7 @@ from enum import StrEnum
 from functools import wraps
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QEvent, Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -29,6 +29,7 @@ from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
+    AxisOrientation,
     DepthAxisOrientation,
     DepthAxisOrientationStr,
     HorizontalAxisOrientation,
@@ -128,10 +129,10 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
-    def _new_points(self):
+    def _new_points(self) -> None:
         new_points(self.viewer)
 
-    def _new_shapes(self):
+    def _new_shapes(self) -> None:
         new_shapes(self.viewer)
 
     def _on_selection_changed(self, event=None) -> None:
@@ -210,7 +211,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: Callable[[], Any] | Callable[[Enum], Any] | Callable[[str], Any],
+    callback: Callable[..., Any],
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -312,7 +313,7 @@ class QtViewerButtons(QFrame):
         ndb.customContextMenuRequested.connect(self.open_ndisplay_camera_popup)
 
         @self.viewer.dims.events.ndisplay.connect
-        def _set_ndisplay_mode_checkstate(event):
+        def _set_ndisplay_mode_checkstate(event) -> None:
             ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()
@@ -326,13 +327,13 @@ class QtViewerButtons(QFrame):
         layout.addStretch(0)
         self.setLayout(layout)
 
-    def eventFilter(self, qobject, event):
+    def eventFilter(self, qobject, event) -> bool:
         """Have Alt/Option key rotate layers with the transpose button."""
         modifiers = QApplication.keyboardModifiers()
         if (
-            modifiers == Qt.AltModifier
+            modifiers == Qt.KeyboardModifier.AltModifier
             and qobject == self.transposeDimsButton
-            and event.type() == QEvent.MouseButtonPress
+            and event.type() == QEvent.Type.MouseButtonPress
         ):
             action_manager.trigger('napari:rotate_layers')
             return True
@@ -344,18 +345,22 @@ class QtViewerButtons(QFrame):
         """Position the popup so that it remains with the viewer.
 
         Use the location of the button as a reference and place the popup
-        above it. move_to will adjust the position if the popup is too close
-        to the edge of the screen.
+        above it, horizontally centered on the button. The popup is shifted
+        horizontally to stay within the viewer window, and move_to will
+        adjust the position if the popup is too close to the edge of the
+        screen.
         """
+        width = popup.sizeHint().width()
+        height = popup.sizeHint().height()
         button_rect = button.rect()
-        button_pos = button.mapToGlobal(button_rect.topLeft())
+        button_top_center = button.mapToGlobal(
+            QPoint(button_rect.center().x(), button_rect.top())
+        )
+        left = button_top_center.x() - width // 2
+        window_rect = button.window().geometry()
+        left = max(min(left, window_rect.right() - width), window_rect.left())
         popup.move_to(
-            (
-                button_pos.x(),
-                button_pos.y() - popup.sizeHint().height() - 5,
-                popup.sizeHint().width(),
-                popup.sizeHint().height(),
-            )
+            (left, button_top_center.y() - height - 5, width, height)
         )
         popup.show()
 
@@ -379,7 +384,7 @@ class QtViewerButtons(QFrame):
         """Add 3D camera controls to the popup."""
         self.perspective = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.perspective,
+            value=self.viewer.scene.camera.perspective,
             value_range=(0, 90),
             callback=self._update_perspective,
         )
@@ -391,7 +396,7 @@ class QtViewerButtons(QFrame):
 
         self.rz = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.angles[0],
+            value=self.viewer.scene.camera.angles[0],
             value_range=(-180, 180),
             callback=self._update_first_camera_angle,
         )
@@ -400,14 +405,14 @@ class QtViewerButtons(QFrame):
         # this is a known complication of calculation with Euler angles
         self.ry = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.angles[1],
+            value=self.viewer.scene.camera.angles[1],
             value_range=(-89, 89),
             callback=self._update_second_camera_angle,
         )
 
         self.rx = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.angles[2],
+            value=self.viewer.scene.camera.angles[2],
             value_range=(-180, 180),
             callback=self._update_third_camera_angle,
         )
@@ -439,7 +444,7 @@ class QtViewerButtons(QFrame):
         """Add shared camera controls to the popup."""
         self.zoom = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.zoom,
+            value=self.viewer.scene.camera.zoom,
             value_range=(0.01, 100),
             decimals=2,
             callback=self._update_zoom,
@@ -485,14 +490,14 @@ class QtViewerButtons(QFrame):
         self.vertical_combo = enum_combobox(
             parent=popup,
             enum_class=VerticalAxisOrientation,
-            current_enum=self.viewer.camera.orientation[1],
+            current_enum=self.viewer.scene.camera.orientation[1],
             callback=self._update_verical_axis_orientation,
         )
 
         self.horizontal_combo = enum_combobox(
             parent=popup,
             enum_class=HorizontalAxisOrientation,
-            current_enum=self.viewer.camera.orientation[2],
+            current_enum=self.viewer.scene.camera.orientation[2],
             callback=self._update_horizontal_axis_orientation,
         )
 
@@ -508,7 +513,7 @@ class QtViewerButtons(QFrame):
             self.depth_combo = enum_combobox(
                 parent=popup,
                 enum_class=DepthAxisOrientation,
-                current_enum=self.viewer.camera.orientation[0],
+                current_enum=self.viewer.scene.camera.orientation[0],
                 callback=self._update_depth_axis_orientation,
             )
 
@@ -521,7 +526,7 @@ class QtViewerButtons(QFrame):
                 text='',  # updated dynamically
             )
             self._update_handedness_help_symbol()
-            self.viewer.camera.events.orientation.connect(
+            self.viewer.scene.camera.events.orientation.connect(
                 self._update_handedness_help_symbol
             )
 
@@ -533,7 +538,7 @@ class QtViewerButtons(QFrame):
 
     def _update_handedness_help_symbol(self, event=None) -> None:
         """Update the handedness symbol based on the camera orientation."""
-        handedness = self.viewer.camera.handedness
+        handedness = self.viewer.scene.camera.handedness
         tooltip_text = (
             'Controls the orientation of the depth, vertical, and horizontal camera axes.\n'
             'Default is right-handed (towards, down, right).\n'
@@ -556,10 +561,10 @@ class QtViewerButtons(QFrame):
         """Add synced camera toggle to the popup."""
         row = grid_layout.rowCount()
         self.camera_synced_checkbox = QCheckBox('Sync 2D/3D camera', popup)
-        self.camera_synced_checkbox.setChecked(self.viewer.camera.synced)
-        self.camera_synced_checkbox.stateChanged.connect(
+        self.camera_synced_checkbox.setChecked(self.viewer.scene.camera.synced)
+        self.camera_synced_checkbox.toggled.connect(
             lambda checked: setattr(
-                self.viewer.camera, 'synced', bool(checked)
+                self.viewer.scene.camera, 'synced', checked
             )
         )
         synced_help_symbol = help_tooltip(
@@ -594,11 +599,7 @@ class QtViewerButtons(QFrame):
 
     def _update_orientation(
         self,
-        orientation_type: type[
-            DepthAxisOrientation
-            | VerticalAxisOrientation
-            | HorizontalAxisOrientation
-        ],
+        orientation_type: AxisOrientation,
         orientation_value: (
             DepthAxisOrientationStr
             | VerticalAxisOrientationStr
@@ -609,20 +610,19 @@ class QtViewerButtons(QFrame):
 
         Parameters
         ----------
-        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+        orientation_type : AxisOrientation
             The orientation type (which implies the position/axis) to update.
         value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
             New orientation value for the updated axis.
         """
-        axes = (
-            DepthAxisOrientation,
-            VerticalAxisOrientation,
-            HorizontalAxisOrientation,
-        )
-        axis_to_update = axes.index(orientation_type)
-        new_orientation = list(self.viewer.camera.orientation)
-        new_orientation[axis_to_update] = orientation_type(orientation_value)
-        self.viewer.camera.orientation = tuple(new_orientation)
+        depth, vertical, horizontal = self.viewer.scene.camera.orientation
+        if orientation_type is DepthAxisOrientation:
+            depth = DepthAxisOrientation(orientation_value)
+        elif orientation_type is VerticalAxisOrientation:
+            vertical = VerticalAxisOrientation(orientation_value)
+        else:
+            horizontal = HorizontalAxisOrientation(orientation_value)
+        self.viewer.scene.camera.orientation = (depth, vertical, horizontal)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
@@ -635,9 +635,9 @@ class QtViewerButtons(QFrame):
             New angle value.
         """
 
-        angles = list(self.viewer.camera.angles)
+        angles = list(self.viewer.scene.camera.angles)
         angles[idx] = value
-        self.viewer.camera.angles = tuple(angles)
+        self.viewer.scene.camera.angles = (angles[0], angles[1], angles[2])
 
     def _update_zoom(self, value: float) -> None:
         """Update the camera zoom.
@@ -648,7 +648,7 @@ class QtViewerButtons(QFrame):
             New camera.zoom value.
         """
 
-        self.viewer.camera.zoom = value
+        self.viewer.scene.camera.zoom = value
 
     def _update_perspective(self, value: float) -> None:
         """Update the camera perspective.
@@ -659,9 +659,9 @@ class QtViewerButtons(QFrame):
             New camera.perspective value.
         """
 
-        self.viewer.camera.perspective = value
+        self.viewer.scene.camera.perspective = value
 
-    def _open_roll_popup(self):
+    def _open_roll_popup(self) -> None:
         """Open a grid popup to manually order the dimensions"""
         pop = QtPopup(self)
 
@@ -674,13 +674,12 @@ class QtViewerButtons(QFrame):
         layout.addWidget(dim_sorter)
         pop.frame.setLayout(layout)
 
-        # show popup
-        pop.show_above_mouse()
+        self._position_popup_inside_viewer(pop, self.rollDimsButton)
 
-    def _update_grid_button(self, event):
+    def _update_grid_button(self, event) -> None:
         self.gridViewButton.setChecked(event.value)
 
-    def _open_grid_popup(self):
+    def _open_grid_popup(self) -> None:
         """Open grid options pop up widget."""
 
         # widgets
@@ -780,9 +779,9 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(spacing_help_symbol, 3, 2)
 
         popup.frame.setLayout(grid_layout)
-        popup.show_above_mouse()
+        self._position_popup_inside_viewer(popup, self.gridViewButton)
 
-    def _update_grid_width(self, value):
+    def _update_grid_width(self, value) -> None:
         """Update the width value in grid shape.
 
         Parameters
@@ -796,7 +795,7 @@ class QtViewerButtons(QFrame):
             value,
         )
 
-    def _update_grid_stride(self, value):
+    def _update_grid_stride(self, value) -> None:
         """Update stride in grid settings.
 
         Parameters
@@ -807,7 +806,7 @@ class QtViewerButtons(QFrame):
 
         self.viewer.canvas.grid.stride = value
 
-    def _update_grid_height(self, value):
+    def _update_grid_height(self, value) -> None:
         """Update height value in grid shape.
 
         Parameters
@@ -834,7 +833,7 @@ class QtViewerButtons(QFrame):
 
 def _omit_viewer_args(constructor):
     @wraps(constructor)
-    def _func(*args, **kwargs):
+    def _func(*args, **kwargs: Any) -> Any:
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 'viewer argument is deprecated since 0.4.14 and should not be used',
@@ -880,7 +879,7 @@ class QtViewerPushButton(QPushButton):
         self,
         button_name: str,
         tooltip: str = '',
-        slot=None,
+        slot: Callable | None = None,
         action: str = '',
         extra_tooltip_text: str = '',
     ) -> None:

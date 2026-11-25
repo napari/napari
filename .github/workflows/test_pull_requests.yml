@@ -24,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Python 3.14
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.14
       - name: Install dependencies
@@ -43,18 +43,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
         run: pip install --upgrade pip tox
-      - name: Make Typestubs
-        run: |
-          tox -e typestubs
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Check Manifest
         run: |
           tox -e check-manifest
@@ -73,7 +68,7 @@ jobs:
         include:
           - python: "3.11"
             platform: ubuntu-latest
-            backend: pyqt5
+            backend: pyqt6
             coverage: no_cov
             min_req: ""
           - python: "3.14"
@@ -98,23 +93,20 @@ jobs:
       matrix:
         platform: [ ubuntu-latest ]
         python: [ "3.14" ]
-        backend: [ "pyqt5,pyqt6" ]
+        backend: [ "pyqt6" ]
         coverage: [ cov ]
         include:
           # when changing these, try to keep full coverage of supported
           # python versions so we test at least once everywhere
-          - python: "3.11"
-            platform: windows-latest
-            backend: pyqt5
-            coverage: no_cov
           - python: "3.14"
             platform: windows-latest
             backend: pyqt6
             coverage: cov
+          # test with no numba and on macOS intel
           - python: "3.14"
             platform: macos-15-intel
-            backend: pyqt5_no_numba
-            coverage: no_cov
+            backend: pyqt6_no_numba
+            coverage: cov
             timeout-minutes: 60
           - python: "3.14"
             platform: macos-15
@@ -124,7 +116,7 @@ jobs:
           # minimum specified requirements
           - python: "3.11"
             platform: ubuntu-22.04
-            backend: pyqt5
+            backend: pyqt6
             MIN_REQ: 1
             coverage: cov
           # [all] extras
@@ -144,11 +136,6 @@ jobs:
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
-          # test with no numba
-          - python: "3.14"
-            platform: ubuntu-latest
-            backend: pyqt6_no_numba
-            coverage: cov
           # pyside6 test
           - python: "3.14"
             platform: ubuntu-latest
@@ -179,16 +166,19 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     with:
-        toxenv: py312-linux-pyqt6-examples-cov
+        toxenv: py312-pyqt6-examples
         timeout: 60
         python_version: 3.12
         constraints_suffix: _examples
         coverage: cov
 
   coverage_report:
-    if: ${{ always() }}
+    # Upload partial coverage even if some test jobs fail, but skip when
+    # test_initial failed: then no coverage-producing job ran.
+    if: ${{ always() && needs.test_initial.result == 'success' }}
     secrets: inherit
     needs:
+      - test_initial
       - test
       - test_examples
     uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
@@ -209,13 +199,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.12
           cache-dependency-path: pyproject.toml
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        uses: pyvista/setup-headless-display-action@10e6efb97af3cd1523828f0e22c39f0e4567f3e4 # v5.2.0
         with:
           qt: true
           wm: herbstluftwm
@@ -263,7 +253,7 @@ jobs:
 
       - name: Upload triangulation artifacts
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: triangulation-benchmarks
           path: /tmp/napari*

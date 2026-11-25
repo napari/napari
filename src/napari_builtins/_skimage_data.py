@@ -26,6 +26,16 @@ def _load_skimage_data(name, **kwargs):
                 },
             )
         ]
+    if name == 'kidney_rgb':
+        return [
+            (
+                skimage.data.kidney(),
+                {
+                    'name': 'Kidney (nuclei, WGA and actin)',
+                    'rgb': True,
+                },
+            )
+        ]
     if name == 'lily':
         return [
             (
@@ -62,7 +72,7 @@ SKIMAGE_DATA = [
     'astronaut', 'binary_blobs', 'binary_blobs_3D', 'brain', 'brick', 'camera', 'cat',
     'cell', 'cells3d', 'checkerboard', 'clock', 'coffee', 'coins', 'colorwheel',
     'eagle', 'grass', 'gravel', 'horse', 'hubble_deep_field', 'human_mitosis',
-    'immunohistochemistry', 'kidney', 'lfw_subset', 'lily', 'microaneurysms', 'moon',
+    'immunohistochemistry', 'kidney', 'kidney_rgb', 'lfw_subset', 'lily', 'microaneurysms', 'moon',
     'page', 'retina', 'rocket', 'shepp_logan_phantom', 'skin', 'text',
 ]
 

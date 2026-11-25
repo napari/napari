@@ -39,8 +39,8 @@ plane_layer = viewer.add_image(
     opacity=0.5,
     plane=plane_parameters
 )
-viewer.axes.visible = True
-viewer.camera.angles = (0, -30, 35)
+viewer.scene.overlays.axes.visible = True
+viewer.scene.camera.angles = (0, -30, 35)
 viewer.fit_to_view()
 viewer.canvas.overlays.text.text = """shift + click and drag to move the plane
 press 'x', 'y' or 'z' to orient the plane along that axis around the cursor

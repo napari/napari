@@ -243,16 +243,15 @@ def fix_data_points(
         if ndim does not match with second dimensions of points
     """
     if points is None or len(points) == 0:
-        if ndim is None:
-            ndim = 2
-        points = np.empty((0, ndim))
+        ndim_ = ndim if ndim is not None else 2
+        points = np.empty((0, ndim_))
     else:
         points = np.atleast_2d(points)
         data_ndim = points.shape[1]
         if ndim is not None and ndim != data_ndim:
             raise ValueError('Points dimensions must be equal to ndim')
-        ndim = data_ndim
-    return points, ndim
+        ndim_ = data_ndim
+    return points, ndim_
 
 
 def symbol_conversion(symbol: str | Symbol) -> Symbol:

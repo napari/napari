@@ -23,7 +23,7 @@ class PluginsSettings(EventedSettings):
     )
     extension2reader: dict[str, str] = Field(
         default_factory=dict,
-        title='File extension readers',
+        title='',
         description='Assign file extensions to specific reader plugins',
     )
     extension2writer: dict[str, str] = Field(

@@ -119,10 +119,7 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     # only emit data once dragging has finished
     if layer._is_moving:
         vertex_indices = tuple(
-            tuple(
-                vertex_index
-                for vertex_index, coord in enumerate(layer.data[i])
-            )
+            tuple(range(len(layer._data_view.shapes[i].data)))
             for i in layer.selected_data
         )
         layer.events.data(
@@ -353,6 +350,9 @@ def add_path_polygon_lasso(
         while event.type == 'mouse_move':
             polygon_creating(layer, event)
             yield
+        # Enter or Escape may have finished the shape during the drag.
+        if not layer._is_creating:
+            return
         index = layer._moving_value[0]
         vertices = layer._data_view.shapes[index].data
         # If number of vertices is higher than 2, tablet draw mode is assumed and shape is finished upon mouse release
@@ -685,10 +685,7 @@ def _move_selected_layer(
 ) -> None:
     if layer._mode == Mode.SELECT and not layer._is_moving:
         vertex_indices = tuple(
-            tuple(
-                vertex_index
-                for vertex_index, coord in enumerate(layer.data[i])
-            )
+            tuple(range(len(layer._data_view.shapes[i].data)))
             for i in layer.selected_data
         )
         layer.events.data(
@@ -704,8 +701,9 @@ def _move_selected_layer(
         # Check where dragging box from to move whole object
         center = layer._selected_box[Box.CENTER]
         shift = coord - center - layer._drag_start
-        for index in layer.selected_data:
-            layer._data_view.shift(index, shift)
+        with layer._data_view.batched_updates():
+            for index in layer.selected_data:
+                layer._data_view.shift(index, shift)
         layer._selected_box = layer._selected_box + shift
         layer.refresh()
     elif vertex < Box.LEN:
@@ -770,18 +768,20 @@ def _move_selected_layer(
 
         # check orientation of box
         if abs(handle_offset_norm[0]) == 1:
-            for index in layer.selected_data:
-                layer._data_view.scale(
-                    index, drag_scale, center=layer._fixed_vertex
-                )
+            with layer._data_view.batched_updates():
+                for index in layer.selected_data:
+                    layer._data_view.scale(
+                        index, drag_scale, center=layer._fixed_vertex
+                    )
             layer._scale_box(drag_scale, center=layer._fixed_vertex)
         else:
             scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
             transform = rot @ scale_mat @ inv_rot
-            for index in layer.selected_data:
-                layer._data_view.shift(index, -layer._fixed_vertex)
-                layer._data_view.transform(index, transform)
-                layer._data_view.shift(index, layer._fixed_vertex)
+            with layer._data_view.batched_updates():
+                for index in layer.selected_data:
+                    layer._data_view.shift(index, -layer._fixed_vertex)
+                    layer._data_view.transform(index, transform)
+                    layer._data_view.shift(index, layer._fixed_vertex)
             layer._transform_box(transform, center=layer._fixed_vertex)
         layer.refresh()
     elif vertex == 8:
@@ -803,8 +803,11 @@ def _move_selected_layer(
         else:
             angle = new_angle - fixed_angle
 
-        for index in layer.selected_data:
-            layer._data_view.rotate(index, angle, center=layer._fixed_vertex)
+        with layer._data_view.batched_updates():
+            for index in layer.selected_data:
+                layer._data_view.rotate(
+                    index, angle, center=layer._fixed_vertex
+                )
         layer._rotate_box(angle, center=layer._fixed_vertex)
         layer.refresh()
 
@@ -895,9 +898,10 @@ def _add_rectangle_ellipse_line(
     scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
     transform = rot @ scale_mat @ inv_rot
     index = next(iter(layer.selected_data))
-    layer._data_view.shift(index, -layer._fixed_vertex)
-    layer._data_view.transform(index, transform)
-    layer._data_view.shift(index, layer._fixed_vertex)
+    with layer._data_view.batched_updates():
+        layer._data_view.shift(index, -layer._fixed_vertex)
+        layer._data_view.transform(index, transform)
+        layer._data_view.shift(index, layer._fixed_vertex)
     layer._transform_box(transform, center=layer._fixed_vertex)
     layer.refresh()
 

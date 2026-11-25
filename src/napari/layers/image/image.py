@@ -24,9 +24,13 @@ from napari.layers.image._image_constants import (
 from napari.layers.image._image_utils import guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
-from napari.layers.utils.layer_utils import calc_data_range
+from napari.layers.utils.layer_utils import (
+    _resize_to_thumbnail,
+    calc_data_range,
+)
 from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
+from napari.utils.color import rgb_to_luminance
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 
@@ -37,7 +41,7 @@ if typing.TYPE_CHECKING:
     import pint
 
     from napari.components.histogram import HistogramModel
-    from napari.types import ArrayLike
+    from napari.types import ArrayLike, Matrix2D, Vector1D
     from napari.utils.transforms import Affine
 
 __all__ = ('Image',)
@@ -235,11 +239,15 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         3D Depiction mode used by vispy. Must be one of our supported modes.
     iso_threshold : float
         Threshold for isosurface.
+        When in RGB, this threshold applies to the perceived luminance.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
     plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
         {'position', 'normal', 'thickness'}.
+    projection_mode : str
+        How data outside the viewed dimensions, but inside the thick Dims slice will
+        be projected onto the viewed dimensions. Must fit to ImageProjectionMode
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
     custom_interpolation_kernel_2d : np.ndarray
@@ -284,13 +292,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         projection_mode: str = 'mean',
         rendering: str = 'mip',
         rgb: bool | None = None,
-        rotate: float | Sequence[float] | npt.NDArray | None = None,
+        rotate: float | Vector1D | Matrix2D | None = None,
         scale: Sequence[float] | None = None,
-        shear: Sequence[float] | npt.NDArray | None = None,
+        shear: Vector1D | Matrix2D | None = None,
         translate: Sequence[float] | None = None,
         units: Sequence[str | pint.Unit] | None = None,
         visible: bool = True,
-    ):
+    ) -> None:
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         if rgb and not guess_rgb(data_shape, min_side_len=0):
@@ -348,13 +356,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits: tuple[float, float] = self.contrast_limits_range
+        self._contrast_limits: tuple[float, float] = self.contrast_limits_range  # pyrefly: ignore [bad-assignment]
         self.contrast_limits = self._contrast_limits
         self.auto_contrast = auto_contrast
 
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
-            self._iso_threshold = cmin + (cmax - cmin) / 2
+            self._iso_threshold = cmin + (cmax - cmin) / 2  # pyrefly: ignore [unsupported-operation]
         else:
             self._iso_threshold = iso_threshold
 
@@ -460,9 +468,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self._histogram = HistogramModel(self)
         return self._histogram
 
-    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
+        ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         if self.auto_contrast:
             self.reset_contrast_limits()
 
@@ -527,8 +535,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
-        from scipy import ndimage as ndi
-
         # black thumbnail if there is no data in the slice
         if self._slice.empty:
             self.thumbnail = np.zeros(self._thumbnail_shape, self.dtype)
@@ -539,24 +545,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
-        # float16 not supported by ndi.zoom
-        dtype = np.dtype(image.dtype)
-        if dtype in [np.dtype(np.float16)]:
-            image = image.astype(np.float32)
+        downsampled = _resize_to_thumbnail(image, self._thumbnail_shape[:2])
 
-        raw_zoom_factor = np.divide(
-            self._thumbnail_shape[:2], image.shape[:2]
-        ).min()
-        new_shape = np.clip(
-            raw_zoom_factor * np.array(image.shape[:2]),
-            1,  # smallest side should be 1 pixel wide
-            self._thumbnail_shape[:2],
-        )
-        zoom_factor = tuple(new_shape / image.shape[:2])
         if self.rgb:
-            downsampled = ndi.zoom(
-                image, zoom_factor + (1,), prefilter=False, order=0
-            )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -574,15 +565,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
             low, high = self.contrast_limits
             if np.issubdtype(downsampled.dtype, np.integer):
-                low = max(low, np.iinfo(downsampled.dtype).min)
-                high = min(high, np.iinfo(downsampled.dtype).max)
+                low = max(low, np.iinfo(downsampled.dtype).min)  # pyrefly: ignore [bad-specialization]
+                high = min(high, np.iinfo(downsampled.dtype).max)  # pyrefly: ignore [bad-specialization]
             downsampled = np.clip(downsampled, low, high)
-            color_range = high - low
+            color_range = high - low  # pyrefly: ignore [unsupported-operation]
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled**self.gamma
@@ -592,7 +580,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.thumbnail = colormapped
 
     def _calc_data_range(
-        self, mode: Literal['data', 'slice'] = 'data'
+        self,
+        mode: Literal['data', 'slice'] = 'data',
+        percentiles: tuple[float, float] | None = None,
     ) -> tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
@@ -600,7 +590,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         """
         input_data: np.ndarray
         if mode == 'data':
-            input_data = self.data[-1] if self.multiscale else self.data
+            input_data = self.data[-1] if self.multiscale else self.data  # pyrefly: ignore [bad-assignment]
         elif mode == 'slice':
             input_data = self._slice.image.raw  # ugh
         else:
@@ -608,7 +598,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 f"mode must be either 'data' or 'slice', got {mode!r}"
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
+            cast(LayerDataProtocol, input_data),
+            rgb=self.rgb,
+            dtype=self.dtype,
+            percentiles=percentiles,
         )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
@@ -630,20 +623,21 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         image : array
             Displayed array.
         """
-        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)
+        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)  # pyrefly: ignore [bad-argument-type]
         if np.allclose(
-            fixed_contrast_info.contrast_limits, self.contrast_limits
+            fixed_contrast_info.contrast_limits,
+            self.contrast_limits,  # pyrefly: ignore [bad-argument-type]
         ):
             return raw
 
         return fixed_contrast_info.coerce_data(raw)
 
-    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
+    @IntensityVisualizationMixin.contrast_limits.setter
     def contrast_limits(self, contrast_limits: tuple[float, float]) -> None:
-        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # type: ignore [attr-defined]
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # pyrefly: ignore [not-callable]
         if not np.allclose(
-            _coerce_contrast_limits(self.contrast_limits).contrast_limits,
-            self.contrast_limits,
+            _coerce_contrast_limits(self.contrast_limits).contrast_limits,  # pyrefly: ignore [bad-argument-type]
+            self.contrast_limits,  # pyrefly: ignore [bad-argument-type]
         ):
             # we use the private attribute here to avoid triggering the setter again
             prev = self._auto_contrast
@@ -653,50 +647,63 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             finally:
                 self._auto_contrast = prev
 
-    def _calculate_value_from_ray(self, values: npt.NDArray) -> float | None:
+    def _calculate_value_from_ray(
+        self, values: npt.NDArray
+    ) -> float | npt.NDArray | None:
+        if not values.size:
+            return None
+
         # translucent is special: just return the first value, no matter what
         if self.rendering == ImageRendering.TRANSLUCENT:
-            return np.ravel(values)[0]
-        # iso is weird too: just return None always
-        if self.rendering == ImageRendering.ISO:
-            return None
+            return values[0]
 
         # if the whole ray is NaN, we should see nothing, so return None
         # this check saves us some warnings later as well, so better do it now
         if np.all(np.isnan(values)):
             return None
 
+        luminance = rgb_to_luminance(values) if self.rgb else values
+
+        # in isosurface we return the value at the hit surface;
+        # in non-rgb it's ~= iso_threshold. Return None if nothing was hit.
+        if self.rendering == ImageRendering.ISO:
+            hits = luminance >= self.iso_threshold
+            if np.any(hits):
+                return values[np.nanargmax(hits)]
+            return None
+
         # "summary" renderings; they do not represent a specific pixel, so we just
         # return the summary value. We should probably differentiate these somehow.
         # these are also probably not the same as how the gpu does it...
+        # TODO: this is "broken" cause same pixel gets multisampled, getting worse
+        #       when the sampling rate is high (and especially bad for additive).
+        #       But it looks like it's also similarly overdoing it in vispy vis too.
+        #       I don't know if there's a way to *not* do it...
         if self.rendering == ImageRendering.AVERAGE:
-            return np.nanmean(values)
+            return np.nanmean(values, axis=0)
         if self.rendering == ImageRendering.ADDITIVE:
-            # TODO: this is "broken" cause same pixel gets multisampled...
-            #       but it looks like it's also overdoing it in vispy vis too?
-            #       I don't know if there's a way to *not* do it...
-            return np.nansum(values)
+            return np.nansum(values, axis=0)
 
         # all the following cases are returning the *actual* value of the image at the
         # "selected" pixel, whose position changes depending on the rendering mode.
         if self.rendering == ImageRendering.MIP:
-            return np.nanmax(values)
+            return values[np.nanargmax(luminance)]
         if self.rendering == ImageRendering.MINIP:
-            return np.nanmin(values)
+            return values[np.nanargmin(luminance)]
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # normalize values so attenuation applies from 0 to 1
-            values_attenuated = (
-                values - self.contrast_limits[0]
+            attenuated = (  # pyrefly: ignore [unsupported-operation]
+                luminance - self.contrast_limits[0]  # pyrefly: ignore [unsupported-operation]
             ) / self.contrast_limits[1]
             # approx, step size is actually calculated with int(lenght(ray) * 2)
             step_size = 0.5
             sumval = (
                 step_size
-                * np.cumsum(np.clip(values_attenuated, 0, 1))
-                * len(values_attenuated)
+                * np.cumsum(np.clip(attenuated, 0, 1))
+                * len(attenuated)
             )
             scale = np.exp(-self.attenuation * (sumval - 1))
-            return values[np.nanargmin(values_attenuated * scale)]
+            return values[np.nanargmin(attenuated * scale)]
 
         raise RuntimeError(  # pragma: no cover
             f'ray value calculation not implemented for {self.rendering}'

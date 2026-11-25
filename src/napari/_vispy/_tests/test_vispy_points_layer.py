@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
@@ -5,6 +7,7 @@ from napari._vispy.layers.points import VispyPointsLayer
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import Dims
 from napari.layers import Points
+from napari.layers.points._points_constants import PointsProjectionMode
 
 
 @pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
@@ -149,8 +152,8 @@ def test_negative_scale_highlight(scale):
         assert np.all(markers._data['a_edgewidth'] >= 0)
 
 
-def test_highlight_with_out_of_slice_display():
-    """Highlight should work when out_of_slice_display is enabled.
+def test_highlight_with_rescale_projection():
+    """Highlight should work when projection is 'rescale_linear'.
 
     Regression test for a bug where _view_size_scale (array for all view
     points) was multiplied with size indexed only by highlighted points,
@@ -169,14 +172,51 @@ def test_highlight_with_out_of_slice_display():
     # Select point 0 BEFORE slicing so update_selected_view populates
     # _selected_view and _set_highlight populates _highlight_index.
     layer.selected_data = {0}
-    layer.out_of_slice_display = True
-    layer._slice_dims(Dims(ndim=3, point=(50, 0, 0)))
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(50, 0, 0),
+            margin_left=(100, 0, 0),
+            margin_right=(100, 0, 0),
+        )
+    )
 
     # Verify the preconditions that cause the bug:
     # all 5 points in view, scale is a per-point array, only 1 highlighted
-    assert len(layer._indices_view) == 5
-    assert isinstance(layer._view_size_scale, np.ndarray)
+    assert len(layer._view_indices) == 5
+    assert isinstance(layer._view_size, np.ndarray)
     assert len(layer._highlight_index) == 1
 
     # Previously, raised ValueError: could not broadcast input array from shape (5,) into shape (1,)
     vispy_layer._on_highlight_change()
+
+
+@pytest.mark.parametrize(
+    ('border_width', 'is_relative', 'expected'),
+    [
+        (0.5, True, 15),  # relative: size + 0.5 * size
+        (4, False, 14),  # absolute, smaller than the size
+        (30, False, 20),  # absolute, capped to the size like the markers
+    ],
+)
+def test_highlight_size_includes_capped_border(
+    border_width, is_relative, expected
+):
+    """The highlight must use the same border-capped size as hit-testing."""
+    layer = Points(
+        [[5.0, 5.0]],
+        size=10,
+        border_width=border_width,
+        border_width_is_relative=is_relative,
+    )
+    layer.selected_data = {0}
+    assert len(layer._highlight_index) == 1
+
+    # Call the method on a stub, as creating the node needs a working GL.
+    stub = MagicMock()
+    stub.layer = layer
+    VispyPointsLayer._on_highlight_change(stub)
+
+    kwargs = stub.node.selection_markers.set_data.call_args.kwargs
+    assert kwargs['size'][0] == pytest.approx(expected)

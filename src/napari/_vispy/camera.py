@@ -1,17 +1,33 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
+from napari.utils.camera_orientations import (
+    angles_from_view_and_up_directions,
+    view_and_up_directions_from_angles,
+)
+
 if TYPE_CHECKING:
-    from napari.components import Camera
+    from collections.abc import Sequence
+
+    from vispy.scene.widgets.viewbox import ViewBox
+    from vispy.util.event import Event as VispyEvent
+
+    from napari.components import Camera, Dims
+    from napari.utils.camera_orientations import AxesOrientation3D
 
 
-def get_vispy_flipped_axes(
-    camera: Camera, ndisplay: Literal[2, 3] = 2
+EulerAngles: TypeAlias = tuple[float, float, float]
+Vector3D: TypeAlias = tuple[float, float, float]
+
+
+def _get_vispy_flipped_axes(
+    orientation: AxesOrientation3D,
+    ndisplay: Literal[2, 3] = 2,
 ) -> tuple[int, int, int]:
     # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
     # while the napari axis order is zyx / plane-row-column, or depth, vertical,
@@ -27,10 +43,8 @@ def get_vispy_flipped_axes(
         else ('right', 'down', 'away')
     )
 
-    # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
-    # start by inverting the order of coordinates coming from the napari
-    # camera model:
-    orientation_xyz = camera.orientation[::-1]
+    # Vispy uses xyz coordinates; napari uses zyx coordinates, so we invert
+    orientation_xyz = orientation[::-1]
     # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
     # whether they are flipped relative to the Vispy default.
     return cast(
@@ -44,34 +58,112 @@ def get_vispy_flipped_axes(
     )
 
 
-def napari_angles_to_vispy_quat(
-    angles: tuple[float, float, float], flipped_axes: tuple[int, int, int]
-) -> Quaternion:
+def _quaternion_to_matrix(
+    quat: Quaternion,
+) -> np.ndarray:
+    """Return the rotation matrix for a VisPy quaternion.
+
+    VisPy derives its rotation from the quaternion axis-angle, permuting the
+    vector part as (x, z, y) [NOTE THE WRONG ORDER!!!].
+    See #8281 for some discussion on this quirk and why we keep it around.
+
+    Parameters
+    ----------
+    quat : vispy.util.quaternion.Quaternion
+        The VisPy quaternion as rendered by the VisPy 3D camera.
+
+    Returns
+    -------
+    np.ndarray
+        The (3, 3) rotation matrix in VisPy (xyz) coordinates.
+    """
     from scipy.spatial.transform import Rotation
 
-    # flip handedness so the rotation is always righthanded even with axis flipping
-    angles_flipped = angles * np.where(flipped_axes, -1, 1)
-    # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-    angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
-    # see #8281 for why this is yzx. In short: longstanding vispy bug.
-    rotation = Rotation.from_euler('yzx', angles_fixed, degrees=True)
-    # Create quaternion
-    return Quaternion(*rotation.as_quat(scalar_first=True))
+    w, x, y, z = quat.w, quat.x, quat.y, quat.z
+    # order is nonstandard!
+    return Rotation.from_quat([x, z, y, w]).as_matrix().T
+
+
+def _matrix_to_quaternion(
+    matrix: np.ndarray,
+) -> Quaternion:
+    """Return the VisPy quaternion for the given rotation matrix.
+
+    The inverse of :func:`_quaternion_to_matrix`.
+    """
+    from scipy.spatial.transform import Rotation
+
+    qx, qy, qz, qw = Rotation.from_matrix(matrix.T).as_quat()
+    # order is nonstandard!
+    return Quaternion(qw, qx, qz, qy)
+
+
+def _directions_to_vispy_quat(
+    view_direction: Vector3D,
+    up_direction: Vector3D,
+    orientation: AxesOrientation3D,
+) -> Quaternion:
+    """Return the VisPy quaternion from the given napari view and up directions."""
+    flipped_axes = _get_vispy_flipped_axes(orientation, ndisplay=3)
+    factors = np.where(flipped_axes, -1, 1)
+    # zyx -> xyz flip
+    view_row = factors * np.asarray(view_direction)[::-1]
+    up_row = factors * np.asarray(up_direction)[::-1]
+    matrix = np.stack([np.cross(view_row, up_row), view_row, up_row])
+    return _matrix_to_quaternion(matrix)
+
+
+def napari_angles_to_vispy_quat(
+    angles: EulerAngles,
+    orientation: AxesOrientation3D,
+) -> Quaternion:
+    """Return the VisPy quaternion for the given napari camera angles.
+
+    Parameters
+    ----------
+    angles : 3-tuple of float
+        Euler angles of the 3D camera, in degrees.
+    orientation : 3-tuple of str
+        The napari orientation, with depth, vertical, and horizontal components,
+        in napari (zyx) order.
+
+    Returns
+    -------
+    vispy.util.quaternion.Quaternion
+        The VisPy quaternion rendering the given camera angles.
+    """
+    view, up = view_and_up_directions_from_angles(angles, orientation)
+    return _directions_to_vispy_quat(view, up, orientation)
 
 
 def vispy_quat_to_napari_angles(
-    quat: Quaternion, flipped_axes: tuple[int, int, int]
-) -> tuple[float, float, float]:
-    from scipy.spatial.transform import Rotation
+    quat: Quaternion,
+    orientation: AxesOrientation3D,
+) -> EulerAngles:
+    """Return the napari camera angles for the given VisPy quaternion.
 
-    # Do conversion from quaternion representation to euler angles
-    rotation = Rotation.from_quat([quat.x, quat.y, quat.z, quat.w])
-    # see #8281 for why this is yzx. In short: longstanding vispy bug.
-    angles = rotation.as_euler('yzx', degrees=True)
-    # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-    angles_fixed = (angles - (0, 0, 90)) * (1, -1, 1)
-    # flip handedness so the rotation is always righthanded even with axis flipping
-    return tuple(angles_fixed * np.where(flipped_axes, -1, 1))
+    Parameters
+    ----------
+    quat : vispy.util.quaternion.Quaternion
+        The VisPy quaternion as rendered by the VisPy 3D camera.
+    orientation : 3-tuple of str
+        The napari orientation, with depth, vertical, and horizontal components,
+        in napari (zyx) order.
+
+    Returns
+    -------
+    3-tuple of float
+        Euler angles (rx, ry, rz) of the 3D camera, in degrees.
+    """
+    matrix = _quaternion_to_matrix(quat)
+    flipped_axes = _get_vispy_flipped_axes(orientation, ndisplay=3)
+    factors = np.where(flipped_axes, -1, 1)
+    # Undo the flips and switch from VisPy (xyz) to napari (zyx) coordinates.
+    view_direction = tuple((factors * matrix[1])[::-1])
+    up_direction = tuple((factors * matrix[2])[::-1])
+    return angles_from_view_and_up_directions(
+        view_direction, up_direction, orientation
+    )
 
 
 class VispyCamera:
@@ -87,7 +179,7 @@ class VispyCamera:
         napari dims model.
     """
 
-    def __init__(self, view, camera, dims) -> None:
+    def __init__(self, view: ViewBox, camera: Camera, dims: Dims) -> None:
         self._view = view
         self._camera = camera
         self._dims = dims
@@ -115,34 +207,32 @@ class VispyCamera:
         self._camera.events.orientation.connect(self._on_orientation_change)
 
     @property
-    def angles(self):
+    def angles(self) -> EulerAngles:
         """3-tuple: Euler angles of camera in 3D viewing, in degrees.
         Note that angles might be different than the ones that might have generated the quaternion.
         """
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            flipped_axes = get_vispy_flipped_axes(self._camera, ndisplay=3)
             return vispy_quat_to_napari_angles(
-                self._view.camera._quaternion, flipped_axes
+                self._view.camera._quaternion, self._camera.orientation
             )
 
         return (0, 0, 0)
 
     @angles.setter
-    def angles(self, angles):
+    def angles(self, angles: Sequence[float]) -> None:
         if self.angles == tuple(angles):
             return
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            flipped_axes = get_vispy_flipped_axes(self._camera, ndisplay=3)
             quat = napari_angles_to_vispy_quat(
-                self._camera.angles, flipped_axes
+                self._camera.angles, self._camera.orientation
             )
             self._view.camera.set_state(_quaternion=quat)
 
     @property
-    def center(self):
+    def center(self) -> Vector3D:
         """tuple: Center point of camera view for 2D or 3D viewing."""
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             center = tuple(self._view.camera.center)
@@ -150,17 +240,17 @@ class VispyCamera:
             # in 2D, we arbitrarily choose 0.0 as the center in z
             center = (*self._view.camera.center[:2], 0.0)
         # switch from VisPy xyz ordering to NumPy prc ordering
-        return center[::-1]
+        return center[::-1]  # pyrefly: ignore [bad-return]
 
     @center.setter
-    def center(self, center):
+    def center(self, center: Sequence[float]) -> None:
         if self.center == tuple(center):
             return
         self._view.camera.center = center[::-1]
         self._view.camera.view_changed()
 
     @property
-    def zoom(self):
+    def zoom(self) -> float:
         """float: Scale from canvas pixels to world pixels."""
         viewbox_size = np.array(self._view.rect.size)
         if isinstance(self._view.camera, MouseToggledArcballCamera):
@@ -181,7 +271,7 @@ class VispyCamera:
         return zoom
 
     @zoom.setter
-    def zoom(self, zoom):
+    def zoom(self, zoom: float) -> None:
         if self.zoom == zoom:
             return
         viewbox_size = np.array(self._view.rect.size)
@@ -194,12 +284,12 @@ class VispyCamera:
             self._view.camera.rect = tuple(corner) + tuple(scale)
 
     @property
-    def perspective(self):
+    def perspective(self) -> float:
         """Field of view of camera (only visible in 3D mode)."""
         return self._3D_camera.fov
 
     @perspective.setter
-    def perspective(self, perspective):
+    def perspective(self, perspective: float) -> None:
         if self.perspective == perspective:
             return
         self._3D_camera.fov = perspective
@@ -210,7 +300,7 @@ class VispyCamera:
         return self._view.camera.mouse_zoom
 
     @mouse_zoom.setter
-    def mouse_zoom(self, mouse_zoom: bool):
+    def mouse_zoom(self, mouse_zoom: bool) -> None:
         self._view.camera.mouse_zoom = mouse_zoom
 
     @property
@@ -218,10 +308,10 @@ class VispyCamera:
         return self._view.camera.mouse_pan
 
     @mouse_pan.setter
-    def mouse_pan(self, mouse_pan: bool):
+    def mouse_pan(self, mouse_pan: bool) -> None:
         self._view.camera.mouse_pan = mouse_pan
 
-    def _on_ndisplay_change(self):
+    def _on_ndisplay_change(self) -> None:
         # remove previous camera from children
         self._view.camera.parent = None
         if self._dims.ndisplay == 3:
@@ -236,28 +326,32 @@ class VispyCamera:
         self._on_orientation_change()
         self._on_perspective_change()
 
-    def _on_mouse_toggles_change(self):
+    def _on_mouse_toggles_change(self) -> None:
         self.mouse_pan = self._camera.mouse_pan
         self.mouse_zoom = self._camera.mouse_zoom
 
-    def _on_center_change(self):
+    def _on_center_change(self) -> None:
         self.center = self._camera.center[-self._dims.ndisplay :]
 
-    def _on_zoom_change(self):
+    def _on_zoom_change(self) -> None:
         self.zoom = self._camera.zoom
 
-    def _on_orientation_change(self):
-        self._2D_camera.flip = get_vispy_flipped_axes(self._camera, ndisplay=2)
-        self._3D_camera.flip = get_vispy_flipped_axes(self._camera, ndisplay=3)
+    def _on_orientation_change(self) -> None:
+        self._2D_camera.flip = _get_vispy_flipped_axes(
+            self._camera.orientation, ndisplay=2
+        )
+        self._3D_camera.flip = _get_vispy_flipped_axes(
+            self._camera.orientation, ndisplay=3
+        )
 
-    def _on_perspective_change(self):
+    def _on_perspective_change(self) -> None:
         self.perspective = self._camera.perspective
 
-    def _on_angles_change(self):
+    def _on_angles_change(self) -> None:
         with self._camera.events.angles.blocker():
             self.angles = self._camera.angles
 
-    def on_draw(self, _event):
+    def on_draw(self, _event: VispyEvent) -> None:
         """Called whenever the canvas is drawn.
 
         Update camera model angles, center, and zoom.
@@ -311,12 +405,12 @@ def add_mouse_pan_zoom_toggles(
     """
 
     class _vispy_camera_cls(vispy_camera_cls):
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: Any) -> None:
             super().__init__(**kwargs)
             self.mouse_pan = True
             self.mouse_zoom = True
 
-        def viewbox_mouse_event(self, event):
+        def viewbox_mouse_event(self, event: VispyEvent) -> None:
             if (
                 self.mouse_zoom
                 and event.type in ('mouse_wheel', 'gesture_zoom')
@@ -329,7 +423,7 @@ def add_mouse_pan_zoom_toggles(
             else:
                 event.handled = False
 
-        def viewbox_resize_event(self, event):
+        def viewbox_resize_event(self, event: VispyEvent) -> None:
             # due to the 2d/3d switching of cameras, sometimes we momentarily
             # try to update cameras that are not in the scenegraph;
             # in that case, we can just skip the update
@@ -337,7 +431,7 @@ def add_mouse_pan_zoom_toggles(
                 return
             super().viewbox_resize_event(event)
 
-        def viewbox_key_event(self, event):
+        def viewbox_key_event(self, event: VispyEvent) -> None:
             """ViewBox key event handler.
 
             Parameters

@@ -5,7 +5,8 @@ from collections import defaultdict
 from unittest.mock import Mock
 
 import pytest
-from qtpy.QtWidgets import QAction, QShortcut
+from qtpy.QtGui import QAction, QFont, QShortcut
+from qtpy.QtWidgets import QLabel
 
 from napari._qt.qt_event_loop import (
     _ipython_has_eventloop,
@@ -49,7 +50,7 @@ def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
 
     with monkeypatch.context() as m:
         mock_exec = Mock()
-        m.setattr(qapp, 'exec_', mock_exec)
+        m.setattr(qapp, 'exec', mock_exec)
         run()
         mock_exec.assert_called_once()
 
@@ -91,6 +92,28 @@ def test_no_wayland_warning(
     assert not any(
         'Wayland startup workaround' in str(w.message) for w in records
     )
+
+
+def test_status_bar_requests_tabular_numerals_with_preexisting_app(
+    make_napari_viewer, qapp, qtbot
+):
+    tag = QFont.Tag('tnum')
+    app_font = QFont(qapp.font())
+    host_label = QLabel('host')
+    qtbot.addWidget(host_label)
+    host_font = QFont(host_label.font())
+
+    viewer = make_napari_viewer()
+    window = viewer.window._qt_window
+    status = window.statusBar()._status
+
+    assert status.font().isFeatureSet(tag)
+    assert qapp.font() == app_font
+    assert host_label.font() == host_font
+
+    viewer.window._update_theme()
+
+    assert status.font().isFeatureSet(tag)
 
 
 def test_shortcut_collision(qtbot, make_napari_viewer):

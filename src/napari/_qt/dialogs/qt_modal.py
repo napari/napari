@@ -34,7 +34,7 @@ class QtPopup(QDialog):
         super().__init__(parent)
         self.setObjectName('QtModalPopup')
         self.setModal(False)  # if False, then clicking anywhere else closes it
-        flags = Qt.Popup | Qt.FramelessWindowHint
+        flags = Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         self.setWindowFlags(flags)
         self.setLayout(QVBoxLayout())
 
@@ -137,7 +137,9 @@ class QtPopup(QDialog):
         self.setGeometry(left, top, width, height)
 
     def keyPressEvent(self, event):
-        """Close window on return, else pass event through to super class.
+        """Ignore return, else pass event through to super class.
+
+        A popup is dismissed with Escape or by clicking away from it.
 
         Parameters
         ----------
@@ -145,6 +147,5 @@ class QtPopup(QDialog):
             Event from the Qt context.
         """
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.close()
             return
         super().keyPressEvent(event)

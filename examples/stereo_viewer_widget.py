@@ -104,7 +104,7 @@ class StereoViewerWidget(QWidget):
 
         self.viewer.events.reset_view.connect(self._reset_view)
         # Mild perspective helps stereo depth cues.
-        self.viewer.camera.perspective = 30
+        self.viewer.scene.camera.perspective = 30
 
     def _all_models(self) -> tuple[ViewerModel, ViewerModel, ViewerModel]:
         return (self.viewer, self.viewer_left, self.viewer_right)
@@ -126,14 +126,14 @@ class StereoViewerWidget(QWidget):
     def _on_separation_changed(self, value: float) -> None:
         # when the eye separation is changed, re-calculate and apply camera state to all viewers
         self._eye_separation = value
-        cam = self.viewer.camera
+        cam = self.viewer.scene.camera
         self._apply_stereo_from(
             cam.angles, cam.center, cam.zoom, cam.perspective
         )
 
     def _reset_view(self) -> None:
         # Main viewer already reset; push its camera through stereo sync.
-        cam = self.viewer.camera
+        cam = self.viewer.scene.camera
         self._apply_stereo_from(
             cam.angles, cam.center, cam.zoom, cam.perspective
         )
@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     viewer = napari.Viewer(ndisplay=3)
     viewer.open_sample('napari', 'cells3d')
-    viewer.camera.angles = (-20, 20, -20)
+    viewer.scene.camera.angles = (-20, 20, -20)
 
     window = StereoViewerWindow()
     window.setStyleSheet(get_stylesheet(get_settings().appearance.theme))

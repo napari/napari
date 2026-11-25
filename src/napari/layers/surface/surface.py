@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
@@ -27,7 +27,6 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
 from napari.types import LayerDataType
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
@@ -233,7 +232,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     _projectionclass: type[StringEnum] = SurfaceProjectionMode
 
-    _colormaps = AVAILABLE_COLORMAPS
     _slicing_state: _SurfaceSlicingState
 
     def __init__(
@@ -329,7 +327,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
+            self._contrast_limits_range = calc_data_range(self._vertex_values)  # pyrefly: ignore [bad-argument-type]
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
@@ -396,8 +394,13 @@ class Surface(IntensityVisualizationMixin, Layer):
     def _view_texcoords(self) -> np.ndarray | None:
         return self._slicing_state._view_texcoords
 
-    def _calc_data_range(self, mode='data'):
-        return calc_data_range(self.vertex_values)
+    def _calc_data_range(
+        self, mode='data', percentiles: tuple[float, float] | None = None
+    ) -> tuple[float, float]:
+        return calc_data_range(
+            self.vertex_values,  # pyrefly: ignore[bad-argument-type]
+            percentiles=percentiles,
+        )
 
     @property
     def dtype(self) -> np.dtype:
@@ -408,7 +411,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return (self.vertices, self.faces, self.vertex_values)
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         if len(data) not in (2, 3):
             raise ValueError(
                 f'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {len(data)}.'
@@ -431,7 +434,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._vertices
 
     @vertices.setter
-    def vertices(self, vertices):
+    def vertices(self, vertices) -> None:
         """Array of vertices of mesh triangles."""
 
         self._vertices = vertices
@@ -768,7 +771,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         return intersection_value, intersection_index
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         """Create a copy of this layer.
 
         Returns
@@ -808,7 +811,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 class _SurfaceSlicingState(_LayerSlicingState):
     layer: Surface
 
-    def __init__(self, layer: Surface, data, cache: bool):
+    def __init__(self, layer: Surface, data, cache: bool) -> None:
         super().__init__(layer=layer, data=data, cache=cache)
         # Data containing vectors in the currently viewed slice
         self._view_vertices = np.zeros((0, self._slice_input.ndisplay))
@@ -846,7 +849,7 @@ class _SurfaceSlicingState(_LayerSlicingState):
             vertex_colors=self.layer.vertex_colors,
             texcoords=self.layer.texcoords,
             data_slice=data_slice,
-            projection_mode=self.layer.projection_mode,
+            projection_mode=self.layer.projection_mode,  # pyrefly: ignore [bad-argument-type]
         )
 
     def _update_slice_response(self, response: _SurfaceSliceResponse) -> None:

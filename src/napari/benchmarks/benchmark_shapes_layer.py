@@ -226,6 +226,10 @@ class Shapes2DSuite(_BackendSelection):
         """Time to update thumbnail."""
         self.layer._update_thumbnail()
 
+    def time_to_labels(self, *_):
+        """Time to convert shapes to a labels image."""
+        self.layer.to_labels(labels_shape=(64, 64))
+
     def time_get_value(self, *_):
         """Time to get current value."""
         for i in range(100):
@@ -303,6 +307,10 @@ class Shapes3DSuite:
     def time_update_thumbnail(self, _n):
         """Time to update thumbnail."""
         self.layer._update_thumbnail()
+
+    def time_to_labels(self, _n):
+        """Time to convert shapes to a labels image."""
+        self.layer.to_labels(labels_shape=(64, 64, 64))
 
     def time_get_value(self, _n):
         """Time to get current value."""

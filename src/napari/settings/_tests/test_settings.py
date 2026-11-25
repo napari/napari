@@ -246,11 +246,11 @@ def test_settings_env_variables_alias(monkeypatch):
 
 def test_two_env_variable_settings(monkeypatch):
     assert NapariSettings(None).experimental.async_ is False
-    assert NapariSettings(None).experimental.autoswap_buffers is False
+    assert NapariSettings(None).advanced.autoswap_buffers is False
     monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC_', '1')
-    monkeypatch.setenv('NAPARI_EXPERIMENTAL_AUTOSWAP_BUFFERS', '1')
+    monkeypatch.setenv('NAPARI_ADVANCED_AUTOSWAP_BUFFERS', '1')
     assert NapariSettings(None).experimental.async_ is True
-    assert NapariSettings(None).experimental.autoswap_buffers is True
+    assert NapariSettings(None).advanced.autoswap_buffers is True
 
 
 def test_settings_env_variables_fails(monkeypatch):
@@ -309,7 +309,9 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
 def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     # create a settings file with async_ = true
-    data = 'experimental:\n   async_: true\n   autoswap_buffers: true'
+    data = (
+        'experimental:\n   async_: true\nadvanced:\n   autoswap_buffers: true'
+    )
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
@@ -319,7 +321,7 @@ def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     assert 'autoswap_buffers: true' in disk_settings
     # make sure they load correctly
     assert NapariSettings(fake_path).experimental.async_ is True
-    assert NapariSettings(fake_path).experimental.autoswap_buffers is True
+    assert NapariSettings(fake_path).advanced.autoswap_buffers is True
 
     # now load settings again with an Env-var override
     monkeypatch.setenv('NAPARI_ASYNC', '0')
@@ -327,7 +329,7 @@ def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     settings = NapariSettings(fake_path)
     # make sure the override worked, and save again
     assert settings.experimental.async_ is False
-    assert settings.experimental.autoswap_buffers is False
+    assert settings.advanced.autoswap_buffers is False
 
 
 def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
@@ -356,6 +358,7 @@ def test_get_settings(tmp_path):
     p = f'{tmp_path}.yaml'
     s = settings.get_settings(p)
     assert str(s.config_path) == str(p)
+    settings.get_plugin_settings()
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
@@ -490,3 +493,121 @@ def test_settings_no_import_qt(tmp_path):
     subprocess.check_call(
         [sys.executable, str(tmp_path / 'test_no_import.py')]
     )
+
+
+@pytest.fixture
+def test_settings_2():
+    """A fixture that mimics plugin_configuration_generator()."""
+    from napari.settings import PluginSettings
+    from napari.settings._base import SettingsConfigDict
+
+    class TestPluginSettings(PluginSettings):
+        model_config = SettingsConfigDict(env_prefix='testnapari_plugin_')
+
+        display_name: str = 'demo'
+
+    return {
+        'test-plugin': TestPluginSettings,
+    }
+
+
+def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    s = settings.get_plugin_settings(path_dir=tmp_path)
+
+    assert 'test-plugin' in s
+    assert s['test-plugin'].config_path == tmp_path / 'test-plugin.yaml'
+
+    plugin = settings.get_plugin_settings('test-plugin')
+
+    assert plugin is s['test-plugin']
+
+
+def test_get_plugin_settings_path_set_twice(
+    tmp_path, monkeypatch, test_settings_2
+):
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    settings.get_plugin_settings(path_dir=tmp_path)
+
+    with pytest.raises(RuntimeError, match='The path can only be set once'):
+        settings.get_plugin_settings(path_dir=tmp_path)
+
+
+def test_get_plugin_settings_unknown_plugin(
+    tmp_path, monkeypatch, test_settings_2
+):
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    settings.get_plugin_settings(path_dir=tmp_path)
+
+    with pytest.raises(KeyError):
+        settings.get_plugin_settings('does-not-exist')
+
+
+def test_get_plugin_settings_default_path_dir(
+    tmp_path, monkeypatch, test_settings_2
+):
+    """With no ``path_dir``, plugin settings default to the directory of
+    napari's own settings file (``_CFG_PATH``, honoring ``NAPARI_CONFIG``).
+
+    The autouse ``plugin_settings`` fixture already redirects the default path
+    to ``tmp_path``; this test overrides ``_CFG_PATH`` again to exercise the
+    real default-path resolution logic.
+    """
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+    monkeypatch.setattr(settings, '_CFG_PATH', str(tmp_path / 'settings.yaml'))
+
+    s = settings.get_plugin_settings()
+
+    assert s['test-plugin'].config_path.parent == tmp_path
+
+
+def test_get_plugin_settings_default_path_dir_disabled(
+    monkeypatch, test_settings_2
+):
+    """An empty ``NAPARI_CONFIG`` disables on-disk plugin settings."""
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+    monkeypatch.setattr(settings, '_CFG_PATH', '')
+
+    s = settings.get_plugin_settings()
+
+    assert s['test-plugin'].config_path is None
+
+
+def test_plugin_settings_str(tmp_path, monkeypatch, test_settings_2):
+    """``str(plugin_settings)`` shows only non-default values."""
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    prefs = settings.get_plugin_settings(path_dir=tmp_path)['test-plugin']
+
+    # defaults are excluded from the string representation
+    assert 'demo' not in str(prefs)
+
+    prefs.display_name = 'renamed'
+    assert 'renamed' in str(prefs)

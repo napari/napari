@@ -1,9 +1,11 @@
 # The tests in this module for the new style of async slicing in napari:
 # https://napari.org/dev/naps/4-async-slicing.html
+import threading
 from functools import partial
 
 import numpy as np
 import pytest
+from qtpy.QtCore import QCoreApplication, QEvent, QObject, Signal
 from vispy.visuals import VolumeVisual
 
 from napari import Viewer
@@ -16,7 +18,7 @@ from napari._vispy.layers.vectors import (
     generate_vector_meshes_2D,
 )
 from napari.layers import Image, Layer, Points, Vectors
-from napari.utils.events import Event
+from napari.utils.events import Event, EventEmitter
 
 
 @pytest.fixture
@@ -106,7 +108,7 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     # Force the image to be at the lower resolution, with #7870 this behavior
     # changed so that initial zoom was high, resulting in data_level=0.
     # Likely due to better sequencing of async slicing.
-    viewer.camera.zoom = 0.1
+    viewer.scene.camera.zoom = 0.1
     viewer.window._qt_viewer.canvas.on_draw(None)
 
     # Check that we're initially slicing the middle of the first dimension
@@ -134,7 +136,7 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     # Force the image to be at the lower resolution, with #7870 this behavior
     # changed so that initial zoom was high, resulting in data_level=0.
     # Likely due to better sequencing of async slicing.
-    viewer.camera.zoom = 0.1
+    viewer.scene.camera.zoom = 0.1
     viewer.window._qt_viewer.canvas.on_draw(None)
 
     # Check that we're initially slicing the middle of the first dimension
@@ -150,6 +152,33 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     image.events.reload(Event('reload', layer=image))
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[0][1, 2:6, 3:7])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_first_multiscale_slice_is_coarse_and_centered(
+    make_napari_viewer, qtbot, monkeypatch
+):
+    viewer = make_napari_viewer(show=True)
+    # Only an initialized canvas repaints synchronously on resize.
+    canvas = viewer.window._qt_viewer.canvas._scene_canvas.native
+    qtbot.waitUntil(canvas.isValid)
+
+    submitted = []
+    submit = viewer._layer_slicer.submit
+
+    def record(*, layers, dims, force=False):
+        submitted.append(
+            (dims.current_step, [layer.data_level for layer in layers])
+        )
+        return submit(layers=layers, dims=dims, force=force)
+
+    monkeypatch.setattr(viewer._layer_slicer, 'submit', record)
+
+    data = [np.zeros((8, 256 // 2**i, 256 // 2**i)) for i in range(3)]
+    layer = viewer.add_image(data, multiscale=True)
+    qtbot.waitUntil(lambda: layer.loaded)
+
+    assert submitted[0] == (viewer.dims.current_step, [2])
 
 
 @pytest.mark.usefixtures('_enable_async')
@@ -249,6 +278,54 @@ def test_async_slice_two_layers_shutdown(make_napari_viewer):
     points.add([[1, 2]])
 
     viewer.close()
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_response_applied_on_main_thread(
+    make_napari_viewer, qtbot, rng, monkeypatch
+):
+    viewer = make_napari_viewer()
+    image = Image(rng.random((3, 4, 5)))
+    setup_viewer_for_async_slicing(viewer, image)
+
+    ready_threads = []
+    viewer._layer_slicer.events.ready.connect(
+        lambda _: ready_threads.append(threading.current_thread())
+    )
+    update_threads = []
+    update_slice_response = image._slicing_state._update_slice_response
+
+    def record_update_thread(response):
+        update_threads.append(threading.current_thread())
+        update_slice_response(response)
+
+    monkeypatch.setattr(
+        image._slicing_state, '_update_slice_response', record_update_thread
+    )
+
+    viewer.dims.current_step = (2, 0, 0)
+
+    qtbot.waitUntil(lambda: bool(update_threads))
+    assert threading.main_thread() not in ready_threads
+    assert set(update_threads) == {threading.main_thread()}
+
+
+def test_callback_emitting_signal_of_deleted_qobject_is_disconnected(qapp):
+    class Source(QObject):
+        signal = Signal()
+
+        def emit_signal(self):
+            self.signal.emit()
+
+    source = Source()
+    emitter = EventEmitter(type_name='test')
+    emitter.connect(source.emit_signal)
+
+    source.deleteLater()
+    QCoreApplication.sendPostedEvents(source, QEvent.Type.DeferredDelete)
+    emitter()
+
+    assert not emitter.callbacks
 
 
 def setup_viewer_for_async_slicing(

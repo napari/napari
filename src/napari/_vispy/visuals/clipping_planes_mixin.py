@@ -18,7 +18,7 @@ class _PVisual(Protocol):
     _subvisuals: list[_PVisual] | None
     _clip_filter: PlanesClipper
 
-    def attach(self, filt: Filter, view=None): ...
+    def attach(self, filt: Filter, view=None) -> None: ...
 
 
 class ClippingPlanesMixin:
@@ -30,7 +30,7 @@ class ClippingPlanesMixin:
     def __init__(self: _PVisual, *args, font_info: FontInfo, **kwargs) -> None:
         clip_filter = PlanesClipper()
         self._clip_filter = clip_filter
-        self.font_info = font_info
+        self.font_info = font_info  # pyrefly: ignore [missing-attribute]
         super().__init__(*args, **kwargs)
 
         self.attach(clip_filter)
@@ -40,5 +40,5 @@ class ClippingPlanesMixin:
         return self._clip_filter.clipping_planes
 
     @clipping_planes.setter
-    def clipping_planes(self, value):
+    def clipping_planes(self, value) -> None:
         self._clip_filter.clipping_planes = value
