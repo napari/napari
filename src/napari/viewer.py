@@ -199,7 +199,7 @@ class Viewer(ViewerModel):
         rois: list of np.ndarray
             A list of arrays with each having shape (4, 2) representing a
             rectangular roi.
-        paths: str, Path, list[str, Path], optional
+        paths: str, Path, sequence of str or Path, optional
             Where to save the rois. If a string or a Path, a directory will
             be created if it does not exist yet and screenshots will be saved
             with filename `roi_{n}.png` where n is the nth roi. If paths is
