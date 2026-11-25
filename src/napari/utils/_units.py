@@ -1,12 +1,8 @@
 """Units utilities."""
 
 from decimal import Decimal
-from typing import TYPE_CHECKING
 
 import numpy as np
-
-if TYPE_CHECKING:
-    import pint
 
 # define preferred scale bar values
 PREFERRED_VALUES = [
@@ -26,22 +22,6 @@ PREFERRED_VALUES = [
     500,
     750,
 ]
-
-
-def get_unit_registry() -> 'pint.UnitRegistry':
-    """Get pint's UnitRegistry.
-
-    Pint greedily imports many libraries, (including dask, xarray, pandas, and
-    babel) to check for compatibility.  Some of those libraries may be slow to
-    import.  This accessor function should be used (and only when units are
-    actually necessary) to avoid incurring a large import time penalty.
-
-    See comment for details:
-    https://github.com/napari/napari/pull/2617#issuecomment-827747792
-    """
-    import pint
-
-    return pint.get_application_registry()
 
 
 PREFERRED_TICK_VALUES = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5]
@@ -64,6 +44,16 @@ def compute_nice_ticks(
     min_value: float, max_value: float, target_ticks: int = 5
 ) -> tuple[np.ndarray, int]:
     """Compute round tick values spanning a range.
+
+    Parameters
+    ----------
+    min_value : float
+        Lower bound of the range the ticks should span.
+    max_value : float
+        Upper bound of the range the ticks should span.
+    target_ticks : int, optional
+        Desired number of ticks, by default 5. The actual number may
+        differ, since ticks are restricted to round values.
 
     Returns
     -------

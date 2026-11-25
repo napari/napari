@@ -282,6 +282,7 @@ def _readable_color(
         (np.array([0.0, 0.0, 0.0, 1.0]), np.array([1.0, 1.0, 1.0, 1.0])),
         key=lambda c: _contrast_ratio(c, background_color),
     )
+    mixed = color
     for t in np.linspace(0, 1, 11):
         mixed = (1 - t) * color + t * target
         if _contrast_ratio(mixed, background_color) >= min_contrast:

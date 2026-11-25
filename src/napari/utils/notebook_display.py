@@ -102,7 +102,7 @@ class NotebookScreenshot:
                 return None
             # cleaner won't recognize escaped script tags, so always unescape
             # to be safe
-            alt_text = html.unescape(str(alt_text))
+            alt_text = html.unescape(alt_text)
             cleaner = Cleaner()
             try:
                 doc = document_fromstring(alt_text)

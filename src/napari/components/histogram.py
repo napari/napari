@@ -285,6 +285,10 @@ class HistogramModel(EventedModel):
         range_min, range_max = self._layer.contrast_limits_range
 
         running_counts = np.zeros(self.bins, dtype=np.float64)
+        bins = np.linspace(range_min, range_max, self.bins + 1).astype(
+            np.float32
+        )
+        counts = np.zeros(self.bins, dtype=np.float32)
         for ci in order:
             # Early stale guard to abort worker early if a new compute has started.
             if self._compute_generation != generation:
@@ -307,9 +311,6 @@ class HistogramModel(EventedModel):
             )
             running_counts += chunk_counts.astype(np.float64)
 
-            bins = np.linspace(range_min, range_max, self.bins + 1).astype(
-                np.float32
-            )
             if self.log_scale:
                 counts = np.log10(running_counts + 1).astype(np.float32)
             else:
