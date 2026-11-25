@@ -113,8 +113,11 @@ class _LayerSlicer:
         self._shutdown = False
         # The condition protects queued requests and unfinished tasks. Once a
         # worker takes a task out of _pending, its request is immutable.
+        # A layer has at most one read in flight, so its slices are read and
+        # delivered in request order. Workers parallelize across layers.
         self._tasks_changed = Condition()
         self._pending: dict[weakref.ReferenceType[Layer], _SliceTask] = {}
+        self._reading: set[weakref.ReferenceType[Layer]] = set()
         self._tasks: dict[Future[dict], _SliceTask] = {}
         # Latest request presented per layer, used only on the main thread.
         # The order of presented slices belongs to the slicer's view, while
@@ -172,11 +175,11 @@ class _LayerSlicer:
     ) -> list[Future[dict]]:
         """Slices the given layers with the given dims.
 
-        Each layer is sliced in its own task. A layer has at most one waiting
-        request. A newer request replaces the waiting one in place, keeping
-        its turn in the queue. The worker reads requests in queue order, so a
-        layer's responses arrive in request order, but a response can be
-        superseded by the time it arrives.
+        Each layer is sliced in its own task. A layer has at most one read in
+        progress and one waiting request. A newer request replaces the waiting
+        one in place, keeping its turn, and is read once the layer's current
+        read finishes. A layer's responses therefore arrive in request order,
+        but a response can be superseded by the time it arrives.
 
         This should only be called from the main thread.
 
@@ -276,7 +279,8 @@ class _LayerSlicer:
             task = _SliceTask(weak_layer, request)
             self._pending[weak_layer] = task
             self._tasks[task.future] = task
-            self._executor.submit(self._slice_layer, weak_layer)
+            if weak_layer not in self._reading:
+                self._executor.submit(self._slice_layer, weak_layer)
         task.future.add_done_callback(self._on_slice_done)
         return task.future
 
@@ -320,9 +324,14 @@ class _LayerSlicer:
     def _slice_layer(self, weak_layer: weakref.ReferenceType[Layer]) -> None:
         """Claim the layer's latest pending request and slice it."""
         with self._tasks_changed:
+            # A worker scheduled for a cancelled request can find the layer
+            # reading a newer one. That read hands on the next request.
+            if weak_layer in self._reading:
+                return
             task = self._pending.pop(weak_layer, None)
             if task is None or not task.future.set_running_or_notify_cancel():
                 return
+            self._reading.add(weak_layer)
             request = task.request
         try:
             result = {}
@@ -330,9 +339,20 @@ class _LayerSlicer:
                 result = {weak_layer: request()}
                 self.events.ready(value=result)
         except BaseException as exc:  # noqa: BLE001 - delivered via the future
+            self._finish_reading(weak_layer)
             task.future.set_exception(exc)
         else:
+            self._finish_reading(weak_layer)
             task.future.set_result(result)
+
+    def _finish_reading(
+        self, weak_layer: weakref.ReferenceType[Layer]
+    ) -> None:
+        """Hand the layer's next request, if any, to a worker."""
+        with self._tasks_changed:
+            self._reading.discard(weak_layer)
+            if weak_layer in self._pending and not self._shutdown:
+                self._executor.submit(self._slice_layer, weak_layer)
 
     def _on_slice_done(self, future: Future[dict]) -> None:
         with self._tasks_changed:

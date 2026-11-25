@@ -1,5 +1,5 @@
 import time
-from concurrent.futures import Future
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from threading import Event, RLock, current_thread, main_thread
 from types import SimpleNamespace
@@ -439,6 +439,83 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
 
     _wait_for_result(wait_future)
     assert slice_future.done()
+
+
+def test_layer_reads_one_request_at_a_time(layer_slicer, monkeypatch):
+    """An idle worker does not start a second read of the same layer. The
+    layer's waiting request is read after its current read, so a replaced
+    request is skipped and responses keep request order."""
+    dims = Dims()
+    layer = FakeAsyncLayer()
+    started = []
+
+    def make_slice_request(dims):
+        layer._slice_request_count += 1
+        started.append(Event())
+        return FakeSliceRequest(
+            layer._slice_request_count, layer.lock, started[-1]
+        )
+
+    monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        monkeypatch.setattr(layer_slicer, '_executor', executor)
+        with layer.lock:
+            [first] = layer_slicer.submit(layers=[layer], dims=dims)
+            assert started[0].wait(DEFAULT_TIMEOUT_SECS)
+            [second] = layer_slicer.submit(layers=[layer], dims=dims)
+            [replaced] = layer_slicer.submit(layers=[layer], dims=dims)
+            assert replaced is second
+            assert not started[2].wait(0.2)
+            with pytest.raises(TimeoutError, match='Slicing 2 tasks'):
+                layer_slicer.wait_until_idle(timeout=0)
+
+        layer_slicer.wait_until_idle(DEFAULT_TIMEOUT_SECS)
+
+    assert _wait_for_response(first)[layer].id == 1
+    assert _wait_for_response(second)[layer].id == 3
+    assert not started[1].is_set()
+
+
+def test_cancelled_request_leaves_no_second_reader(layer_slicer, monkeypatch):
+    """A worker scheduled for a cancelled request does not start a second
+    read of a layer whose next request is already being read."""
+    dims = Dims()
+    blockers = [FakeAsyncLayer(), FakeAsyncLayer()]
+    layer = FakeAsyncLayer()
+    started = []
+
+    def make_slice_request(dims):
+        layer._slice_request_count += 1
+        started.append(Event())
+        return FakeSliceRequest(
+            layer._slice_request_count, layer.lock, started[-1]
+        )
+
+    monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        monkeypatch.setattr(layer_slicer, '_executor', executor)
+        layer.lock.acquire()
+        for blocker in blockers:
+            blocker.lock.acquire()
+            layer_slicer.submit(layers=[blocker], dims=dims)
+            assert blocker.started.wait(DEFAULT_TIMEOUT_SECS)
+        try:
+            [cancelled] = layer_slicer.submit(layers=[layer], dims=dims)
+            assert cancelled.cancel()
+            [second] = layer_slicer.submit(layers=[layer], dims=dims)
+            blockers[0].lock.release()
+            assert started[1].wait(DEFAULT_TIMEOUT_SECS)
+            [third] = layer_slicer.submit(layers=[layer], dims=dims)
+            blockers[1].lock.release()
+            assert not started[2].wait(0.2)
+        finally:
+            for lock in (blockers[1].lock, layer.lock):
+                if lock._is_owned():
+                    lock.release()
+        layer_slicer.wait_until_idle(DEFAULT_TIMEOUT_SECS)
+
+    assert _wait_for_response(second)[layer].id == 2
+    assert _wait_for_response(third)[layer].id == 3
 
 
 def test_force_sync_on_sync_layer(layer_slicer):
