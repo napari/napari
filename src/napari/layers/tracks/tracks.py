@@ -22,7 +22,8 @@ if TYPE_CHECKING:
     import pandas as pd
     import pint
 
-    from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+    from napari.layers.utils.plane import ValidClippingPlanesArg
+    from napari.types import Matrix2D, Vector1D
     from napari.utils.transforms import Affine
 
 
@@ -132,11 +133,7 @@ class Tracks(Layer):
         color_by: str = 'track_id',
         colormap: str = 'turbo',
         colormaps_dict: dict[str, Colormap] | None = None,
-        experimental_clipping_planes: dict
-        | ClippingPlane
-        | list[ClippingPlane | dict]
-        | ClippingPlaneList
-        | None = None,
+        experimental_clipping_planes: ValidClippingPlanesArg | None = None,
         features: dict[str, np.ndarray] | pd.DataFrame | None = None,
         graph: dict[int, int | list[int]] | None = None,
         head_length: int = 0,
@@ -146,19 +143,12 @@ class Tracks(Layer):
         opacity: float = 1.0,
         projection_mode: str = 'none',
         properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
-        rotate: float
-        | Sequence[float]
-        | Sequence[Sequence[float]]
-        | npt.NDArray
-        | None = None,
-        scale: Sequence[float] | npt.NDArray | None = None,
-        shear: Sequence[float]
-        | Sequence[Sequence[float]]
-        | npt.NDArray
-        | None = None,
+        rotate: float | Vector1D | Matrix2D | None = None,
+        scale: Vector1D | None = None,
+        shear: Vector1D | Matrix2D | None = None,
         tail_length: int = 30,
         tail_width: float = 2,
-        translate: Sequence[float] | npt.NDArray | None = None,
+        translate: Vector1D | None = None,
         units: Sequence[str | pint.Unit | None] | None = None,
         visible: bool = True,
     ) -> None:

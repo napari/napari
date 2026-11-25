@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any, TypeAlias, cast
 
 import numpy as np
@@ -153,6 +154,11 @@ class ClippingPlane(Plane):
     """
 
     enabled: bool = True
+
+
+ValidClippingPlanesArg: TypeAlias = (
+    dict | ClippingPlane | Sequence[dict | ClippingPlane]
+)
 
 
 class ClippingPlaneList(SelectableEventedList):

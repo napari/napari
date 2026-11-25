@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -167,7 +169,7 @@ class TrackManager:
         self._track_end_times = None
 
     @property
-    def features(self) -> 'pd.DataFrame':
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -187,10 +189,10 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame | None',
+        features: dict[str, np.ndarray] | pd.DataFrame | None,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
-        self._feature_table.reorder(self._order)  # pyrefly: ignore[bad-argument-type]
+        self._feature_table.reorder(self._order)
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
 
@@ -486,7 +488,7 @@ class TrackManager:
 
 
 def prepare_tracks_data(
-    data: 'pd.DataFrame',
+    data: pd.DataFrame,
     track_id: int | str = 'track_id',
     t: int | str = 't',
     y: int | str = 'y',
