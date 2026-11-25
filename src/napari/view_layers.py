@@ -350,7 +350,7 @@ def imshow(
     viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.
-    ndisplay : {2, 3}, optional
+    ndisplay : {2, 3} or None, optional
         Number of displayed dimensions.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
