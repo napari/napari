@@ -196,7 +196,7 @@ class Viewer(ViewerModel):
 
         Parameters
         ----------
-        rois: list[np.ndarray]
+        rois: list of np.ndarray
             A list of arrays with each having shape (4, 2) representing a
             rectangular roi.
         paths: str, Path, list[str, Path], optional
