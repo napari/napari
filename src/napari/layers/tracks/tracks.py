@@ -20,11 +20,11 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
     import pandas as pd
-    import pint
 
     from napari.layers.utils.plane import ValidClippingPlanesArg
     from napari.types import Matrix2D, Vector1D
     from napari.utils.transforms import Affine
+    from napari.utils.transforms._units import UnitsLike
 
 
 class Tracks(Layer):
@@ -149,7 +149,7 @@ class Tracks(Layer):
         tail_length: int = 30,
         tail_width: float = 2,
         translate: Vector1D | None = None,
-        units: Sequence[str | pint.Unit | None] | None = None,
+        units: UnitsLike = None,
         visible: bool = True,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
@@ -388,7 +388,7 @@ class Tracks(Layer):
         return self._manager.data
 
     @data.setter
-    def data(self, data: list | np.ndarray) -> None:
+    def data(self, data: npt.ArrayLike) -> None:
         """set the data and build the vispy arrays for display"""
         # set the data and build the tracks
         self._manager.data = data

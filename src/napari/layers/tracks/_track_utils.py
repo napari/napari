@@ -126,7 +126,7 @@ class TrackManager:
         return self._data
 
     @data.setter
-    def data(self, data: list | np.ndarray) -> None:
+    def data(self, data: npt.ArrayLike) -> None:
         """set the vertex data and build the vispy arrays for display"""
         from scipy.sparse import coo_matrix
         from scipy.spatial import cKDTree
