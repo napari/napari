@@ -48,7 +48,7 @@ class ExperimentalSettings(EventedSettings):
     )
 
     async_slicing_workers: int = Field(
-        1,
+        8,
         ge=1,
         title='Asynchronous slicing workers',
         description=(
