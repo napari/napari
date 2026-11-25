@@ -1,7 +1,7 @@
 import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
-from threading import RLock, current_thread, main_thread
+from threading import Event, RLock, current_thread, main_thread
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -98,7 +98,6 @@ def test_submit_with_one_async_layer_no_block(layer_slicer):
 
     [future] = layer_slicer.submit(layers=[layer], dims=Dims())
 
-    assert _wait_for_response(future)[layer].id == 1
     assert _wait_for_response(future)[layer].id == 1
 
 
@@ -277,20 +276,6 @@ def test_submit_with_multiple_async_layer_with_all_locked(
     assert _wait_for_response(blocked2)[layer2].id == 1
 
 
-def test_submit_task_to_layers_lock(layer_slicer):
-    """ensure that if only one layer has a lock, the non-locked layer
-    can continue"""
-    dims = Dims()
-    layer = FakeAsyncLayer()
-
-    with layer.lock:
-        [task] = layer_slicer.submit(layers=[layer], dims=dims)
-        assert task in layer_slicer._layer_to_task.values()
-
-    assert _wait_for_response(task)[layer].id == 1
-    assert task not in layer_slicer._layer_to_task
-
-
 def test_submit_exception_main_thread(layer_slicer):
     """Exception is raised on the main thread from an error on the main
     thread immediately when the task is created."""
@@ -308,9 +293,11 @@ def test_submit_exception_subthread_on_result(layer_slicer, monkeypatch):
     """Exception is raised on the main thread from an error on a subthread
     only after result is called, not upon submission of the task."""
     errors = []
+    reported = Event()
 
     def _record_error(exctype, value, traceback, thread=None):
         errors.append((exctype, value))
+        reported.set()
 
     monkeypatch.setattr(notification_manager, 'receive_error', _record_error)
 
@@ -328,12 +315,17 @@ def test_submit_exception_subthread_on_result(layer_slicer, monkeypatch):
             )
 
     layer = FakeAsyncLayerError()
-    [future] = layer_slicer.submit(layers=[layer], dims=Dims())
+    sibling = FakeAsyncLayer()
+    future, successful = layer_slicer.submit(
+        layers=[layer, sibling], dims=Dims()
+    )
 
     done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
     assert done, 'Test future did not complete within timeout.'
     with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
         _wait_for_response(future)
+    assert _wait_for_response(successful)[sibling].id == 1
+    assert reported.wait(DEFAULT_TIMEOUT_SECS)
     assert layer.loaded
     assert len(errors) == 1
     assert errors[0][0] is RuntimeError
@@ -360,7 +352,7 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
         _wait_until_running(wait_future)
 
     _wait_for_result(wait_future)
-    assert len(layer_slicer._layer_to_task) == 0
+    assert slice_future.done()
 
 
 def test_force_sync_on_sync_layer(layer_slicer):

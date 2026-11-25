@@ -9,6 +9,7 @@ import logging
 import weakref
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
+from functools import partial
 from threading import RLock
 from typing import (
     TYPE_CHECKING,
@@ -33,7 +34,7 @@ logger = logging.getLogger('napari.components._layer_slicer')
 # a slice request that can be called and will produce a slice
 # response. The request and response types are coupled but will
 # vary per layer type, which means that the values of the dictionary
-# result of ``_slice_layers`` cannot be fixed to a single type.
+# result of ``_slice_layer`` cannot be fixed to a single type.
 
 
 class _SliceRequest(Protocol):
@@ -95,29 +96,12 @@ class _LayerSlicer:
     """
 
     def __init__(self) -> None:
-        """
-        Attributes
-        ----------
-        _executor : concurrent.futures.ThreadPoolExecutor
-            manager for the slicing threading
-        _force_sync: bool
-            if true, forces slicing to execute synchronously
-        _layer_to_task : dict of layer weakrefs to futures
-            each layer's latest task, for cancellation logic
-        _task_to_requests : dict of futures to slice requests
-            maps unfinished tasks to their layer and slice request
-        _lock_futures_dicts : threading.RLock
-            lock to guard against concurrent changes to `_layer_to_task`
-            and `_task_to_requests` when finding, adding, or removing tasks
-        """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._force_sync = not get_settings().experimental.async_
         self._layer_to_task: dict[weakref.ReferenceType[Layer], Future] = {}
-        self._task_to_requests: dict[
-            Future, dict[weakref.ReferenceType[Layer], _SliceRequest]
-        ] = {}
-        self._lock_futures_dicts = RLock()
+        self._unfinished: set[Future] = set()
+        self._lock = RLock()
 
     @contextmanager
     def force_sync(self) -> Generator[None, None, None]:
@@ -151,8 +135,8 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
-        with self._lock_futures_dicts:
-            futures = list(self._task_to_requests)
+        with self._lock:
+            futures = tuple(self._unfinished)
         _, not_done_futures = wait(futures, timeout=timeout)
 
         if len(not_done_futures) > 0:
@@ -169,9 +153,8 @@ class _LayerSlicer:
     ) -> list[Future[dict]]:
         """Slices the given layers with the given dims.
 
-        Each layer is sliced in its own task, which cancels that layer's
-        pending task. A running task can't be cancelled, so consumers of the
-        ready event should ignore responses to stale requests.
+        Each layer has its own task and ready event. A new request cancels
+        any pending task for that layer. A running read can finish.
 
         This should only be called from the main thread.
 
@@ -248,21 +231,22 @@ class _LayerSlicer:
         request: _SliceRequest,
     ) -> Future[dict]:
         """Submit a task that slices one layer, cancelling its pending task."""
-        with self._lock_futures_dicts:
+        with self._lock:
             previous_task = self._layer_to_task.get(weak_layer)
         if previous_task is not None:
             logger.debug('Cancelling task %s', id(previous_task))
             previous_task.cancel()
 
-        requests = {weak_layer: request}
-        task = self._executor.submit(self._slice_layers, requests)
+        task = self._executor.submit(self._slice_layer, weak_layer, request)
         logger.debug('Submitted task %s', id(task))
         # Store task before adding done callback to ensure there is always
         # a task to remove in the done callback.
-        with self._lock_futures_dicts:
+        with self._lock:
             self._layer_to_task[weak_layer] = task
-            self._task_to_requests[task] = requests
-        task.add_done_callback(self._on_slice_done)
+            self._unfinished.add(task)
+        task.add_done_callback(
+            partial(self._on_slice_done, weak_layer, request.id)
+        )
         return task
 
     def shutdown(self) -> None:
@@ -277,52 +261,27 @@ class _LayerSlicer:
         self.events.disconnect()
         self.events.ready.disconnect()
 
-    def _slice_layers(self, requests: dict) -> dict:
-        """
-        Iterates through a dictionary of request objects and call the slice
-        on each individual layer. Can be called from the main or slicing thread.
-
-        Attributes
-        ----------
-        requests: dict[Layer, SliceRequest]
-            Dictionary of request objects to be used for constructing the slice
-
-        Returns
-        -------
-        dict[Layer, SliceResponse]: which contains the results of the slice
-        """
-        logger.debug('_LayerSlicer._slice_layers: %s', requests)
-        result = {layer: request() for layer, request in requests.items()}
+    def _slice_layer(
+        self, weak_layer: weakref.ReferenceType[Layer], request: _SliceRequest
+    ) -> dict:
+        result = {weak_layer: request()}
         self.events.ready(value=result)
         return result
 
-    def _on_slice_done(self, task: Future[dict]) -> None:
-        """
-        This is the "done_callback" which is added to each task.
-        Can be called from the main or slicing thread.
-        """
-        logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
-        with self._lock_futures_dicts:
-            requests = self._task_to_requests.pop(task, None)
-            for weak_layer in requests or ():
-                # A newer task may already have replaced this one.
-                if self._layer_to_task.get(weak_layer) is task:
-                    del self._layer_to_task[weak_layer]
+    def _on_slice_done(
+        self,
+        weak_layer: weakref.ReferenceType[Layer],
+        request_id: int,
+        task: Future,
+    ) -> None:
+        with self._lock:
+            self._unfinished.remove(task)
+            if self._layer_to_task.get(weak_layer) is task:
+                del self._layer_to_task[weak_layer]
 
-        if task.cancelled():
-            logger.debug('Cancelled task: %s', id(task))
-            return
-
-        if exception := task.exception():
-            logger.debug('Task failed: %s', id(task))
-            if requests:
-                for weak_layer, request in requests.items():
-                    if layer := weak_layer():
-                        # Mark the failed request as complete so layers don't
-                        # remain forever "loading" after an exception.
-                        layer._slicing_state._update_loaded_slice_id(
-                            request.id
-                        )
+        if not task.cancelled() and (exception := task.exception()):
+            if (layer := weak_layer()) is not None:
+                layer._slicing_state._update_loaded_slice_id(request_id)
 
             from napari.utils.notifications import notification_manager
 

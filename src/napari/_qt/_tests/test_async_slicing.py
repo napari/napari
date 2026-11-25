@@ -335,7 +335,7 @@ def test_async_slice_stale_response_not_applied(
         qtbot.waitUntil(
             lambda: any(
                 task.running()
-                for task in viewer._layer_slicer._task_to_requests
+                for task in viewer._layer_slicer._unfinished
             )
         )
         viewer.dims.current_step = (2, 0, 0)
@@ -523,6 +523,26 @@ def test_async_edit_hidden_image_with_pending_slice(make_napari_viewer, qtbot):
     image.visible = True
     qtbot.waitUntil(lambda: image.loaded)
     np.testing.assert_array_equal(image._slice.image.raw, new_data)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_layer_presented_while_sibling_is_reading(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    data = np.arange(60, dtype=np.float32).reshape(3, 4, 5)
+    fast = Image(data, contrast_limits=(0, 60))
+    slow_data = LockableData(data + 100)
+    slow = Image(slow_data, contrast_limits=(100, 160))
+    fast_visual = setup_viewer_for_async_slicing(viewer, fast)
+    slow_visual = setup_viewer_for_async_slicing(viewer, slow)
+    dims = viewer.dims.model_copy(update={'point': (2, 0, 0)})
+
+    with slow_data.lock:
+        viewer._layer_slicer.submit(layers=[fast, slow], dims=dims)
+        wait_until_vispy_image_data_equal(qtbot, fast_visual, data[2])
+        assert fast.loaded
+        assert not slow.loaded
+    wait_until_vispy_image_data_equal(qtbot, slow_visual, data[2] + 100)
+    assert slow.loaded
 
 
 def test_callback_emitting_signal_of_deleted_qobject_is_disconnected(qapp):
