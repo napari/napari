@@ -57,6 +57,9 @@ class ExperimentalSettings(EventedSettings):
             'in parallel. This helps with data sources that serve reads in '
             'parallel, such as object stores, and makes slices older on '
             'sources that serve one read at a time, such as HDF5 files. '
+            'Slices of Dask data with many chunks are read one at a time, '
+            "because one of them already keeps all of Dask's slicing "
+            'threads busy. '
             'Applies to newly opened viewers.'
         ),
     )

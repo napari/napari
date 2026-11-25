@@ -1,5 +1,6 @@
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import ExitStack
 from dataclasses import dataclass
 from threading import Event, RLock, current_thread, main_thread
 from types import SimpleNamespace
@@ -10,7 +11,7 @@ import pytest
 
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
-from napari.components._layer_slicer import _LayerSlicer
+from napari.components._layer_slicer import _chunk_count, _LayerSlicer
 from napari.layers import Image, Labels, Points
 from napari.layers.base._slice import _next_request_id
 from napari.utils.notifications import notification_manager
@@ -41,6 +42,28 @@ class FakeSliceRequest:
         self.started.set()
         with self.lock:
             return FakeSliceResponse(id=self.id)
+
+
+@dataclass(frozen=True)
+class ChunkedSliceRequest(FakeSliceRequest):
+    """A request that reads ``chunks`` Dask chunks."""
+
+    chunks: int = 1
+
+    def chunk_count(self) -> int:
+        return self.chunks
+
+
+def _read_chunks(layer: 'FakeAsyncLayer', chunks: int):
+    """Make the layer's requests read ``chunks`` chunks."""
+
+    def make_slice_request(dims):
+        layer._slice_request_count += 1
+        return ChunkedSliceRequest(
+            layer._slice_request_count, layer.lock, layer.started, chunks
+        )
+
+    return make_slice_request
 
 
 class FakeAsyncLayer:
@@ -463,6 +486,7 @@ def test_layer_reads_one_request_at_a_time(layer_slicer, monkeypatch):
     monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
     with ThreadPoolExecutor(max_workers=2) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
+        monkeypatch.setattr(layer_slicer, '_max_reads', 2)
         with layer.lock:
             [first] = layer_slicer.submit(layers=[layer], dims=dims)
             assert started[0].wait(DEFAULT_TIMEOUT_SECS)
@@ -478,6 +502,88 @@ def test_layer_reads_one_request_at_a_time(layer_slicer, monkeypatch):
     assert _wait_for_response(first)[layer].id == 1
     assert _wait_for_response(second)[layer].id == 3
     assert not started[1].is_set()
+
+
+def test_read_of_many_chunks_runs_alone(layer_slicer, monkeypatch):
+    """A read of as many chunks as the shared Dask pool has threads keeps
+    it busy, so the next layer waits for it instead of queueing in the pool
+    behind it."""
+    heavy, light = FakeAsyncLayer(), FakeAsyncLayer()
+    monkeypatch.setattr(heavy, '_make_slice_request', _read_chunks(heavy, 8))
+    monkeypatch.setattr(light, '_make_slice_request', _read_chunks(light, 1))
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        monkeypatch.setattr(layer_slicer, '_executor', executor)
+        monkeypatch.setattr(layer_slicer, '_max_reads', 2)
+        monkeypatch.setattr(layer_slicer, '_chunk_budget', 8)
+        with heavy.lock:
+            _, light_read = layer_slicer.submit(
+                layers=[heavy, light], dims=Dims()
+            )
+            assert heavy.started.wait(DEFAULT_TIMEOUT_SECS)
+            assert not light.started.wait(0.2)
+        assert _wait_for_response(light_read)[light].id == 1
+
+
+def test_reads_of_few_chunks_share_the_pool(layer_slicer, monkeypatch):
+    """Reads start while those in flight leave threads of the shared pool
+    idle, up to the read limit."""
+    layers = [FakeAsyncLayer() for _ in range(4)]
+    for layer in layers:
+        monkeypatch.setattr(
+            layer, '_make_slice_request', _read_chunks(layer, 3)
+        )
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        monkeypatch.setattr(layer_slicer, '_executor', executor)
+        monkeypatch.setattr(layer_slicer, '_max_reads', 4)
+        monkeypatch.setattr(layer_slicer, '_chunk_budget', 7)
+        with ExitStack() as stack:
+            for layer in layers:
+                stack.enter_context(layer.lock)
+            futures = layer_slicer.submit(layers=layers, dims=Dims())
+            for layer in layers[:3]:
+                assert layer.started.wait(DEFAULT_TIMEOUT_SECS)
+            assert not layers[3].started.wait(0.2)
+        for layer, future in zip(layers, futures, strict=True):
+            assert _wait_for_response(future)[layer].id == 1
+
+
+def test_read_without_dask_chunks_passes_a_full_pool(
+    layer_slicer, monkeypatch
+):
+    """A read of other data doesn't use the shared Dask pool, so it starts
+    while a read of many chunks fills the pool, ahead of a Dask read that
+    waits for it."""
+    heavy, light, other = FakeAsyncLayer(), FakeAsyncLayer(), FakeAsyncLayer()
+    monkeypatch.setattr(heavy, '_make_slice_request', _read_chunks(heavy, 8))
+    monkeypatch.setattr(light, '_make_slice_request', _read_chunks(light, 1))
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        monkeypatch.setattr(layer_slicer, '_executor', executor)
+        monkeypatch.setattr(layer_slicer, '_max_reads', 3)
+        monkeypatch.setattr(layer_slicer, '_chunk_budget', 8)
+        with heavy.lock:
+            _, light_read, other_read = layer_slicer.submit(
+                layers=[heavy, light, other], dims=Dims()
+            )
+            assert heavy.started.wait(DEFAULT_TIMEOUT_SECS)
+            assert _wait_for_response(other_read)[other].id == 1
+            assert not light.started.is_set()
+        assert _wait_for_response(light_read)[light].id == 1
+
+
+@pytest.mark.parametrize(
+    ('request_', 'expected'),
+    [
+        (object(), 0),
+        (SimpleNamespace(chunk_count=lambda: 0), 0),
+        (SimpleNamespace(chunk_count=lambda: 12), 12),
+        (SimpleNamespace(chunk_count=lambda: 1 / 0), 1),
+    ],
+    ids=['no count', 'zero', 'twelve', 'error'],
+)
+def test_chunk_count_of_request(request_, expected):
+    """Requests without a chunk count read no Dask chunks. One whose count
+    fails counts as one, so it waits for the pool like a Dask read."""
+    assert _chunk_count(request_) == expected
 
 
 def test_cancelled_request_leaves_no_second_reader(layer_slicer, monkeypatch):
@@ -498,6 +604,7 @@ def test_cancelled_request_leaves_no_second_reader(layer_slicer, monkeypatch):
     monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
     with ThreadPoolExecutor(max_workers=2) as executor:
         monkeypatch.setattr(layer_slicer, '_executor', executor)
+        monkeypatch.setattr(layer_slicer, '_max_reads', 2)
         layer.lock.acquire()
         for blocker in blockers:
             blocker.lock.acquire()
@@ -704,3 +811,79 @@ def _wait_for_response(
         if layer := weak_layer():
             result[layer] = response
     return result
+
+
+class _GatedExecutor(ThreadPoolExecutor):
+    """Holds submitted calls until the gate opens."""
+
+    def __init__(self, max_workers: int) -> None:
+        super().__init__(max_workers=max_workers)
+        self.gate = Event()
+
+    def submit(self, fn, /, *args, **kwargs):
+        def run():
+            self.gate.wait(DEFAULT_TIMEOUT_SECS)
+            return fn(*args, **kwargs)
+
+        return super().submit(run)
+
+
+def _replace_before_claim(layer_slicer, monkeypatch, admitted, read):
+    """Admit a read of ``admitted`` chunks and replace its request by one of
+    ``read`` chunks before a worker claims it."""
+    layer = FakeAsyncLayer()
+    counts = iter([admitted, read])
+
+    def make_slice_request(dims):
+        layer._slice_request_count += 1
+        return ChunkedSliceRequest(
+            layer._slice_request_count, layer.lock, layer.started, next(counts)
+        )
+
+    monkeypatch.setattr(layer, '_make_slice_request', make_slice_request)
+    executor = _GatedExecutor(max_workers=2)
+    monkeypatch.setattr(layer_slicer, '_executor', executor)
+    monkeypatch.setattr(layer_slicer, '_max_reads', 2)
+    monkeypatch.setattr(layer_slicer, '_chunk_budget', 8)
+    [first] = layer_slicer.submit(layers=[layer], dims=Dims())
+    [second] = layer_slicer.submit(layers=[layer], dims=Dims())
+    assert second is first
+    return layer, first, executor.gate
+
+
+def test_replaced_request_counts_the_chunks_it_reads(
+    layer_slicer, monkeypatch
+):
+    """A request that replaces an admitted one before a worker claims it
+    fills the shared pool, so the next Dask read waits for it."""
+    light = FakeAsyncLayer()
+    monkeypatch.setattr(light, '_make_slice_request', _read_chunks(light, 1))
+    heavy, heavy_read, gate = _replace_before_claim(
+        layer_slicer, monkeypatch, admitted=1, read=8
+    )
+    with heavy.lock:
+        gate.set()
+        assert heavy.started.wait(DEFAULT_TIMEOUT_SECS)
+        [light_read] = layer_slicer.submit(layers=[light], dims=Dims())
+        assert not light.started.wait(0.2)
+    assert _wait_for_response(heavy_read)[heavy].id == 2
+    assert _wait_for_response(light_read)[light].id == 1
+
+
+def test_replaced_request_of_fewer_chunks_frees_the_pool(
+    layer_slicer, monkeypatch
+):
+    """A request of few chunks that replaces an admitted one of many lets a
+    waiting Dask read start once a worker claims it."""
+    light = FakeAsyncLayer()
+    monkeypatch.setattr(light, '_make_slice_request', _read_chunks(light, 1))
+    heavy, heavy_read, gate = _replace_before_claim(
+        layer_slicer, monkeypatch, admitted=8, read=1
+    )
+    with heavy.lock:
+        [light_read] = layer_slicer.submit(layers=[light], dims=Dims())
+        gate.set()
+        assert heavy.started.wait(DEFAULT_TIMEOUT_SECS)
+        assert light.started.wait(DEFAULT_TIMEOUT_SECS)
+    assert _wait_for_response(heavy_read)[heavy].id == 2
+    assert _wait_for_response(light_read)[light].id == 1

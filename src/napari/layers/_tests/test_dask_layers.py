@@ -436,6 +436,50 @@ def test_dask_slice_task_can_compute_dask():
     assert np.all(response.image.raw == 0)
 
 
+@pytest.mark.parametrize(
+    ('index', 'expected'),
+    [
+        ((4, slice(None), slice(None)), 16),
+        ((slice(4, 7), slice(None), slice(None)), 32),
+        ((4, slice(25, 35), slice(0, 10)), 2),
+        ((4, slice(None)), 16),
+        ((4, slice(50, 50), slice(None)), 0),
+    ],
+    ids=['plane', 'thick slice', 'tile', 'short index', 'empty'],
+)
+@pytest.mark.parametrize('wrap', [None, xr.DataArray], ids=['dask', 'xarray'])
+def test_dask_chunk_count(index, expected, wrap):
+    data = da.zeros((10, 100, 100), chunks=(3, 30, 30))
+    if wrap is not None:
+        data = wrap(data)
+    assert _dask_utils._dask_chunk_count(data, index) == expected
+
+
+def test_dask_chunk_count_of_other_data():
+    assert _dask_utils._dask_chunk_count(np.zeros((4, 4)), (0,)) == 0
+
+
+def test_slice_request_counts_dask_chunks():
+    data = da.zeros((10, 100, 100), chunks=(3, 30, 30))
+    request = layers.Image(data)._slicing_state._make_slice_request(
+        Dims(ndim=3, point=(4, 0, 0))
+    )
+    assert request.chunk_count() == 16
+
+    pyramid = [
+        da.zeros((8, 1024, 1024), chunks=(1, 256, 256)),
+        da.zeros((8, 512, 512), chunks=(1, 256, 256)),
+    ]
+    layer = layers.Image(pyramid, multiscale=True)
+    # The displayed tile, in pixels of the level.
+    for level, corner, chunks in ((0, 1023, 16), (0, 300, 4), (1, 511, 4)):
+        layer._data_level = level
+        layer.corner_pixels = np.array([[0, 0, 0], [0, corner, corner]])
+        request = layer._slicing_state._make_slice_request(Dims(ndim=3))
+        assert request.data_level == level
+        assert request.chunk_count() == chunks
+
+
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
     # we start with a cache...but then intentionally turn it off per-layer.

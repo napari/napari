@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import weakref
+from collections import deque
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -20,6 +21,7 @@ from typing import (
 
 from napari.layers import Layer
 from napari.settings import get_settings
+from napari.utils._dask_utils import _slice_pool_size
 from napari.utils.events.event import EmitterGroup, Event
 
 if TYPE_CHECKING:
@@ -85,6 +87,17 @@ class _SliceTask:
     future: Future[dict] = field(default_factory=Future)
 
 
+def _chunk_count(request: _SliceRequest) -> int:
+    """Dask chunks a request reads, 0 for other data, 1 if counting fails."""
+    count = getattr(request, 'chunk_count', None)
+    if count is None:
+        return 0
+    try:
+        return max(0, count())
+    except Exception:  # noqa: BLE001 - the read itself reports errors
+        return 1
+
+
 class _LayerSlicer:
     """
     High level class to control the creation of a slice (via a slice request),
@@ -117,11 +130,19 @@ class _LayerSlicer:
         # The condition protects queued requests and unfinished tasks. Once a
         # worker takes a task out of _pending, its request is immutable.
         # A layer has at most one read in flight, so its slices are read and
-        # delivered in request order. Workers parallelize across layers.
+        # delivered in request order. Workers parallelize across layers, as
+        # far as the shared Dask pool allows.
         self._tasks_changed = Condition()
         self._pending: dict[weakref.ReferenceType[Layer], _SliceTask] = {}
         self._reading: set[weakref.ReferenceType[Layer]] = set()
         self._tasks: dict[Future[dict], _SliceTask] = {}
+        # Layers with a waiting request and no read in flight, in turn order.
+        self._ready: deque[weakref.ReferenceType[Layer]] = deque()
+        self._max_reads = settings.async_slicing_workers
+        # Dask chunks of each read in flight. Another read starts only while
+        # they leave threads of Dask's shared slicing pool idle.
+        self._reading_chunks: dict[weakref.ReferenceType[Layer], int] = {}
+        self._chunk_budget = _slice_pool_size()
         # Latest request presented per layer, used only on the main thread.
         # The order of presented slices belongs to the slicer's view, while
         # edits invalidate slices on the layer itself, for every view.
@@ -283,7 +304,8 @@ class _LayerSlicer:
             self._pending[weak_layer] = task
             self._tasks[task.future] = task
             if weak_layer not in self._reading:
-                self._executor.submit(self._slice_layer, weak_layer)
+                self._ready.append(weak_layer)
+                self._dispatch()
         task.future.add_done_callback(self._on_slice_done)
         return task.future
 
@@ -324,18 +346,49 @@ class _LayerSlicer:
         self.events.ready.disconnect()
         self.events.failed.disconnect()
 
+    def _dispatch(self) -> None:
+        """Hand ready layers to idle workers in turn."""
+        index = 0
+        while (
+            index < len(self._ready)
+            and len(self._reading) < self._max_reads
+            and not self._shutdown
+        ):
+            weak_layer = self._ready[index]
+            task = self._pending.get(weak_layer)
+            # A cancelled request can leave its layer queued twice.
+            if weak_layer in self._reading or task is None:
+                del self._ready[index]
+                continue
+            # A read of many chunks already fills the pool, and another read
+            # of Dask chunks would only queue behind it, older by the time it
+            # lands. Reads of other data don't use the pool and pass it.
+            chunks = _chunk_count(task.request)
+            if (
+                chunks
+                and sum(self._reading_chunks.values()) >= self._chunk_budget
+            ):
+                index += 1
+                continue
+            del self._ready[index]
+            self._reading.add(weak_layer)
+            self._reading_chunks[weak_layer] = chunks
+            self._executor.submit(self._slice_layer, weak_layer)
+
     def _slice_layer(self, weak_layer: weakref.ReferenceType[Layer]) -> None:
         """Claim the layer's latest pending request and slice it."""
         with self._tasks_changed:
-            # A worker scheduled for a cancelled request can find the layer
-            # reading a newer one. That read hands on the next request.
-            if weak_layer in self._reading:
-                return
             task = self._pending.pop(weak_layer, None)
             if task is None or not task.future.set_running_or_notify_cancel():
+                self._release(weak_layer)
                 return
-            self._reading.add(weak_layer)
             request = task.request
+            # A newer request can replace the admitted one before a worker
+            # claims it, so count the chunks of the request it reads.
+            chunks = _chunk_count(request)
+            if chunks != self._reading_chunks[weak_layer]:
+                self._reading_chunks[weak_layer] = chunks
+                self._dispatch()
         try:
             result = {}
             if weak_layer() is not None:
@@ -353,9 +406,14 @@ class _LayerSlicer:
     ) -> None:
         """Hand the layer's next request, if any, to a worker."""
         with self._tasks_changed:
-            self._reading.discard(weak_layer)
-            if weak_layer in self._pending and not self._shutdown:
-                self._executor.submit(self._slice_layer, weak_layer)
+            self._release(weak_layer)
+
+    def _release(self, weak_layer: weakref.ReferenceType[Layer]) -> None:
+        self._reading.discard(weak_layer)
+        self._reading_chunks.pop(weak_layer, None)
+        if weak_layer in self._pending:
+            self._ready.append(weak_layer)
+        self._dispatch()
 
     def _on_slice_done(self, future: Future[dict]) -> None:
         with self._tasks_changed:

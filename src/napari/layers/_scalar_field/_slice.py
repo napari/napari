@@ -11,7 +11,7 @@ from napari.layers.base._slice import _next_request_id
 from napari.layers.image._image_constants import ImageProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
-from napari.utils._dask_utils import _asarray_for_slicing
+from napari.utils._dask_utils import _asarray_for_slicing, _dask_chunk_count
 from napari.utils._dtype import normalize_dtype
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -344,14 +344,8 @@ class _ScalarFieldSliceRequest:
             scale[d] = self.downsample_factors[self.data_level][d]
 
         translate = np.zeros(self.slice_input.ndim)
-        disp_slice = [slice(None)] * self.slice_input.ndim
+        disp_slice = self._tile_slice()
         if self.slice_input.ndisplay == 2:
-            for d in self.slice_input.displayed:
-                disp_slice[d] = slice(
-                    self.corner_pixels[0, d],
-                    self.corner_pixels[1, d] + 1,
-                    1,
-                )
             translate = self.corner_pixels[0] * scale
 
         # This only needs to be a ScaleTranslate but different types
@@ -397,6 +391,38 @@ class _ScalarFieldSliceRequest:
             slice_input=self.slice_input,
             request_id=self.id,
         )
+
+    def chunk_count(self) -> int:
+        """Number of Dask chunks the displayed data reads, 0 for other data.
+
+        The slicer starts no more reads of Dask data than the threads of
+        Dask's shared pool can serve at once.
+        """
+        if self._slice_out_of_bounds():
+            return 0
+        if not self.multiscale:
+            return _dask_chunk_count(self.data, self._indices(self.data_slice))
+        level = self.data_level
+        data_slice = self._thick_slice_at_level(level)
+        if level == self.thumbnail_level and self._thumbnail_level_is_plane():
+            return _dask_chunk_count(
+                self.data[level], self._indices(data_slice)
+            )
+        return _dask_chunk_count(
+            self.data[level], self._indices(data_slice, self._tile_slice())
+        )
+
+    def _tile_slice(self) -> list[slice]:
+        """Slices of the displayed tile; full extent outside 2D display."""
+        disp_slice = [slice(None)] * self.slice_input.ndim
+        if self.slice_input.ndisplay == 2:
+            for d in self.slice_input.displayed:
+                disp_slice[d] = slice(
+                    self.corner_pixels[0, d],
+                    self.corner_pixels[1, d] + 1,
+                    1,
+                )
+        return disp_slice
 
     def _thumbnail_level_is_plane(self) -> bool:
         """Whether the displayed extent of the thumbnail level is at most 2D.

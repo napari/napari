@@ -119,6 +119,30 @@ def _slice_scheduler() -> Callable:
     return partial(get_async, _SLICE_POOL.submit, _threads_per_slice())
 
 
+def _dask_chunk_count(data: Any, index: tuple) -> int:
+    """Number of Dask chunks that ``data[index]`` reads, or 0 for other data."""
+    chunks = getattr(data, 'chunks', None)
+    if (
+        not dask.is_dask_collection(data)
+        or not chunks
+        or not isinstance(chunks[0], tuple)
+    ):
+        return 0
+    count = 1
+    for dim, sizes in enumerate(chunks):
+        key = index[dim] if dim < len(index) else slice(None)
+        if not isinstance(key, slice):
+            continue  # an integer reads one chunk along this axis
+        edges = np.cumsum((0, *sizes))
+        start, stop, _ = key.indices(int(edges[-1]))
+        if stop <= start:
+            return 0
+        first = np.searchsorted(edges, start, side='right') - 1
+        last = np.searchsorted(edges, stop - 1, side='right') - 1
+        count *= int(last - first + 1)
+    return count
+
+
 def _is_local_scheduler(scheduler: Callable) -> bool:
     """Whether ``scheduler`` is Dask's local scheduler, which takes callbacks.
 
