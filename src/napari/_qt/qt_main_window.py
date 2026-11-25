@@ -1787,7 +1787,7 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.

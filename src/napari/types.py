@@ -5,6 +5,7 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     NewType,
     Optional,
     TypeAlias,
@@ -47,6 +48,7 @@ __all__ = [
     'ReaderFunction',
     'SampleData',
     'SampleDict',
+    'ScreenshotArray',
     'ShapesData',
     'SurfaceData',
     'TracksData',
@@ -74,6 +76,10 @@ Matrix2D: TypeAlias = (
     Sequence[Sequence[float]]
     | np.ndarray[tuple[int, int], np.dtype[np.number]]
 )
+# An RGBA screenshot of shape (height, width, 4).
+ScreenshotArray: TypeAlias = np.ndarray[
+    tuple[int, int, Literal[4]], np.dtype[np.uint8]
+]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.

@@ -17,6 +17,7 @@ if typing.TYPE_CHECKING:
 
     import numpy as np
 
+    from napari.types import ScreenshotArray
     from napari.window import Window
 
 
@@ -47,7 +48,7 @@ class Viewer(ViewerModel):
         self,
         *,
         title: str = 'napari',
-        ndisplay: int = 2,
+        ndisplay: Literal[2, 3] = 2,
         order: Sequence[int] = (),
         axis_labels: Sequence[str] = (),
         show: bool = True,
@@ -134,7 +135,7 @@ class Viewer(ViewerModel):
         *,
         scale_factor: float = 1,
         flash: bool = False,
-    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
+    ) -> ScreenshotArray:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
@@ -184,9 +185,9 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
-    ) -> list[np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]]:
+    ) -> list[ScreenshotArray]:
         """Export the given rectangular rois to specified file paths.
 
         Iteratively take a screenshot of each given roi. Note that 3D rois
@@ -195,7 +196,7 @@ class Viewer(ViewerModel):
 
         Parameters
         ----------
-        rois: numpy array
+        rois: list[np.ndarray]
             A list of arrays with each having shape (4, 2) representing a
             rectangular roi.
         paths: str, Path, list[str, Path], optional
@@ -231,7 +232,7 @@ class Viewer(ViewerModel):
         scale: float | None = None,
         canvas_only: bool = True,
         flash: bool = False,
-    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
+    ) -> ScreenshotArray:
         """Take currently displayed screen and convert to an image array.
 
         Parameters

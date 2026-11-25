@@ -1433,7 +1433,7 @@ class QtViewer(QSplitter):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
     ) -> list[np.ndarray]:
         """Export the given rectangular rois to specified file paths.
@@ -1475,7 +1475,7 @@ class QtViewer(QSplitter):
             )
         if (
             paths is not None
-            and isinstance(paths, list)
+            and not isinstance(paths, str | Path)
             and len(paths) != len(rois)
         ):
             raise ValueError(
