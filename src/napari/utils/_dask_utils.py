@@ -1,19 +1,28 @@
 """Dask cache utilities."""
 
+import atexit
 import collections.abc
 import contextlib
+import os
 from collections.abc import Callable, Generator, Hashable
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from threading import Lock
 from typing import Any
 
 import cachey
 import dask
+import dask.threaded
 import numpy as np
 from dask.base import get_scheduler, named_schedulers
 from dask.cache import Cache
 from dask.callbacks import Callback
 from dask.local import get_async
+
+try:
+    from dask.threaded import ContextAwareThreadPoolExecutor as _PoolExecutor
+except ImportError:  # older dask
+    _PoolExecutor = ThreadPoolExecutor
 
 _CACHE_LOCK = Lock()
 
@@ -52,6 +61,8 @@ _FUSION_USERS = 0
 # Caches napari registered globally for code that computes inside a layer's
 # dask_optimized_slicing context. Slices use their own instead.
 _REGISTERED_CACHES: set[tuple] = set()
+_SLICE_POOL: ThreadPoolExecutor | None = None
+_SLICE_POOL_LOCK = Lock()
 
 DaskIndexer = Callable[
     [], contextlib.AbstractContextManager[tuple[dict, Cache | None] | None]
@@ -76,6 +87,36 @@ def _disable_task_fusion() -> Generator[dict, None, None]:
             _FUSION_USERS -= 1
             if _FUSION_USERS == 0:
                 _FUSION_CONTEXT.close()
+
+
+def _threads_per_slice() -> int:
+    """Tasks one slice keeps in flight: Python's default thread pool size.
+
+    Called from a thread other than the main one, Dask creates a pool of this
+    size for each calling thread.
+    """
+    cpus = getattr(os, 'process_cpu_count', os.cpu_count)() or 1
+    return min(32, cpus + 4)
+
+
+def _slice_pool_size() -> int:
+    """Threads of the pool shared by all slices on Dask's threaded scheduler."""
+    return 2 * _threads_per_slice()
+
+
+def _slice_scheduler() -> Callable:
+    """Dask's local scheduler on the pool shared by all slices.
+
+    Each slice keeps at most as many tasks in flight as Dask's threaded
+    scheduler would give it alone. Dask schedules a computation on an
+    Executor passed as ``scheduler`` the same way.
+    """
+    global _SLICE_POOL
+    with _SLICE_POOL_LOCK:
+        if _SLICE_POOL is None:
+            _SLICE_POOL = _PoolExecutor(_slice_pool_size())
+            atexit.register(_SLICE_POOL.shutdown)
+    return partial(get_async, _SLICE_POOL.submit, _threads_per_slice())
 
 
 def _is_local_scheduler(scheduler: Callable) -> bool:
@@ -136,6 +177,15 @@ def _asarray_for_slicing(data: Any, cache: bool | None) -> np.ndarray:
     kwargs = {}
     if _is_local_scheduler(scheduler):
         kwargs['callbacks'] = _slice_callbacks(cache)
+    # Otherwise each slicing worker would bring a pool of its own. Slices
+    # share the threads, unless the user chose a pool or a number of threads
+    # for Dask.
+    if (
+        scheduler is dask.threaded.get
+        and dask.config.get('pool', None) is None
+        and dask.config.get('num_workers', None) is None
+    ):
+        scheduler = _slice_scheduler()
     (result,) = dask.compute(
         collection, scheduler=scheduler, optimize_graph=False, **kwargs
     )

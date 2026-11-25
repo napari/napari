@@ -1,5 +1,6 @@
+import time
 from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier, Event
+from threading import Barrier, Event, Lock, current_thread
 
 import dask
 import dask.array as da
@@ -341,6 +342,98 @@ def test_dask_slicing_preserves_custom_scheduler():
 
     assert len(calls) == 1
     assert np.all(response.image.raw == 1)
+
+
+def _recording_blocks(shape, chunk):
+    """A Dask array whose chunk tasks record their threads and overlap."""
+    record = {'threads': set(), 'running': 0, 'peak': 0}
+    lock = Lock()
+
+    def block(x):
+        with lock:
+            record['threads'].add(current_thread())
+            record['running'] += 1
+            record['peak'] = max(record['peak'], record['running'])
+        time.sleep(0.002)
+        with lock:
+            record['running'] -= 1
+        return x
+
+    data = da.zeros(shape, chunks=chunk, dtype=np.uint8).map_blocks(
+        block, dtype=np.uint8
+    )
+    return data, record
+
+
+def _slice_requests(data, record, count):
+    requests = [
+        layers.Image(data, cache=False)._slicing_state._make_slice_request(
+            Dims(ndim=2)
+        )
+        for _ in range(count)
+    ]
+    # Creating a layer reads the data once; record only the requests.
+    record['threads'].clear()
+    record['peak'] = 0
+    return requests
+
+
+def test_dask_slices_share_one_pool():
+    """Slices read by several workers run their chunk tasks in one pool, each
+    with as many tasks in flight as Dask would give it alone."""
+    data, record = _recording_blocks((128, 128), (4, 4))
+    requests = _slice_requests(data, record, 3)
+
+    with ThreadPoolExecutor(max_workers=3) as workers:
+        for future in [workers.submit(request) for request in requests]:
+            assert np.all(future.result(timeout=30).image.raw == 0)
+
+    shared_threads = set(_dask_utils._SLICE_POOL._threads)
+    assert record['threads'] <= shared_threads
+    assert len(shared_threads) <= _dask_utils._slice_pool_size()
+
+    [request] = _slice_requests(data, record, 1)
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        workers.submit(request).result(timeout=30)
+    assert record['peak'] <= _dask_utils._threads_per_slice()
+
+
+@pytest.mark.parametrize(
+    'option', ['pool', 'num_workers'], ids=['pool', 'num_workers']
+)
+def test_dask_slicing_keeps_configured_threads(option):
+    """A pool or number of threads chosen for Dask replaces the shared pool."""
+    data, record = _recording_blocks((16, 16), (4, 4))
+    [request] = _slice_requests(data, record, 1)
+
+    with ThreadPoolExecutor(2, thread_name_prefix='user-pool') as pool:
+        value = pool if option == 'pool' else 2
+        with dask.config.set({option: value}):
+            ThreadPoolExecutor(1).submit(request).result(timeout=30)
+
+    shared = _dask_utils._SLICE_POOL
+    assert not record['threads'] & set(shared._threads if shared else ())
+    if option == 'pool':
+        assert all(t.name.startswith('user-pool') for t in record['threads'])
+
+
+def test_dask_slice_task_can_compute_dask():
+    """A chunk task that computes Dask itself gets its own threads, so it
+    can't wait on the shared pool it occupies."""
+    inner = da.ones((8, 8), chunks=(2, 2))
+
+    def block(x):
+        return x + inner.sum().compute().astype(x.dtype) * 0
+
+    data = da.zeros((256, 256), chunks=(4, 4), dtype=np.uint8).map_blocks(
+        block, dtype=np.uint8
+    )
+    request = layers.Image(
+        data, cache=False
+    )._slicing_state._make_slice_request(Dims(ndim=2))
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        response = workers.submit(request).result(timeout=60)
+    assert np.all(response.image.raw == 0)
 
 
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
