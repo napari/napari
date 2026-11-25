@@ -1063,3 +1063,13 @@ def test_read_limit_of_one_with_one_layer_does_not_compare():
     reads.run(parallel, 500)
     assert reads.read_limit._settled == 1
     assert reads.read_limit._candidate is None
+
+
+def test_read_limit_rechecks_a_new_choice_soon():
+    """A choice made while the storage looked serial, such as cold caches
+    at first, is compared again long before the full period."""
+    reads = SimulatedReads(4)
+    reads.run(serial, 150)
+    assert reads.read_limit._settled == 1
+    reads.run(parallel, 200)
+    assert reads.read_limit._settled == 4

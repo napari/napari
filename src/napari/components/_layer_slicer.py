@@ -121,11 +121,17 @@ class _ReadLimit:
 
     Starting from two reads, the limit is compared with double the number,
     up to the layers that have work, and if that does not help, with half,
-    and moves whenever the other predicts an age shorter by ``MIN_GAIN``. The two limits take turns, so
-    both see the same part of the workload, and only reads that started with
-    every slot busy and finished in their turn count. Between comparisons,
-    the limit is compared again after ``PERIOD`` reads, or sooner when reads
-    at the chosen limit clearly slow down or speed up.
+    and moves whenever the other predicts an age shorter by ``MIN_GAIN``.
+    The two limits take turns, so both see the same part of the workload,
+    and only reads that started with every slot busy and finished in their
+    turn count.
+
+    A round of comparisons that changed the limit, or the first one, is
+    followed by another after ``FIRST_PERIOD`` reads, so a choice made on
+    unrepresentative reads, such as the first ones from cold storage, is
+    soon revisited. Each round that keeps the limit doubles the wait, up to
+    ``PERIOD`` reads. Reads at the chosen limit that clearly slow down or
+    speed up start a round sooner.
 
     .NET's thread pool chooses its number of threads similarly, by comparing
     neighboring counts (PortableThreadPool.HillClimbing.cs in dotnet/runtime).
@@ -141,7 +147,8 @@ class _ReadLimit:
     MIN_GAIN = 0.05  # relative age improvement needed to change the limit
     SHIFT = 1.5  # change in read duration at the chosen limit that re-compares
     SHIFT_WINDOW = 32  # latest reads compared with all since the choice
-    PERIOD = 384  # completed reads at the chosen limit between comparisons
+    FIRST_PERIOD = 48  # completed reads before a new choice is compared again
+    PERIOD = 384  # most completed reads at the chosen limit between rounds
 
     def __init__(
         self, max_reads: int, clock: Callable[[], float] = time.perf_counter
@@ -164,6 +171,9 @@ class _ReadLimit:
         self._total = 0.0
         self._count = 0
         self._recent: deque[float] = deque(maxlen=self.SHIFT_WINDOW)
+        self._period = self.FIRST_PERIOD
+        self._rounds_held = -1  # rounds that kept the limit, -1 before any
+        self._round_from = self._settled
         if max_reads > 1:
             self._compare(1 if self._settled < max_reads else -1)
 
@@ -203,10 +213,11 @@ class _ReadLimit:
             down = -1 if self._settled > 1 else 0
             up = 1 if self._settled < self._ceiling() else down
             shift = self._shift(read)
-            if shift or self._reads >= self.PERIOD:
+            if shift or self._reads >= self._period:
                 # Slower reads suggest the storage is busy: try fewer first.
                 step = down if shift > 0 and down else up
                 if step:
+                    self._round_from = self._settled
                     self._compare(step)
             return
         if read.full and read.turn == self._turn:
@@ -221,6 +232,8 @@ class _ReadLimit:
             # Too few reads with every slot busy: the slots outnumber the
             # work, so there is nothing to learn about the storage.
             self._decide(None)
+        if self._candidate is None:
+            self._end_round()
 
     def _shift(self, read: _Read) -> int:
         """1 or -1 if reads at the chosen limit got clearly slower or faster.
@@ -291,6 +304,14 @@ class _ReadLimit:
         if step > 0:
             return min(2 * limit, self._ceiling())
         return 1 << ((limit - 1).bit_length() - 1)
+
+    def _end_round(self) -> None:
+        """Set the reads until the next round of comparisons."""
+        if self._settled != self._round_from or self._rounds_held < 0:
+            self._rounds_held = 0
+        else:
+            self._rounds_held += 1
+        self._period = min(self.FIRST_PERIOD << self._rounds_held, self.PERIOD)
 
     def _compare(self, step: int) -> None:
         self._candidate = self._neighbor(self._settled, step)
