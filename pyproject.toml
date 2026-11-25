@@ -357,6 +357,7 @@ write_to = "src/napari/_version.py"
 fallback_version = "0.7.1.dev0"
 
 [tool.uv]
+required-version = ">=0.13.4"
 no-build-package = ["numpy"]
 required-environments = [
     "sys_platform == 'win32' and platform_machine == 'AMD64' and python_version == '3.14'",
