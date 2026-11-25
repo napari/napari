@@ -120,11 +120,11 @@ class _ReadLimit:
     with more slots and would pull ``d`` down.
 
     Starting from two reads, the limit is compared with double the number,
-    up to the layers that have work, and if that does not help, with half,
-    and moves whenever the other predicts an age shorter by ``MIN_GAIN``.
-    The two limits take turns, so both see the same part of the workload,
-    and only reads that started with every slot busy and finished in their
-    turn count.
+    up to the layers that have work, and if that does not help, with half.
+    The larger of the two must predict an age shorter by ``MIN_GAIN``, since
+    every read in flight also costs the main thread. The two limits take
+    turns, so both see the same part of the workload, and only reads that
+    started with every slot busy and finished in their turn count.
 
     A round of comparisons that changed the limit, or the first one, is
     followed by another after ``FIRST_PERIOD`` reads, so a choice made on
@@ -144,7 +144,7 @@ class _ReadLimit:
     # difference doesn't stand out from the spread of read durations.
     MAX_WINDOW = 48
     CONFIDENCE = 1.0  # standard errors between the estimate and the threshold
-    MIN_GAIN = 0.05  # relative age improvement needed to change the limit
+    MIN_GAIN = 0.05  # relative age improvement more reads must bring
     SHIFT = 1.5  # change in read duration at the chosen limit that re-compares
     SHIFT_WINDOW = 32  # latest reads compared with all since the choice
     FIRST_PERIOD = 48  # completed reads before a new choice is compared again
@@ -268,11 +268,12 @@ class _ReadLimit:
             return None
         mean_a, mean_b = max(fmean(a), 1e-9), max(fmean(b), 1e-9)
         m = self._layers / (len(a) + len(b))
-        # Log of the current limit's display age over the candidate's.
-        gain = math.log(
-            mean_a * (1 + m / (2 * n)) / (mean_b * (1 + m / (2 * c)))
-        )
-        margin = gain - math.log(1 + self.MIN_GAIN)
+        age_a = mean_a * (1 + m / (2 * n))
+        age_b = mean_b * (1 + m / (2 * c))
+        # Log of the smaller limit's display age over the larger one's, less
+        # the gain the larger one must bring.
+        smaller, larger = (age_a, age_b) if n < c else (age_b, age_a)
+        margin = math.log(smaller / larger) - math.log(1 + self.MIN_GAIN)
         # Standard error of the gain, from the relative spread of durations.
         spread = (
             variance(a) / mean_a**2 * (len(a) - 1)
@@ -284,7 +285,7 @@ class _ReadLimit:
             and min(len(a), len(b)) < self.MAX_WINDOW
         ):
             return None
-        return margin > 0
+        return (margin > 0) == (c > n)
 
     def _ceiling(self) -> int:
         """The most reads that can be busy, given the layers with work.

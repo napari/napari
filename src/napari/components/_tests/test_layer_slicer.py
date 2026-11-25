@@ -1073,3 +1073,18 @@ def test_read_limit_rechecks_a_new_choice_soon():
     assert reads.read_limit._settled == 1
     reads.run(parallel, 200)
     assert reads.read_limit._settled == 4
+
+
+def tie(limit):
+    """Durations at which two and four reads predict the same age."""
+    return 0.1 if limit <= 2 else 0.4 / 3
+
+
+def test_read_limit_prefers_fewer_reads_on_a_close_call():
+    """When more reads predict no fresher slices, the limit falls back to
+    fewer, which cost the main thread less."""
+    reads = SimulatedReads(4)
+    reads.run(parallel, 300)
+    assert reads.read_limit._settled == 4
+    reads.run(tie, 1000)
+    assert reads.read_limit._settled == 2
