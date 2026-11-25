@@ -27,6 +27,7 @@ from napari.layers.utils._slice_input import (
     _ThickNDAffineSlice,
     _ThickNDSlice,
     apply_units_to_transform,
+    units_conversion_factors,
 )
 from napari.layers.utils.layer_utils import (
     compute_multiscale_level_and_corners,
@@ -46,6 +47,8 @@ from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from napari.utils.transforms._units import UnitsLike
 
     from napari.components import Dims
 
@@ -890,6 +893,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         sampling_plane = self._make_sampling_plane(
             slice_input=self._slice_input,
             world_to_data=world_to_data,
+            world_units=self._units,
         )
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
@@ -932,6 +936,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         sampling_plane = self._make_sampling_plane(
             slice_input=slice_input,
             world_to_data=world_to_data,
+            world_units=dims.units,
         )
         return self._make_slice_request_internal(
             slice_input=slice_input,
@@ -944,6 +949,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         *,
         slice_input: _SliceInput,
         world_to_data: Affine,
+        world_units: tuple[UnitsLike, ...] | None,
     ) -> _ThickNDSlice | _ThickNDAffineSlice:
         # Multiscale affine slicing is not yet implemented
         if (
@@ -959,14 +965,24 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # All the heavy lifting is actually done upstream by _extent_world_augmented
         # as it directly gives us the size of the "bounding rectangle" containing the slice
         # in world coordinates.
-        extent = self.layer._extent_world_augmented[:, plane_axes]
+        factor = units_conversion_factors(self.layer.units, world_units)
+        extent_world = self.layer._extent_world_augmented * factor
+        extent = extent_world[:, plane_axes]
         span_world = extent[1] - extent[0]
 
-        # # Estimate how many data pixels correspond to one world unit on each
-        # # displayed axis so we do not undersample when world scale is small.
-        displayed_step_world = self.layer._extent_augmented.step[
-            list(plane_axes)
-        ]
+        # Moving a one unit world-space step along a tile axis moves the sampled data
+        # position by the corresponding column of the world_to_data linear matrix. 
+        # So the world-space step that moves a single data pixel can be obtained from 
+        # the inverse of the norm of the corresponding column in the matrix.
+        # The norms' units are ratios of data units over world units,
+        # and they also account for the coupling introduced by shears
+        # between displayed and non-displayed dimensions.
+        world_to_data_column_norms = np.linalg.norm(
+            world_to_data.linear_matrix, axis=0
+        )
+        displayed_step_world = 1.0 / world_to_data_column_norms[list(plane_axes)]
+
+        # Invert to get a density
         displayed_density = 1.0 / displayed_step_world
 
         span_in_samples = (
@@ -980,8 +996,9 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # This is essential to allow the slice to be correctly displayed on screen by Vispy.
         # `tile_to_world` contains:
         #   1. the top-left corner of the slice (not setting this not only makes the slice
-        #      be ill-centered, but some parts of it also do not display at all)
-        origin = np.array(self.layer._extent_world_augmented[0], dtype=float)
+        #      be ill-centered, but some parts of it also do not display at all). It also
+        #      also accounts for the units.
+        origin = np.array(extent_world[0], dtype=float)
         #   2. the information that is normally contained in _ThickNDSlice.point, i.e
         #      the position of the slider in the viewer (not setting this makes the sliders
         #      unresponsive)

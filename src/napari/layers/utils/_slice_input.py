@@ -299,3 +299,26 @@ def apply_units_to_transform(
         linear_matrix=new_linear,
         translate=data_to_world.translate,
     )
+
+
+def units_conversion_factors(
+    layer_units: Sequence[pint.Unit],
+    world_units: Sequence[pint.Unit] | None,
+) -> npt.NDArray:
+    """Return per-axis factors converting lengths from layer to world units,
+    e.g if the later is in um and the former in mm.
+    """
+    if world_units is None:
+        # World units can be None if layers have disagreeing units.
+        # Return 1s for now...
+        return np.ones(len(layer_units))
+
+    reg = pint.get_application_registry()
+    
+    factors = [
+        reg.get_base_units(layer_unit)[0] / reg.get_base_units(world_unit)[0]
+        for world_unit, layer_unit in zip(
+            world_units[-len(layer_units) :], layer_units, strict=True
+        )
+    ]
+    return np.array(factors)
