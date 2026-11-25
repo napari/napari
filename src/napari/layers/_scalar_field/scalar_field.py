@@ -48,9 +48,8 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from napari.utils.transforms._units import UnitsLike
-
     from napari.components import Dims
+    from napari.utils.transforms._units import UnitsLike
 
     PixelValue: TypeAlias = (
         np.number
@@ -971,8 +970,8 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         span_world = extent[1] - extent[0]
 
         # Moving a one unit world-space step along a tile axis moves the sampled data
-        # position by the corresponding column of the world_to_data linear matrix. 
-        # So the world-space step that moves a single data pixel can be obtained from 
+        # position by the corresponding column of the world_to_data linear matrix.
+        # So the world-space step that moves a single data pixel can be obtained from
         # the inverse of the norm of the corresponding column in the matrix.
         # The norms' units are ratios of data units over world units,
         # and they also account for the coupling introduced by shears
@@ -980,7 +979,9 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         world_to_data_column_norms = np.linalg.norm(
             world_to_data.linear_matrix, axis=0
         )
-        displayed_step_world = 1.0 / world_to_data_column_norms[list(plane_axes)]
+        displayed_step_world = (
+            1.0 / world_to_data_column_norms[list(plane_axes)]
+        )
 
         # Invert to get a density
         displayed_density = 1.0 / displayed_step_world

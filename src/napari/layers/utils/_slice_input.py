@@ -314,7 +314,7 @@ def units_conversion_factors(
         return np.ones(len(layer_units))
 
     reg = pint.get_application_registry()
-    
+
     factors = [
         reg.get_base_units(layer_unit)[0] / reg.get_base_units(world_unit)[0]
         for world_unit, layer_unit in zip(
