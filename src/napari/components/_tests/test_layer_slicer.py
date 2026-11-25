@@ -1032,6 +1032,13 @@ def test_read_limit_compares_again_when_reads_slow_down():
     assert reads.read_limit._settled == 1
 
 
+def test_read_limit_rises_to_layers_with_work():
+    """Between powers of two, the limit stops at the layers to read."""
+    reads = SimulatedReads(16, layers=6)
+    reads.run(parallel, 300)
+    assert reads.read_limit._settled == 6
+
+
 def test_read_limit_keeps_limit_without_enough_work():
     """With one layer to read, extra slots stay idle and teach nothing."""
     reads = SimulatedReads(4, layers=1)
@@ -1043,4 +1050,16 @@ def test_read_limit_of_one_does_not_compare():
     reads = SimulatedReads(1)
     reads.run(serial, 500)
     assert reads.read_limit.limit == 1
+    assert reads.read_limit._candidate is None
+
+
+def test_read_limit_of_one_with_one_layer_does_not_compare():
+    """Settled at one read, with one layer left to read, there is no other
+    limit to compare with."""
+    reads = SimulatedReads(4)
+    reads.run(serial, 300)
+    assert reads.read_limit._settled == 1
+    reads.layers = 1
+    reads.run(parallel, 500)
+    assert reads.read_limit._settled == 1
     assert reads.read_limit._candidate is None

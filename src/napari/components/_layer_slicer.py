@@ -120,8 +120,8 @@ class _ReadLimit:
     with more slots and would pull ``d`` down.
 
     Starting from two reads, the limit is compared with double the number,
-    and if that does not help, with half, and moves whenever the other
-    predicts an age shorter by ``MIN_GAIN``. The two limits take turns, so
+    up to the layers that have work, and if that does not help, with half,
+    and moves whenever the other predicts an age shorter by ``MIN_GAIN``. The two limits take turns, so
     both see the same part of the workload, and only reads that started with
     every slot busy and finished in their turn count. Between comparisons,
     the limit is compared again after ``PERIOD`` reads, or sooner when reads
@@ -157,6 +157,8 @@ class _ReadLimit:
         # Durations of measured reads per limit, and the layers they saw.
         self._durations: dict[int, list[float]] = {}
         self._layers = 0
+        # Layers reading or waiting when the latest read started.
+        self._busy = max_reads
         # Read durations at the chosen limit since it was chosen, and the
         # latest of them.
         self._total = 0.0
@@ -168,6 +170,7 @@ class _ReadLimit:
     def start(self, layers: int) -> _Read:
         """Record a read starting while ``layers`` layers read or wait."""
         self._active += 1
+        self._busy = layers
         read = _Read(
             self.limit,
             self._clock(),
@@ -195,13 +198,16 @@ class _ReadLimit:
         if self._candidate is None:
             if self.max_reads == 1:
                 return
-            up = 1 if self._settled < self.max_reads else -1
+            # Compare with more reads if more layers have work, else with
+            # fewer, if there are fewer.
+            down = -1 if self._settled > 1 else 0
+            up = 1 if self._settled < self._ceiling() else down
             shift = self._shift(read)
-            if shift:
+            if shift or self._reads >= self.PERIOD:
                 # Slower reads suggest the storage is busy: try fewer first.
-                self._compare(-1 if shift > 0 and self._settled > 1 else up)
-            elif self._reads >= self.PERIOD:
-                self._compare(up)
+                step = down if shift > 0 and down else up
+                if step:
+                    self._compare(step)
             return
         if read.full and read.turn == self._turn:
             self._durations.setdefault(read.limit, []).append(
@@ -267,6 +273,14 @@ class _ReadLimit:
             return None
         return margin > 0
 
+    def _ceiling(self) -> int:
+        """The most reads that can be busy, given the layers with work.
+
+        Slots beyond those layers stay idle, so a comparison with them never
+        sees every slot busy and learns nothing.
+        """
+        return max(1, min(self.max_reads, self._busy))
+
     def _neighbor(self, limit: int, step: int) -> int:
         """Double the limit, or halve it to a power of two.
 
@@ -275,7 +289,7 @@ class _ReadLimit:
         differ enough to tell apart quickly.
         """
         if step > 0:
-            return min(2 * limit, self.max_reads)
+            return min(2 * limit, self._ceiling())
         return 1 << ((limit - 1).bit_length() - 1)
 
     def _compare(self, step: int) -> None:
@@ -300,7 +314,7 @@ class _ReadLimit:
         if c > n:
             if wins:
                 self._settled = self.limit = c
-                if c < self.max_reads:
+                if c < self._ceiling():
                     self._compare(1)
             elif n > 1:
                 self._compare(-1)
