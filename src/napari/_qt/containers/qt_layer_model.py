@@ -91,7 +91,7 @@ class QtLayerListModel(QtListModel[Layer]):
             # The item model stores a Qt.CheckState enum value that can be
             # partially checked, but we only use the unchecked and checked
             # to correspond to the layer's visibility.
-            # https://doc.qt.io/qt-5/qt.html#CheckState-enum
+            # https://doc.qt.io/qt-6/qt.html#CheckState-enum
             layer.visible = Qt.CheckState(value) == Qt.CheckState.Checked
         elif role == LockedRole:
             layer.locked = LayerLock.ALL if value else LayerLock.NONE

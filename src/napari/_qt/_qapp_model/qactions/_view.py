@@ -29,7 +29,7 @@ def _get_current_menubar_status(window: Window) -> bool:
 
 
 def _get_current_play_status(qt_viewer: QtViewer) -> bool:
-    return bool(qt_viewer.dims.is_playing)
+    return qt_viewer.dims.is_playing
 
 
 def _get_current_activity_dock_status(window: Window) -> bool:

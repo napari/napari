@@ -30,7 +30,7 @@ class _ThickNDSlice(Generic[_T]):
     margin_right: tuple[_T, ...]
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         return len(self.point)
 
     @classmethod
@@ -40,7 +40,7 @@ class _ThickNDSlice(Generic[_T]):
         margin_left=None,
         margin_right=None,
         ndim=None,
-    ):
+    ) -> Self:
         """
         Make a full slice based on minimal input.
 
@@ -94,7 +94,7 @@ class _ThickNDSlice(Generic[_T]):
         margin_left=None,
         margin_right=None,
         ndim=None,
-    ):
+    ) -> Self:
         """Create a copy, but modifying the given fields."""
         return self.make_full(
             point=point or self.point,
@@ -205,6 +205,9 @@ class _SliceInput:
         # but properly rescaled based on the transform, so we remove the translation
         # to bring them back around zero.
         data_slice[1:] -= slice_world_to_data.translate
+        # Keep margins for positive scales; negate and swap them for reflections.
+        # abs alone would fix the signs but leave asymmetric margins on the wrong sides.
+        data_slice[1:] = np.maximum(data_slice[1:], -data_slice[[2, 1]])
 
         full_data_slice = np.full((3, self.ndim), np.nan)
 

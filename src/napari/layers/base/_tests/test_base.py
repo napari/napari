@@ -319,3 +319,14 @@ def test_layer_locked_accepts_flag():
     assert layer.locked is LayerLock.ALL
     layer.locked = False
     assert layer.locked is LayerLock.NONE
+
+
+def test_loaded_event():
+    """layer.events.loaded fires when the loaded state changes."""
+    layer = SampleLayer(np.empty((10, 10)))
+    mock = Mock()
+    layer.events.loaded.connect(mock)
+
+    layer._slicing_state._set_unloaded_slice_id(1)
+    layer._slicing_state._update_loaded_slice_id(1)
+    assert mock.call_count == 2

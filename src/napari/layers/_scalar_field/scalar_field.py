@@ -3,8 +3,7 @@ from __future__ import annotations
 import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
-from functools import lru_cache
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -14,6 +13,7 @@ from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
+    _ThumbnailPlaneCache,
 )
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
@@ -43,31 +43,18 @@ from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from napari.components import Dims
 
+    PixelValue: TypeAlias = (
+        np.number
+        | np.bool_
+        | np.ndarray[tuple[Literal[3, 4]], np.dtype[np.number]]
+    )
+
 
 __all__ = ('ScalarFieldBase',)
-
-
-def _make_level_materializer(
-    data: MultiScaleData,
-) -> Callable[[int], np.ndarray]:
-    """Return a cached function that materializes one level of *data* at a time.
-
-    The returned callable accepts a ``level`` integer and returns
-    ``np.asarray(data[level])``, caching the last result so repeated slice
-    requests at the same level avoid redundant data fetches.  Replacing
-    ``data`` by constructing a new materializer automatically abandons the old
-    cache without an explicit ``cache_clear()``.
-    """
-
-    @lru_cache(maxsize=1)
-    def _materializer(level: int) -> np.ndarray:
-        return np.asarray(data[level])
-
-    return _materializer
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -97,7 +84,8 @@ class ScalarFieldBase(Layer, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum',
+        and 'multiplicative'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -205,7 +193,6 @@ class ScalarFieldBase(Layer, ABC):
 
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
-    _level_materializer: Callable[[int], np.ndarray] | None
     _slicing_state: ScalarFieldSlicingState
 
     def __init__(
@@ -233,7 +220,7 @@ class ScalarFieldBase(Layer, ABC):
         translate=None,
         units=None,
         visible=True,
-    ):
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -252,7 +239,7 @@ class ScalarFieldBase(Layer, ABC):
 
         # Determine dimensionality of the data
         if ndim is None:
-            ndim = len(data.shape)  # pyrefly: ignore [missing-attribute]
+            ndim = len(data.shape)
         self._data = data
 
         # Xarray metadata inference is a no-op if data is not xarray-like
@@ -263,7 +250,7 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
-        rgb = len(xr_source.shape) != ndim  # pyrefly: ignore [missing-attribute]
+        rgb = len(xr_source.shape) != ndim
         xr_metadata = _get_xr_metadata(
             xr_source,  # pyrefly: ignore [bad-argument-type]
             rgb=rgb,
@@ -331,7 +318,6 @@ class ScalarFieldBase(Layer, ABC):
         self.corner_pixels[1][displayed_axes] = (
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
-        self._reset_thumbnail_level_data()
 
         self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
@@ -348,11 +334,11 @@ class ScalarFieldBase(Layer, ABC):
         connect_no_arg(self.plane.events, self.events, 'plane')
         self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
-    def _slice_dtype(self):
+    def _slice_dtype(self) -> np.dtype:
         """Return the dtype of the slice view.
 
         Overridden in Labels subclass to properly handle the
@@ -370,8 +356,8 @@ class ScalarFieldBase(Layer, ABC):
         return self._slicing_state._slice
 
     @property
-    def dtype(self):
-        return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
+    def dtype(self) -> np.dtype:
+        return normalize_dtype(self._data.dtype)
 
     @property
     def data_raw(
@@ -383,7 +369,7 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data  # pyrefly: ignore [bad-return]
+        return self._data
 
     @data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
@@ -391,7 +377,7 @@ class ScalarFieldBase(Layer, ABC):
         # note, we don't support changing from/to multiscale after construction
         self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
         self._reset_data_level()
-        self._reset_thumbnail_level_data()
+        self._slicing_state._reset_thumbnail_plane_cache()
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
@@ -491,7 +477,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def _update_level_and_corners(
         self, data_bbox_int, shape_threshold, displayed_axes
-    ):
+    ) -> None:
         """Update the data level and corner pixels for the current viewport.
 
         For multiscale layers, selects the appropriate resolution level
@@ -564,25 +550,6 @@ class ScalarFieldBase(Layer, ABC):
             if level_changed:
                 self.refresh(extent=False, thumbnail=False)
 
-    def _reset_thumbnail_level_data(self) -> None:
-        """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
-
-        Called once during ``__init__`` and again whenever ``data`` is replaced.
-        Single-scale and 3D multiscale layers set ``_level_materializer`` to
-        ``None``; only 2D multiscale layers cache the thumbnail level.
-        """
-        data = self._data
-        if isinstance(data, MultiScaleData):
-            self._thumbnail_level = len(data) - 1
-            self._level_materializer = (
-                _make_level_materializer(data)
-                if self._get_ndim() == 2
-                else None
-            )
-        else:
-            self._thumbnail_level = 0
-            self._level_materializer = None
-
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
         if isinstance(data, MultiScaleData):
@@ -600,7 +567,7 @@ class ScalarFieldBase(Layer, ABC):
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
-    def depiction(self):
+    def depiction(self) -> str:
         """The current 3D depiction mode.
 
         Selects a preset depiction mode in vispy
@@ -618,12 +585,12 @@ class ScalarFieldBase(Layer, ABC):
         self._update_plane_callbacks()
         self.events.depiction()
 
-    def _reset_plane_parameters(self):
+    def _reset_plane_parameters(self) -> None:
         """Set plane attributes to something valid."""
         self.plane.position = np.array(self.data.shape) / 2  # pyrefly: ignore [bad-assignment]
         self.plane.normal = (1, 0, 0)
 
-    def _update_plane_callbacks(self):
+    def _update_plane_callbacks(self) -> None:
         """Set plane callbacks depending on depiction mode."""
         plane_drag_callback_connected = (
             plane_drag_callback in self.mouse_drag_callbacks
@@ -647,7 +614,7 @@ class ScalarFieldBase(Layer, ABC):
                 )
 
     @property
-    def plane(self):
+    def plane(self) -> SlicingPlane:
         return self._plane
 
     @plane.setter
@@ -660,7 +627,7 @@ class ScalarFieldBase(Layer, ABC):
         return self._custom_interpolation_kernel_2d
 
     @custom_interpolation_kernel_2d.setter
-    def custom_interpolation_kernel_2d(self, value):
+    def custom_interpolation_kernel_2d(self, value) -> None:
         if value is None:
             value = [[1]]
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
@@ -687,7 +654,9 @@ class ScalarFieldBase(Layer, ABC):
     def _set_view_slice(self):
         raise NotImplementedError
 
-    def _get_value(self, position):
+    def _get_value(
+        self, position
+    ) -> PixelValue | tuple[int, PixelValue | None] | None:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -711,7 +680,7 @@ class ScalarFieldBase(Layer, ABC):
 
         raw = self._slice.image.raw
         shape = (
-            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape  # pyrefly: ignore [missing-attribute]
+            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape
         )
 
         if self.ndim < len(coord):
@@ -873,7 +842,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
 
     def __init__(
         self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
-    ):
+    ) -> None:
         super().__init__(layer, data, cache)
         self.transforms = Affine(
             np.ones(self.ndim), np.zeros(self.ndim), name='tile2data'
@@ -883,8 +852,15 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             rgb=len(self.layer.data.shape) != self.ndim,
             dtype=self.layer._slice_dtype(),
         )
+        self._reset_thumbnail_plane_cache()
 
-    def _set_view_slice(self):
+    def _reset_thumbnail_plane_cache(self) -> None:
+        """Drop the cached thumbnail plane. Call it when ``data`` changes."""
+        self._thumbnail_plane_cache = _ThumbnailPlaneCache(
+            self.layer.data, self._slice_request_class._project_slice
+        )
+
+    def _set_view_slice(self) -> None:
         if (
             self.layer.multiscale
             and self._slice_input.ndisplay == 3
@@ -966,31 +942,10 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         else:
             data_level = 0
 
-        thumbnail_level = self.layer._thumbnail_level
-        data_at_thumbnail_level: (
-            LayerDataProtocol | MultiScaleData | np.ndarray
-        )
-        if self.layer._level_materializer:
-            data_at_thumbnail_level = self.layer._level_materializer(
-                thumbnail_level
-            )
-        elif self.layer.multiscale:
-            data_at_thumbnail_level = data[thumbnail_level]
-        else:
-            data_at_thumbnail_level = data
-
-        data_at_data_level: LayerDataProtocol | MultiScaleData | np.ndarray
-        if not self.layer.multiscale:
-            data_at_data_level = data
-        elif data_level == thumbnail_level:
-            data_at_data_level = data_at_thumbnail_level
-        else:
-            data_at_data_level = data[data_level]
-
         return self._slice_request_class(
             slice_input=slice_input,
-            data_at_data_level=data_at_data_level,
-            data_at_thumbnail_level=data_at_thumbnail_level,
+            data=data,
+            thumbnail_plane_cache=self._thumbnail_plane_cache,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
@@ -999,7 +954,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             corner_pixels=self.layer.corner_pixels,
             rgb=len(self.layer.data.shape) != self.ndim,
             data_level=data_level,
-            thumbnail_level=thumbnail_level,
+            thumbnail_level=len(self.layer.level_shapes) - 1,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
         )

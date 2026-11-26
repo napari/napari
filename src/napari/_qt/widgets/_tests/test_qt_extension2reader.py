@@ -75,7 +75,7 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
     assert widget._table.rowCount() == 2
 
     btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
-    qtbot.mouseClick(btn_to_click, Qt.LeftButton)
+    qtbot.mouseClick(btn_to_click, Qt.MouseButton.LeftButton)
 
     assert get_settings().plugins.extension2reader == {'.abc': 'abc-plugin'}
     assert widget._table.rowCount() == 1
@@ -83,7 +83,7 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
 
     # remove remaining extension
     btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
-    qtbot.mouseClick(btn_to_click, Qt.LeftButton)
+    qtbot.mouseClick(btn_to_click, Qt.MouseButton.LeftButton)
     assert not get_settings().plugins.extension2reader
     assert widget._table.rowCount() == 1
     assert 'No filename preferences found' in widget._table.item(0, 0).text()

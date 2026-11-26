@@ -109,7 +109,7 @@ LayerBound = TypeVar('LayerBound', bound='Layer')
 
 
 class PostInit(ABCMeta):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         sig = inspect.signature(self.__init__)
         params = tuple(sig.parameters.values())
@@ -126,7 +126,7 @@ class _LayerSlicingState(ABC):
     slice_done = Signal()
     loaded_data = Signal()
 
-    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool) -> None:
         self.layer = layer
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._slice_input = _SliceInput(
@@ -163,7 +163,7 @@ class _LayerSlicingState(ABC):
 
         return self._slice_input.data_slice(world_to_data=world_to_data)
 
-    def update_dims(self):
+    def update_dims(self) -> None:
         self._slice_input = self._slice_input.with_ndim(self.ndim)
 
     def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
@@ -353,7 +353,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', 'minimum',
+        and 'multiplicative'}.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
@@ -701,12 +702,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             }
         )
         self._slicing_state = self._get_layer_slicing_state(data, cache)
+        self._slicing_state.loaded_data.connect(self.events.loaded)
 
     @property
-    def _slice_input(self):
+    def _slice_input(self) -> _SliceInput:
         return self._slicing_state._slice_input
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         """Post init hook for subclasses to use."""
 
     def __str__(self) -> str:
@@ -778,14 +780,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return mode
 
-    def update_transform_box_visibility(self, visible):
+    def update_transform_box_visibility(self, visible) -> None:
         if 'transform_box' in self._overlays:
             TRANSFORM = self._modeclass.TRANSFORM  # pyrefly: ignore [missing-attribute]
             self._overlays['transform_box'].visible = (
                 self.mode == TRANSFORM and visible
             )
 
-    def update_highlight_visibility(self, visible):
+    def update_highlight_visibility(self, visible) -> None:
         self._highlight_visible = visible
         self._set_highlight(force=True)
 
@@ -810,7 +812,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.mode(mode=str(mode_enum))
 
     @property
-    def projection_mode(self):
+    def projection_mode(self) -> StringEnum:
         """Mode of projection of the thick slice onto the viewed dimensions.
 
         The sliced data is described by an n-dimensional bounding box ("thick slice"),
@@ -820,7 +822,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._projection_mode
 
     @projection_mode.setter
-    def projection_mode(self, mode):
+    def projection_mode(self, mode) -> None:
         mode = self._projectionclass(str(mode))
         if self._projection_mode != mode:
             self._projection_mode = mode
@@ -853,7 +855,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         if not name:
             name = self._basename()
-        self._name = str(name)
+        self._name = name
         self.events.name()
 
     @property
@@ -940,7 +942,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return str(self._blending)
 
     @blending.setter
-    def blending(self, blending):
+    def blending(self, blending) -> None:
         self._blending = Blending(blending)
         self.events.blending()
 
@@ -1060,12 +1062,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.scale()
 
     @property
-    def scale_factor(self):
+    def scale_factor(self) -> float:
         """float: Conversion factor from canvas coordinates to image coordinates."""
         return self._scale_factor
 
     @scale_factor.setter
-    def scale_factor(self, scale_factor):
+    def scale_factor(self, scale_factor) -> None:
         if self._scale_factor != scale_factor:
             self._scale_factor = scale_factor
             self.events.scale_factor()
@@ -2111,7 +2113,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def _update_level_and_corners(
         self, data_bbox_int, shape_threshold, displayed_axes
-    ):
+    ) -> None:
         """Update the data level and corner pixels for the current viewport.
 
         Sets ``self.corner_pixels`` (and ``self._data_level`` for multiscale
@@ -2144,8 +2146,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.corner_pixels = corners
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
+        self,
+        scale_factor: float,
+        corner_pixels_displayed: npt.NDArray[np.floating],
+        shape_threshold: tuple[float, float],
+    ) -> None:
         """Update canvas scale and corner values on draw.
 
         For layer multiscale determining if a new resolution level or tile is
@@ -2158,7 +2163,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
-        shape_threshold : tuple
+        shape_threshold : tuple[float, float]
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor
@@ -2317,8 +2322,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             # - we take a max because we don't want to go below 0 precision.
             # - we convert to int because it needs to be int to be used in a
             #   format string.
-            precision = int(
-                max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
+            precision = (
+                max(int(np.max(np.ceil(-np.log10(np.abs(self.scale))))), -2)
+                + 2
             )
             position = np.asarray(position)
             value = self.get_value(

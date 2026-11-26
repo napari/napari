@@ -6,11 +6,13 @@ import logging
 import os
 import warnings
 from collections.abc import (
+    Generator,
     Iterator,
     Mapping,
     MutableMapping,
     Sequence,
 )
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -22,9 +24,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-
-# This cannot be condition to TYPE_CHECKING or the stubgen fails
-# with undefined Context.
 from pydantic import Field, PrivateAttr, field_validator
 from typing_extensions import deprecated
 
@@ -79,8 +78,12 @@ from napari.types import (
     PathOrPaths,
     SampleData,
 )
-from napari.utils._register import create_func as create_add_method
+from napari.utils._register import create_add_method
 from napari.utils.action_manager import action_manager
+from napari.utils.camera_orientations import (
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
@@ -110,6 +113,7 @@ DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
     'keymap',
     '_mouse_wheel_gen',
+    '_mouse_move_gen',
     '_mouse_drag_gen',
     '_persisted_mouse_event',
     'mouse_move_callbacks',
@@ -212,6 +216,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    # True while dims changes should not slice layers, see _defer_slicing
+    _slicing_deferred: bool = PrivateAttr(default=False)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -429,7 +435,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_JSON)
-        return super().json(exclude=exclude, **kwargs)
+        return super().model_dump_json(exclude=exclude, **kwargs)
 
     def model_dump(self, **kwargs) -> dict[str, Any]:
         """Convert to a dictionary."""
@@ -778,6 +784,19 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             layers=[event.layer], dims=self.dims, force=True
         )
 
+    @contextmanager
+    def _defer_slicing(self) -> Generator[None, None, None]:
+        """Prevent dims changes from slicing layers.
+
+        The caller is responsible for slicing afterwards.
+        """
+        previous = self._slicing_deferred
+        self._slicing_deferred = True
+        try:
+            yield
+        finally:
+            self._slicing_deferred = previous
+
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
@@ -786,6 +805,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layers : list of napari.layers.Layer, optional
             List of layers to update. If none provided updates all.
         """
+        if self._slicing_deferred:
+            return
         layers = layers or self.layers
         self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
@@ -905,13 +926,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
-        layers_in_viewbox = [
-            self.layers[idx]
-            for idx in sorted(
-                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
-                reverse=self.canvas.grid.stride > 0,
-            )
-        ]
+        layers_in_viewbox: list[Layer] = []
+        if self.cursor.viewbox is not None:
+            layers_in_viewbox = [
+                self.layers[idx]
+                for idx in sorted(
+                    self.canvas.grid.contents_at(
+                        self.cursor.viewbox, self.layers
+                    ),
+                    reverse=self.canvas.grid.stride > 0,
+                )
+            ]
         valid_layers = [
             layer
             for layer in layers_in_viewbox
@@ -998,22 +1023,40 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         world_position : np.ndarray
             Canvas position (on the canvas plane) converted to world coordinates.
         """
-        from scipy.spatial.transform import Rotation as R
-
         ndisplay = self.dims.ndisplay
         camera = self.scene.camera
 
         if viewbox is None:
             viewbox = (0, 0)
         viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
-        viewbox_center = viewbox_size * viewbox + viewbox_size / 2
+        spacing = (
+            self.canvas.grid._compute_canvas_spacing(
+                self.canvas.size, self.layers
+            )
+            if self.canvas.grid.enabled
+            else 0
+        )
+        viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
         world_center = np.array(camera.center)
 
+        # account for orientation flip. Only x and y matter, not depth, because
+        # in 3D we poject onto the origin camera plane.
+        vertical, horizontal = camera.orientation2d
+        flips = np.array(
+            [
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
+            ]
+        )
+        canvas_offset = (np.array(canvas_position) - viewbox_center) * flips
+
         if ndisplay == 2:
-            world_displayed = (
-                np.array(canvas_position) - viewbox_center
-            ) / camera.zoom + world_center[-2:]
+            world_displayed = canvas_offset / camera.zoom + world_center[-2:]
         else:
+            # this import is expensive so it is deferred to here
+            # where it is actually needed
+            from scipy.spatial.transform import Rotation as R
+
             # note that while we call napari axes "zyx", in terms of angles to
             # rot conversion we need to treat them as normal xyz for internal
             # consistency (zyx actually describes a different rotation order)
@@ -1022,18 +1065,19 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # the depth is set to zero because we want the position at the
             # plane of the camera center.
             # Any modifications should be done by callers afterwards.
-            canvas_position_3d = np.array([0, *canvas_position])
-            viewbox_center_3d = np.array([0, *viewbox_center])
+            canvas_position_3d = np.array([0, *canvas_offset])
             world_displayed = (
-                rot_matrix.T
-                @ (canvas_position_3d - viewbox_center_3d)
-                / camera.zoom
-                + world_center
+                rot_matrix.T @ canvas_position_3d / camera.zoom + world_center
             )
+
+        # with fewer dims than ndisplay , the leading components
+        # have no dim to map onto, so we drop them
+        displayed = self.dims.displayed
+        world_displayed = world_displayed[-len(displayed) :]
 
         # embed it in the world point
         position_world = list(self.dims.point)
-        for i, d in enumerate(self.dims.displayed):
+        for i, d in enumerate(displayed):
             position_world[d] = world_displayed[i]
         return np.array(position_world)
 
@@ -1080,15 +1124,20 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
 
-        # Update dims
-        self._on_layers_change()
+        # For the first layer, set the dims to the middle
+        first_layer_being_added = len(self.layers) == 1
+        if first_layer_being_added:
+            with self._defer_slicing():
+                # Update dims
+                self._on_layers_change()
+                self.dims._go_to_center_step()
+        else:
+            self._on_layers_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
-        if len(self.layers) == 1:
-            # set dims slider to the middle of all dimensions
+        if first_layer_being_added:
             self.reset_view()
-            self.dims._go_to_center_step()
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
@@ -1908,6 +1957,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             ) from exc
         return layer if isinstance(layer, list) else [layer]
 
+    add_labels = create_add_method(Labels)
+    add_points = create_add_method(Points)
+    add_shapes = create_add_method(Shapes)
+    add_surface = create_add_method(Surface)
+    add_tracks = create_add_method(Tracks)
+    add_vectors = create_add_method(Vectors)
+
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
@@ -2070,15 +2126,3 @@ def valid_add_kwargs() -> dict[str, set[str]]:
         params = inspect.signature(getattr(ViewerModel, meth)).parameters
         valid[meth[4:]] = set(params) - {'self', 'kwargs'}
     return valid
-
-
-for _layer in (
-    layers.Labels,
-    layers.Points,
-    layers.Shapes,
-    layers.Surface,
-    layers.Tracks,
-    layers.Vectors,
-):
-    func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]

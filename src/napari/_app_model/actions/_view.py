@@ -9,6 +9,7 @@ from app_model.types import (
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
+from napari.components._viewer_key_bindings import toggle_grid
 from napari.settings import get_settings
 
 VIEW_SUBMENUS = [
@@ -23,6 +24,12 @@ VIEW_SUBMENUS = [
     (
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title='Scale Bar'),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(
+            submenu=MenuId.VIEW_COORDINATE_GRID, title='CoordinateGrid'
+        ),
     ),
 ]
 
@@ -109,6 +116,23 @@ toggle_actions = {
             'canvas.overlays.scale_bar.ticks',
         ),
     ],
+    MenuId.VIEW_COORDINATE_GRID: [
+        (
+            'napari.scene.toggle_coordinate_grid',
+            'Toggle Coordinate Grid',
+            'scene.overlays.coordinate_grid.visible',
+        ),
+        (
+            'napari.scene.toggle_coordinate_grid_axis_labels',
+            'Toggle Coordinate Grid Axis Labels',
+            'scene.overlays.coordinate_grid.axis_labels',
+        ),
+        (
+            'napari.scene.toggle_coordinate_grid_tick_labels',
+            'Toggle Coordinate Grid Tick Labels',
+            'scene.overlays.coordinate_grid.tick_labels',
+        ),
+    ],
 }
 
 
@@ -151,7 +175,39 @@ def _get_current_synced_camera(viewer: ViewerModel) -> bool:
     return viewer.scene.camera.synced
 
 
+def _get_current_grid_mode(viewer: ViewerModel) -> bool:
+    return viewer.canvas.grid.enabled
+
+
 VIEW_ACTIONS: list[Action] = [
+    ViewerModelToggleAction(
+        id='napari.scene.toggle_crosshair',
+        title='Toggle Crosshair',
+        attribute_path='scene.overlays.crosshair.visible',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+    ),
+    Action(
+        # TODO: this whole action should be replaced with a ViewerModelToggleAction
+        #       once their keybinding become settable...
+        id='napari.canvas.toggle_grid_mode',
+        title='Toggle Grid Mode',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        toggled=ToggleRule(get_current=_get_current_grid_mode),
+        callback=toggle_grid,
+        # keybinding declared via _viewer_key_bindings
+    ),
     Action(
         id='napari.scene.fit_to_view',
         title='Fit to View',
