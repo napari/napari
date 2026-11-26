@@ -241,24 +241,18 @@ class _SliceInput:
         return _ThickNDSlice.from_array(full_data_slice)
 
     def is_orthogonal(self, world_to_data: Affine) -> bool:
-        """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""
-        # Subspace spanned by non displayed dimensions
-        non_displayed_subspace = np.zeros(self.ndim)
-        for d in self.not_displayed:
-            non_displayed_subspace[d] = 1
-        # Map subspace through inverse transform, ignoring translation
-        world_to_data = Affine(
-            ndim=self.ndim,
-            linear_matrix=world_to_data.linear_matrix,
-            translate=None,
-        )
-        mapped_nd_subspace = world_to_data(non_displayed_subspace)
-        # Look at displayed subspace
-        displayed_mapped_subspace = (
-            mapped_nd_subspace[d] for d in self.displayed
-        )
-        # Check that displayed subspace is null
-        return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
+        """Returns True if this slice represents an orthogonal (axis-aligned) slice through a layer's data, False otherwise."""
+        # Column k of the linear matrix is by definition the displacement in data space
+        # after a unit displacement along axis k in world coordinate.
+        # Here, we look at the displacements for all displayed axis.
+        data_steps = world_to_data.linear_matrix[:, self.displayed]
+
+        # We extract the data coordinates of those along the axis that are not displayed.
+        hidden_changes = data_steps[self.not_displayed, :]
+
+        # The criterion for orthogonality is that moving within the world-space slice should not
+        # create displacements along any data axis that is not displayed.
+        return bool(np.all(np.abs(hidden_changes) < 1e-8))
 
 
 def apply_units_to_transform(
@@ -314,7 +308,7 @@ def units_conversion_factors(
         return np.ones(len(layer_units))
 
     reg = pint.get_application_registry()
-    
+
     factors = [
         reg.get_base_units(layer_unit)[0] / reg.get_base_units(world_unit)[0]
         for world_unit, layer_unit in zip(
