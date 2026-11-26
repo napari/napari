@@ -45,7 +45,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QRangeSlider
-from superqt.sliders._range_style import MONTEREY_SLIDER_STYLES_FIX
+from superqt.sliders._generic_slider import MONTEREY_SLIDER_STYLES_FIX
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
@@ -1264,7 +1264,10 @@ class Window:
         for slider in dock_widget.findChildren(QRangeSlider):
             qss = slider.styleSheet()
             if MONTEREY_SLIDER_STYLES_FIX in qss:
-                slider._style._macpatch = False
+                if hasattr(slider, '_style'):
+                    slider._style._macpatch = False
+                if hasattr(slider, '_macpatch'):
+                    slider._macpatch = False
                 slider.setStyleSheet(
                     qss.replace(MONTEREY_SLIDER_STYLES_FIX, '')
                 )

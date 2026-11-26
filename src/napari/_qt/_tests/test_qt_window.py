@@ -8,7 +8,7 @@ from qtpy.QtCore import QEvent, QPoint
 from qtpy.QtGui import QHelpEvent, QImage
 from qtpy.QtWidgets import QToolTip, QWidget
 from superqt import QDoubleRangeSlider, QRangeSlider
-from superqt.sliders._range_style import MONTEREY_SLIDER_STYLES_FIX
+from superqt.sliders._generic_slider import MONTEREY_SLIDER_STYLES_FIX
 
 from napari._qt.qt_main_window import (
     Window,
@@ -296,10 +296,16 @@ def test_dock_widget_range_slider_style(make_napari_viewer, SliderClass):
     """Range sliders created before docking should inherit napari's QSS."""
     viewer = make_napari_viewer()
     slider = SliderClass()
-    slider._style._macpatch = True
+    if hasattr(slider, '_style'):
+        slider._style._macpatch = True
+    if hasattr(slider, '_macpatch'):
+        slider._macpatch = True
     slider.setStyleSheet(MONTEREY_SLIDER_STYLES_FIX)
 
     viewer.window.add_dock_widget(slider, name='range-slider')
 
     assert MONTEREY_SLIDER_STYLES_FIX not in slider.styleSheet()
-    assert not slider._style._macpatch
+    if hasattr(slider, '_style'):
+        assert not slider._style._macpatch
+    if hasattr(slider, '_macpatch'):
+        assert not slider._macpatch
