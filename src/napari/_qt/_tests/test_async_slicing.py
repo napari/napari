@@ -310,6 +310,221 @@ def test_async_slice_response_applied_on_main_thread(
     assert set(update_threads) == {threading.main_thread()}
 
 
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_stale_response_not_applied(
+    make_napari_viewer, qtbot, rng, monkeypatch
+):
+    viewer = make_napari_viewer()
+    data = LockableData(rng.random((3, 4, 5)))
+    image = Image(data)
+    setup_viewer_for_async_slicing(viewer, image)
+
+    applied_z = []
+    update_slice_response = image._slicing_state._update_slice_response
+
+    def record_applied_z(response):
+        applied_z.append(response.slice_input.world_slice.point[0])
+        update_slice_response(response)
+
+    monkeypatch.setattr(
+        image._slicing_state, '_update_slice_response', record_applied_z
+    )
+
+    with data.lock:
+        viewer.dims.current_step = (1, 0, 0)
+        qtbot.waitUntil(
+            lambda: any(
+                task.running()
+                for task in viewer._layer_slicer._task_to_requests
+            )
+        )
+        viewer.dims.current_step = (2, 0, 0)
+
+    qtbot.waitUntil(lambda: image.loaded)
+    assert applied_z == [2]
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_from_before_points_removal_not_applied(
+    make_napari_viewer, qtbot
+):
+    """See https://github.com/napari/napari/issues/9046"""
+    viewer = make_napari_viewer()
+    points = viewer.add_points([[10, 10], [20, 20], [30, 30]])
+
+    exceptions = edit_while_slice_is_pending(
+        viewer, qtbot, points, lambda: points.remove([2])
+    )
+
+    assert not exceptions
+    np.testing.assert_array_equal(points._view_indices, [0, 1])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_points_view_updated_on_removal_before_slicing(
+    make_napari_viewer, qtbot
+):
+    """Removing points updates the view before the new slice is done.
+
+    Until then, hovering over the canvas reads the view.
+    See https://github.com/napari/napari/issues/9046
+    """
+    viewer = make_napari_viewer()
+    data = LockableData(np.zeros((5, 40, 40)))
+    image = viewer.add_image(
+        data, contrast_limits=(0, 1), scale=(1000,) * 3, units=('nm',) * 3
+    )
+    points = viewer.add_points(
+        [[2, 10, 10], [2, 20, 20], [2, 30, 30]], units=('um',) * 3
+    )
+    viewer.dims.set_point(0, 2000)
+    qtbot.waitUntil(lambda: image.loaded and points.loaded)
+
+    # Observers may hit-test as soon as the edit starts a refresh.
+    observed = []
+
+    def read_points(event):
+        observed.append(points.get_value((2, 20, 20), world=True))
+
+    points.events.loaded.connect(read_points)
+    points.events.set_data.connect(read_points)
+    with data.lock:
+        image.refresh()
+        points.selected_data = {2}
+        points.remove_selected()
+
+        assert points.loaded
+        assert observed == [1]
+        np.testing.assert_array_equal(points._view_indices, [0, 1])
+        assert points.get_value((2, 20, 20), world=True) == 1
+
+    qtbot.waitUntil(lambda: image.loaded and points.loaded)
+    np.testing.assert_array_equal(points._view_indices, [0, 1])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_from_before_fewer_vectors_not_applied(
+    make_napari_viewer, qtbot
+):
+    viewer = make_napari_viewer()
+    data = np.zeros((5, 2, 2))
+    data[:, 0] = np.arange(5)[:, np.newaxis] * 5
+    data[:, 1] = 1
+    vectors = viewer.add_vectors(data)
+
+    def edit():
+        vectors.data = data[:2]
+        # The view is updated before the new slice is done.
+        np.testing.assert_array_equal(vectors._view_indices, [0, 1])
+        assert len(vectors._view_face_color) == 2
+
+    exceptions = edit_while_slice_is_pending(viewer, qtbot, vectors, edit)
+
+    assert not exceptions
+    np.testing.assert_array_equal(vectors._view_indices, [0, 1])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_slice_from_before_image_ndim_change_not_applied(
+    make_napari_viewer, qtbot, rng
+):
+    viewer = make_napari_viewer()
+    image = viewer.add_image(rng.random((5, 40, 40)))
+    new_data = rng.random((30, 30))
+
+    exceptions = edit_while_slice_is_pending(
+        viewer, qtbot, image, lambda: setattr(image, 'data', new_data)
+    )
+
+    assert not exceptions
+    np.testing.assert_array_equal(image._slice.image.raw, new_data)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_point_text_listener_during_removal(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    points = viewer.add_points(
+        [[10, 10], [20, 20], [30, 30]],
+        features={'label': ['a', 'b', 'c']},
+        text='{label}',
+    )
+    observed = []
+
+    def read_points(event):
+        QCoreApplication.processEvents()
+        observed.append(points.get_value((20, 20)))
+
+    points.text.events.values.connect(read_points)
+    exceptions = edit_while_slice_is_pending(
+        viewer, qtbot, points, lambda: points.remove([2])
+    )
+    assert not exceptions
+    assert observed == [1]
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_points_paste_discards_completed_slice(
+    make_napari_viewer, qtbot
+):
+    viewer = make_napari_viewer()
+    points = viewer.add_points([[10, 10], [20, 20]])
+    qtbot.waitUntil(lambda: points.loaded)
+    points.selected_data = {0}
+    points._copy_data()
+
+    displayed = []
+    points.events.set_data.connect(
+        lambda: displayed.append(points._view_indices.tolist())
+    )
+    exceptions = edit_while_slice_is_pending(
+        viewer, qtbot, points, points._paste_data
+    )
+
+    assert not exceptions
+    assert displayed
+    assert all(indices == [0, 1, 2] for indices in displayed)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_edit_while_navigating(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    data = LockableData(np.zeros((5, 40, 40)))
+    image = viewer.add_image(data, contrast_limits=(0, 1))
+    points = viewer.add_points([[2, 10, 10], [2, 20, 20], [3, 30, 30]])
+    qtbot.waitUntil(lambda: image.loaded and points.loaded)
+    with data.lock:
+        viewer.dims.set_current_step(0, 3)
+        points.remove([0])
+        np.testing.assert_array_equal(points._view_indices, [0])
+        assert not points.loaded
+    qtbot.waitUntil(lambda: image.loaded and points.loaded)
+    np.testing.assert_array_equal(points._view_indices, [1])
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_edit_hidden_image_with_pending_slice(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    image = viewer.add_image(np.zeros((4, 5)), contrast_limits=(0, 1))
+    new_data = np.ones((4, 5))
+    updates = []
+
+    def replace_hidden_data():
+        image.visible = False
+        image.data = new_data
+        image.events.set_data.connect(
+            lambda: updates.append(image._slice.image.raw)
+        )
+
+    exceptions = edit_while_slice_is_pending(
+        viewer, qtbot, image, replace_hidden_data
+    )
+    assert not exceptions
+    assert not updates
+    image.visible = True
+    qtbot.waitUntil(lambda: image.loaded)
+    np.testing.assert_array_equal(image._slice.image.raw, new_data)
+
+
 def test_callback_emitting_signal_of_deleted_qobject_is_disconnected(qapp):
     class Source(QObject):
         signal = Signal()
@@ -340,6 +555,24 @@ def setup_viewer_for_async_slicing(
         vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
 
     return vispy_layer
+
+
+def edit_while_slice_is_pending(viewer, qtbot, layer, edit) -> list:
+    """Slice the layer, and edit it after the slice is done but before it is
+    applied. Returns the exceptions raised until the layer is loaded again.
+
+    The slicing thread finishes the slice right away, but the main thread
+    only applies it when it next processes events, which is after `edit`.
+    """
+    qtbot.waitUntil(lambda: layer.loaded)
+    layer.refresh()
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    assert not layer.loaded
+
+    with qtbot.capture_exceptions() as exceptions:
+        edit()
+        qtbot.waitUntil(lambda: layer.loaded)
+    return exceptions
 
 
 def wait_until_vispy_image_data_equal(

@@ -5,7 +5,7 @@ import pytest
 
 from napari._tests.utils import layer_test_data
 from napari.components.dims import Dims
-from napari.layers import Image, Labels
+from napari.layers import Image, Labels, Points, Vectors
 
 
 @pytest.mark.parametrize(
@@ -57,6 +57,33 @@ def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
     new_extent = layer.extent
     assert old_extent is not layer.extent
     assert new_extent is layer.extent
+
+
+@pytest.mark.parametrize(
+    ('layer_type', 'data'),
+    [
+        (Points, [[0, 0], [2, 7], [9, 10]]),
+        (Vectors, [[[0, 0], [2, 5]], [[3, 7], [1, 1]]]),
+    ],
+)
+def test_thumbnail_and_extent_share_updated_bounds(
+    layer_type, data, monkeypatch
+):
+    data = np.asarray(data, dtype=float)
+    layer = layer_type(data)
+    reference = layer_type(data * 5)
+    expected_bounds = reference.extent.data
+    old_extent = layer.extent
+    layer.visible = False
+    layer.data = data * 5
+
+    scan = MagicMock(wraps=layer_type._extent_data.fget)
+    monkeypatch.setattr(layer_type, '_extent_data', property(scan))
+    layer.visible = True
+    assert layer.extent is not old_extent
+    np.testing.assert_array_equal(layer.extent.data, expected_bounds)
+    np.testing.assert_array_equal(layer.thumbnail, reference.thumbnail)
+    scan.assert_called_once_with(layer)
 
 
 def test_contrast_limits_must_be_increasing():
