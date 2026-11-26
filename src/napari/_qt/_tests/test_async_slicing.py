@@ -343,7 +343,6 @@ def test_async_labels_edits_before_and_after_read(make_napari_viewer, qtbot):
     )
 
 
-
 @pytest.mark.parametrize('next_request', ['scroll', 'refresh'])
 @pytest.mark.usefixtures('_enable_async')
 def test_async_labels_stroke_on_plane_delivered_after_newer_request(
@@ -398,6 +397,7 @@ def test_async_labels_stroke_on_plane_delivered_after_newer_request(
     assert shown or next_request == 'scroll'
     assert all(value == 7 for value in shown)
     assert not labels._slicing_state._pending_slices
+
 
 @pytest.mark.usefixtures('_enable_async')
 @pytest.mark.parametrize(('brush_size', 'strokes'), [(151, 1), (1, 33)])
