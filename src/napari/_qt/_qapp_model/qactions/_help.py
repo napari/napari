@@ -27,7 +27,14 @@ def _show_logs(window: Window) -> None:
 
 
 def _show_tips(window: Window) -> None:
-    window.add_dock_widget(TipsWidget(), name='Tips and Tricks', area='bottom')
+    widget = TipsWidget()
+    dock = window.add_dock_widget(
+        widget, name='Tips and Tricks', area='bottom'
+    )
+    if (hot_reload := window._hot_reload_widget) is not None:
+        live = hot_reload.reloader.register_factory(TipsWidget, widget=widget)
+        dock.destroyed.connect(live.unregister)
+        dock.destroyed.connect(live.deleteLater)
 
 
 def _start_viewer_tour(

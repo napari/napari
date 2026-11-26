@@ -5,6 +5,7 @@ napari command line viewer.
 import argparse
 import contextlib
 import logging
+import os
 import sys
 import warnings
 from ast import literal_eval
@@ -14,6 +15,7 @@ from types import ModuleType
 from typing import Any
 
 from napari import Viewer
+from napari._hot_reload import _require_qtreload
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
@@ -99,7 +101,7 @@ def validate_unknown_args(unknown: list[str]) -> dict[str, Any]:
     return out
 
 
-def parse_sys_argv():
+def parse_sys_argv() -> tuple[argparse.Namespace, dict[str, Any]]:
     """Parse command line arguments."""
 
     from napari import __version__, layers
@@ -196,6 +198,18 @@ def parse_sys_argv():
         type=Path,
         help='use specific path to store and load settings.',
     )
+    parser.add_argument(
+        '--dev',
+        action='store_true',
+        help='activate hot reload (requires napari[reload]).',
+    )
+    parser.add_argument(
+        '--dev-module',
+        '--dev_module',
+        action='append',
+        metavar='MODULE',
+        help='watch an additional module in hot-reload mode (repeatable).',
+    )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -204,6 +218,11 @@ def parse_sys_argv():
         if item.startswith('--'):
             unknown.append(args.paths.pop(len(args.paths) - idx - 1))
     kwargs = validate_unknown_args(unknown) if unknown else {}
+    if args.dev:
+        try:
+            _require_qtreload()
+        except ImportError as e:
+            parser.error(str(e))
 
     return args, kwargs
 
@@ -270,6 +289,11 @@ def _build_viewer() -> Viewer:
                     _npe2.get_widget_contribution(pname, wname)
             else:
                 _npe2.get_widget_contribution(pname)
+
+    if args.dev:
+        os.environ['NAPARI_DEV'] = '1'
+    if args.dev_module:
+        os.environ['NAPARI_DEV_MODULES'] = ','.join(args.dev_module)
 
     # viewer _must_  be kept around.
     # it will be referenced by the global window only

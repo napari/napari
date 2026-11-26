@@ -8,6 +8,7 @@ from __future__ import annotations
 import atexit
 import contextlib
 import inspect
+import logging
 import os
 import sys
 import time
@@ -47,6 +48,7 @@ from qtpy.QtWidgets import (
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
+from napari._hot_reload import _require_qtreload
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
@@ -89,6 +91,7 @@ from napari.utils.misc import (
 from napari.utils.notifications import Notification
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import uuid
@@ -98,6 +101,7 @@ if TYPE_CHECKING:
     import numpy as np
     from magicgui.widgets import Widget
     from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+    from qtreload import QtReloadWidget
 
     from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
@@ -608,6 +612,7 @@ class _QtMainWindow(QMainWindow):
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
 
+        self._window._teardown_hot_reload()
         self._stop_worker_threads()
 
         if self._ev and self._ev.isRunning():
@@ -731,6 +736,7 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         self._pref_dialog = None
+        self._hot_reload_widget: QtReloadWidget | None = None
 
         self._task_status_manager = TaskStatusManager()
 
@@ -779,6 +785,9 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
+        if os.getenv('NAPARI_DEV') == '1':
+            self._setup_hot_reload()
+
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
@@ -795,6 +804,48 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+
+    def _setup_hot_reload(self) -> None:
+        try:
+            _require_qtreload()
+            from qtreload import QtReloadWidget
+        except ImportError as e:
+            logging.getLogger(__name__).warning('%s', e)
+            return
+
+        modules = ['napari', 'napari_builtins']
+        modules.extend(
+            name.strip()
+            for name in os.getenv('NAPARI_DEV_MODULES', '').split(',')
+            if name.strip()
+        )
+        widget = QtReloadWidget(modules, parent=self._qt_window)
+        widget.inspector.overlay.setParent(self._qt_window)
+        dock = QtViewerDockWidget(
+            self._qt_viewer,
+            widget,
+            name=trans._('Hot Reload'),
+            area='bottom',
+            allowed_areas=('left', 'right', 'bottom'),
+            object_name='QDev',
+        )
+
+        dock.visibilityChanged.connect(self._hot_reload_visibility_changed)
+        widget.evt_stylesheet.connect(self._update_theme_no_event)
+        self._add_viewer_dock_widget(dock, menu=self.window_menu)
+        self._hot_reload_widget = widget
+
+    def _hot_reload_visibility_changed(self, visible: bool) -> None:
+        if not visible and (widget := self._hot_reload_widget) is not None:
+            widget.inspector.select(None)
+
+    def _teardown_hot_reload(self) -> None:
+        if (widget := self._hot_reload_widget) is not None:
+            self._hot_reload_widget = None
+            widget.evt_stylesheet.disconnect(self._update_theme_no_event)
+            widget.inspector.select(None)
+            widget.inspector.overlay.deleteLater()
+            widget.reloader.set_paused(True)
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari

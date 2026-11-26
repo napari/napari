@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 import gc
+import os
 import sys
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
 
 import napari
 from napari import __main__
+from napari._main import main as console_main
+
+if TYPE_CHECKING:
+    from napari.utils._testsupport import ViewerFactory
 
 
 @pytest.fixture
@@ -31,6 +39,84 @@ def test_cli_shows_plugins(monkeypatch, capsys, tmp_plugin):
     with pytest.raises(SystemExit):
         __main__._run()
     assert tmp_plugin.name in str(capsys.readouterr())
+
+
+@pytest.mark.parametrize('console_script', [False, True])
+def test_cli_starts_without_qtreload(
+    console_script: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    make_napari_viewer: ViewerFactory,
+    mock_run: mock.MagicMock,
+) -> None:
+    monkeypatch.delenv('NAPARI_DEV', raising=False)
+    monkeypatch.setitem(sys.modules, 'qtreload', None)
+    monkeypatch.setattr(sys, 'argv', ['napari'])
+    viewer = make_napari_viewer()
+    monkeypatch.setattr(__main__, 'Viewer', lambda: viewer)
+    if console_script:
+        with (
+            mock.patch('napari._qt.qt_event_loop.run', mock_run),
+            pytest.raises(SystemExit) as exc,
+        ):
+            console_main()
+        assert exc.value.code == 0
+    else:
+        __main__.main()
+    mock_run.assert_called_once_with(gui_exceptions=True)
+
+
+def test_cli_dev_modules_with_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('NAPARI_DEV', '0')
+    monkeypatch.setenv('NAPARI_DEV_MODULES', 'previous_module')
+    monkeypatch.setattr(
+        sys,
+        'argv',
+        [
+            'napari',
+            '--dev',
+            '--dev-module',
+            'first_plugin',
+            '--dev_module',
+            'second_plugin',
+            'image.tif',
+        ],
+    )
+    viewer = mock.Mock()
+    monkeypatch.setattr(__main__, 'Viewer', lambda: viewer)
+
+    with mock.patch('napari._hot_reload.version', return_value='0.3.0'):
+        assert __main__._build_viewer() is viewer
+
+    assert os.environ['NAPARI_DEV'] == '1'
+    assert os.environ['NAPARI_DEV_MODULES'] == 'first_plugin,second_plugin'
+    viewer._window._qt_viewer._qt_open.assert_called_once_with(
+        ['image.tif'], stack=[], plugin=None, layer_type=None
+    )
+
+
+@pytest.mark.parametrize('installed_version', [None, '0.2.3'])
+def test_cli_dev_requires_qtreload(
+    installed_version: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from importlib.metadata import PackageNotFoundError
+
+    from napari import _hot_reload
+
+    def version(name: str) -> str:
+        if installed_version is None:
+            raise PackageNotFoundError(name)
+        return installed_version
+
+    monkeypatch.setattr(_hot_reload, 'version', version)
+    monkeypatch.setattr(sys, 'argv', ['napari', '--dev'])
+
+    with pytest.raises(SystemExit) as exc:
+        __main__.main()
+
+    assert exc.value.code == 2
+    assert 'napari[reload]' in capsys.readouterr().err
 
 
 def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):

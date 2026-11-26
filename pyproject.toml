@@ -139,6 +139,9 @@ partsegcore = [
 all_optional = [
     "napari[optional,partsegcore]"
 ]
+reload = [
+    "qtreload>=0.3.0",
+]
 
 # the following extras need to match the dependency-groups below
 # they will be removed in napari 0.7.0
@@ -225,6 +228,7 @@ dev = [
     "pre-commit>=2.9.0", # to keep old instructions for developers working on napari
     "tox",
     "tox-min-req",
+    "napari[reload]",
     "napari[testing]",
 ]
 build = [
@@ -315,6 +319,7 @@ dev = [
     "pre-commit>=2.9.0",  # to keep old instructions for developers working on napari
     "tox",
     "tox-min-req",
+    "napari[reload]",
     {include-group = "testing"},
 ]
 build = [
