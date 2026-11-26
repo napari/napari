@@ -2,29 +2,40 @@ from __future__ import annotations
 
 import functools
 import inspect
+import operator
 import warnings
 from collections.abc import Callable, Sequence
+from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     NamedTuple,
+    TypeVar,
 )
 
 import dask
 import numpy as np
-import pandas as pd
 
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     import numpy.typing as npt
+    import pandas as pd
+    import pint
 
     from napari.layers._data_protocols import LayerDataProtocol
+else:
+
+    class _LazyPandas:
+        def __getattr__(self, attr: str) -> Any:
+            return getattr(import_module('pandas'), attr)
+
+    pd = _LazyPandas()
 
 
 class Extent(NamedTuple):
@@ -51,6 +62,37 @@ class Extent(NamedTuple):
     data: np.ndarray
     world: np.ndarray
     step: np.ndarray
+    units: tuple[pint.Unit, ...]
+
+
+class LayerListExtent(NamedTuple):
+    """Extent of coordinates in a local data space and world space.
+
+    Each extent is a (2, D) array that stores the minimum and maximum coordinate
+    values in each of D dimensions. Both the minimum and maximum coordinates are
+    inclusive so form an axis-aligned, closed interval or a D-dimensional box
+    around all the coordinates.
+
+    Attributes
+    ----------
+    data : (2, D) array of floats
+        The minimum and maximum raw data coordinates ignoring any transforms like
+        translation or scale.
+    world : (2, D) array of floats
+        The minimum and maximum world coordinates after applying a transform to the
+        raw data coordinates that brings them into a potentially shared world space.
+    step : (D,) array of floats
+        The step in each dimension that when taken from the minimum world coordinate,
+        should form a regular grid that eventually hits the maximum world coordinate.
+    """
+
+    data: np.ndarray | None
+    world: np.ndarray
+    step: np.ndarray
+    units: tuple[pint.Unit, ...] | None
+
+
+TFunc = TypeVar('TFunc', bound=Callable)
 
 
 def register_layer_action(
@@ -58,7 +100,7 @@ def register_layer_action(
     description: str,
     repeatable: bool = False,
     shortcuts: str | list[str] | None = None,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[TFunc], TFunc]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -75,7 +117,8 @@ def register_layer_action(
         The description of the action, this will typically be translated and
         will be what will be used in tooltips.
     repeatable : bool
-        A flag indicating whether the action autorepeats when key is held
+        Deprecated and ignored. Key auto-repeat is delivered to every binding
+        by default; hold-semantics bindings suppress it automatically.
     shortcuts : str | List[str]
         Shortcut to bind by default to the action we are registering.
 
@@ -87,7 +130,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func: Callable) -> Callable:
+    def _inner(func: TFunc) -> TFunc:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
@@ -114,7 +157,7 @@ def register_layer_attr_action(
     description: str,
     attribute_name: str,
     shortcuts=None,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[TFunc], TFunc]:
     """
     Convenient decorator to register an action with the current Layers.
     This will get and restore attribute from function first argument.
@@ -143,32 +186,30 @@ def register_layer_attr_action(
 
     """
 
-    def _handle(func: Callable) -> Callable:
+    def _handle(func: TFunc) -> TFunc:
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
         except StopIteration as e:
             raise RuntimeError(
-                trans._(
-                    'If actions has no arguments there is no way to know what to set the attribute to.',
-                    deferred=True,
-                ),
+                'If actions has no arguments there is no way to know what to set the attribute to.',
             ) from e
 
         @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args, **kwargs) -> Callable[[], None]:
             obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 
-            def _callback():
+            def _callback() -> None:
                 setattr(obj, attribute_name, prev_mode)
 
             return _callback
 
-        repeatable = False  # attribute actions are always non-repeatable
+        # _wrapper returns a release callback, so held-key auto-repeat is
+        # suppressed automatically while the hold is pending
         register_layer_action(
-            keymapprovider, description, repeatable, shortcuts
+            keymapprovider, description, shortcuts=shortcuts
         )(_wrapper)
         return func
 
@@ -201,8 +242,60 @@ def _nanmax(array):
     return max_value
 
 
+def _nanpercentile(
+    array: npt.ArrayLike, percentiles: tuple[float, float]
+) -> tuple[float, float]:
+    """
+    call np.percentile on the finite values of the array, (0, 1) if there are none
+    """
+    array = np.asarray(array)
+    finite = array[np.isfinite(array)]
+    if finite.size == 0:
+        return 0, 1
+    # promote to float64: the interpolation can overflow in small dtypes
+    # (e.g. int16, float16), and np.percentile does not support bool
+    low, high = np.percentile(
+        finite.astype(np.float64, copy=False), percentiles
+    )
+    return low, high
+
+
+def _resize_to_thumbnail(
+    image: np.ndarray, thumbnail_shape: tuple[int, int]
+) -> np.ndarray:
+    """Nearest-neighbor resize of ``image`` to fit ``thumbnail_shape``.
+
+    Preserves aspect ratio (each side at least 1 pixel) and trailing dims.
+    Equivalent to ``scipy.ndimage.zoom(image, ..., order=0, prefilter=False)``,
+    except that the last output pixel along each axis always comes from the
+    last input pixel (scipy's can land just outside ``image`` and become 0).
+
+    Note: this reimplementation was done to avoid costly scipy import.
+    """
+    in_shape = np.array(image.shape[:2])
+    scale = np.min(np.divide(thumbnail_shape, in_shape))
+    # rint rounds ties to even, like scipy's output-shape rounding.
+    out_shape = np.rint(np.clip(scale * in_shape, 1, thumbnail_shape)).astype(
+        np.intp
+    )
+
+    # Evenly spaced positions from the first to the last input pixel.
+    row_positions = np.linspace(0, in_shape[0] - 1, out_shape[0])
+    col_positions = np.linspace(0, in_shape[1] - 1, out_shape[1])
+    # Round half up (not to even), matching scipy's order-0 sampling.
+    rows = np.floor(row_positions + 0.5).astype(np.intp)
+    cols = np.floor(col_positions + 0.5).astype(np.intp)
+
+    resized = image[np.ix_(rows, cols)]
+    # numba-backed label colormaps reject non-native byte order.
+    return resized.astype(resized.dtype.newbyteorder('='), copy=False)
+
+
 def calc_data_range(
-    data: LayerDataProtocol, rgb: bool = False, dtype: np.dtype | None = None
+    data: LayerDataProtocol,
+    rgb: bool = False,
+    dtype: np.dtype | None = None,
+    percentiles: tuple[float, float] | None = None,
 ) -> tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
@@ -214,6 +307,10 @@ def calc_data_range(
         Flag if data is rgb.
     dtype : np.dtype, optional
         Dtype of the layer data. If None, the dtype of the data is used.
+    percentiles : pair of floats, optional
+        Lower and upper percentiles (between 0 and 100) to use instead of the
+        minimum and maximum, e.g. ``(1, 99)``. This makes the range robust to
+        a few outlier values. If None, the minimum and maximum are used.
 
     Returns
     -------
@@ -223,33 +320,42 @@ def calc_data_range(
     Notes
     -----
     If the data type is uint8, no calculation is performed, and 0-255 is
-    returned.
+    returned, even if percentiles are given.
+
+    For large data, only a sample of the data is used. With percentiles, the
+    percentiles are computed on all the sampled values together.
     """
+    if percentiles is not None:
+        low, high = percentiles
+        if not 0 <= low < high <= 100:
+            raise ValueError(
+                f'percentiles must satisfy 0 <= low < high <= 100, got {percentiles!r}'
+            )
+
     if (dtype is not None and dtype == np.uint8) or data.dtype == np.uint8:
         return (0, 255)
 
     if isinstance(data, np.ndarray) and data.ndim < 3:
-        min_val = _nanmin(data)
-        max_val = _nanmax(data)
+        if percentiles is None:
+            min_val, max_val = _nanmin(data), _nanmax(data)
+        else:
+            min_val, max_val = _nanpercentile(data, percentiles)
         if min_val == max_val:
             min_val = min(min_val, 0)
             max_val = max(max_val, 1)
         return float(min_val), float(max_val)
 
     center: int | list[int]
-    reduced_data: list | LayerDataProtocol
+    samples: list | None = None
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
-        center = int(data.shape[0] // 2)
+        center = data.shape[0] // 2
         slices = [
             slice(0, 4096),
             slice(center - 2048, center + 2048),
             slice(-4096, None),
         ]
-        reduced_data = [
-            [_nanmax(data[sl]) for sl in slices],
-            [_nanmin(data[sl]) for sl in slices],
-        ]
+        samples = [data[sl] for sl in slices]
     elif data.size > 1e7:
         # If data is very large take the average of the top, bottom, and
         # middle slices
@@ -257,7 +363,10 @@ def calc_data_range(
         bottom_plane_idx = (0,) * (data.ndim - offset)
         middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
         top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
-        idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
+        # dict.fromkeys removes duplicates (e.g. when there is a single plane)
+        idxs = list(
+            dict.fromkeys([bottom_plane_idx, middle_plane_idx, top_plane_idx])
+        )
         # If each plane is also very large, look only at a subset of the image
         if (
             np.prod(data.shape[-offset:]) > 1e7
@@ -265,24 +374,27 @@ def calc_data_range(
             and data.shape[-offset + 1] > 64
         ):
             # Find a central patch of the image to take
-            center = [int(s // 2) for s in data.shape[-offset:]]
+            center = [s // 2 for s in data.shape[-offset:]]
             central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
-            reduced_data = [
-                [_nanmax(data[idx + central_slice]) for idx in idxs],
-                [_nanmin(data[idx + central_slice]) for idx in idxs],
-            ]
+            samples = [data[idx + central_slice] for idx in idxs]
         else:
-            reduced_data = [
-                [_nanmax(data[idx]) for idx in idxs],
-                [_nanmin(data[idx]) for idx in idxs],
-            ]
-        # compute everything in one go
-        reduced_data = dask.compute(*reduced_data)
-    else:
-        reduced_data = data
+            samples = [data[idx] for idx in idxs]
 
-    min_val = _nanmin(reduced_data)
-    max_val = _nanmax(reduced_data)
+    if percentiles is not None:
+        # pool all the sampled values before computing the percentiles
+        computed = dask.compute(*(samples if samples is not None else [data]))
+        pooled = np.concatenate([np.ravel(s) for s in computed])
+        min_val, max_val = _nanpercentile(pooled, percentiles)
+    elif samples is not None:
+        # compute everything in one go
+        reduced_data = dask.compute(
+            [_nanmax(s) for s in samples], [_nanmin(s) for s in samples]
+        )
+        min_val = _nanmin(reduced_data)
+        max_val = _nanmax(reduced_data)
+    else:
+        min_val = _nanmin(data)
+        max_val = _nanmax(data)
 
     if min_val == max_val:
         min_val = min(min_val, 0)
@@ -310,7 +422,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """
     d = b - a
 
-    norm: Any  # float or array or float, mypy has some difficulties.
+    norm: Any  # float or array or float, pyrefly has some difficulties.
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
@@ -346,7 +458,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 
     Float images are multiplied by 255 and then cast to uint8.
     """
-    out_dtype = np.dtype(np.uint8)
+    out_dtype: np.dtype = np.dtype(np.uint8)
     out_max = np.iinfo(out_dtype).max
     if data.dtype == out_dtype:
         return data
@@ -354,7 +466,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     if in_kind == 'b':
         return data.astype(out_dtype) * 255
     if in_kind == 'f':
-        image_out = np.multiply(data, out_max, dtype=data.dtype)
+        image_out = np.multiply(data, out_max)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
@@ -368,7 +480,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
                 out_dtype
             )
 
-        np.maximum(data, 0, out=data, dtype=data.dtype)
+        np.maximum(data, 0, out=data)
         if data.dtype == np.int8:
             return (data * 2).astype(np.uint8)
         if data.max() < out_max:
@@ -457,10 +569,7 @@ def validate_properties(
         expected_len = lens[0]
     if any(v != expected_len for v in lens):
         raise ValueError(
-            trans._(
-                'the number of items must be equal for all properties',
-                deferred=True,
-            )
+            'the number of items must be equal for all properties'
         )
 
     return {k: np.asarray(v) for k, v in properties.items()}
@@ -489,12 +598,7 @@ def _coerce_current_properties_value(
     """
     if isinstance(value, np.ndarray | list | tuple):
         if len(value) != 1:
-            raise ValueError(
-                trans._(
-                    'current_properties values should have length 1.',
-                    deferred=True,
-                )
-            )
+            raise ValueError('current_properties values should have length 1.')
         coerced_value = np.asarray(value)
     else:
         coerced_value = np.array([value])
@@ -530,14 +634,16 @@ def coerce_current_properties(
 
 def compute_multiscale_level(
     requested_shape, shape_threshold, downsample_factors
-):
+) -> int:
     """Computed desired level of the multiscale given requested field of view.
 
     The level of the multiscale should be the lowest resolution such that
-    the requested shape is above the shape threshold. By passing a shape
-    threshold corresponding to the shape of the canvas on the screen this
+    the requested shape exceeds the shape threshold in the dimensions that
+    contribute to level selection. Dimensions that already fit within the
+    canvas or are not downsampled across pyramid levels are ignored. By
+    passing a shape threshold corresponding to the size of the canvas, this
     ensures that we have at least one data pixel per screen pixel, but no
-    more than we need.
+    more than necessary.
 
     Parameters
     ----------
@@ -554,18 +660,31 @@ def compute_multiscale_level(
     level : int
         Level of the multiscale to be viewing.
     """
+
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
-    # Find the highest level (lowest resolution) allowed
-    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    level = locations[-1][0] if len(locations) > 0 else 0
-    return level
+    # Find the highest level (lowest resolution) allowed, ignoring dimensions
+    # that already fit within the canvas or are not downsampled.
+    exceeds_threshold = requested_shape > shape_threshold
+    is_downsampled = np.any(downsample_factors > 1, axis=0)
+    active_dims = exceeds_threshold & is_downsampled
+
+    if not np.any(active_dims):
+        return 0
+
+    locations = np.flatnonzero(
+        np.all(
+            (scaled_shape > shape_threshold)[:, active_dims],
+            axis=1,
+        )
+    )
+    return int(locations[-1]) if locations.size else 0
 
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
-):
+) -> tuple[int, np.ndarray[tuple[Literal[2], int], np.dtype[np.int_]]]:
     """Computed desired level and corners of a multiscale view.
 
     The level of the multiscale should be the lowest resolution such that
@@ -602,6 +721,146 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
+def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
+    """Return chunk boundary coordinates for one axis.
+
+    This accepts the common chunk metadata forms:
+    - zarr/tensorstore: one regular chunk size for the axis, e.g. ``64``
+    - dask: explicit chunk sizes for the axis, e.g. ``(64, 64, 32)``
+
+    The returned boundaries include both ``0`` and ``axis_size``.  For example,
+    chunks ``(4, 4, 2)`` for an axis of size ``10`` return ``[0, 4, 8, 10]``.
+    """
+    if isinstance(axis_chunks, Sequence) and not isinstance(axis_chunks, str):
+        # dask: explicit per-axis chunk sizes, e.g. (4, 4, 2).
+        # operator.index coerces numpy ints to Python ints or raises
+        try:
+            chunk_sizes = [operator.index(size) for size in axis_chunks]
+        except TypeError:
+            return None
+        if any(size <= 0 for size in chunk_sizes):
+            return None
+        boundaries = np.concatenate([[0], np.cumsum(chunk_sizes)])
+        if boundaries[-1] != axis_size:
+            return None
+        return boundaries
+
+    # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
+    # edge chunk may be smaller than this size.
+    try:
+        chunk_size = operator.index(axis_chunks)
+    except TypeError:
+        return None
+    if chunk_size <= 0:
+        return None
+    return np.append(np.arange(0, axis_size, chunk_size), axis_size)
+
+
+def _chunks_metadata(
+    data: LayerDataProtocol,
+) -> Sequence[int | Sequence[int] | None] | None:
+    """Return zarr/dask-style per-axis ``chunks`` metadata, or ``None``.
+
+    dask and zarr expose this directly as ``chunks``. tensorstore has no
+    ``chunks`` attribute; its read granularity lives on
+    ``chunk_layout.read_chunk.shape``, a per-axis tuple matching the zarr form
+    (with ``None`` for axes that are not chunked). ``read_chunk`` is the
+    smallest independently-readable unit.
+
+    Returns
+    -------
+    Sequence[int | Sequence[int] | None] | None
+        A sequence with one entry per axis, each entry either a single chunk
+        size (regular grid, as zarr and tensorstore expose) or a sequence of
+        explicit chunk sizes (as dask exposes).
+        Returns ``None`` when the array exposes no usable chunk metadata.
+    """
+    # zarr/dask-like arrays with ``chunks`` attribute
+    chunks = getattr(data, 'chunks', None)
+    if chunks is not None:
+        return chunks
+
+    # tensorstore arrays with ``chunk_layout.read_chunk.shape`` attribute
+    layout = getattr(data, 'chunk_layout', None)
+    read_chunk = getattr(layout, 'read_chunk', None)
+    if read_chunk is None:
+        return None
+    # Our boundaries assume a chunk grid anchored at 0, matching napari's
+    # 0-based indexing. Skip translated grids rather than compute misaligned
+    # boundaries; the origin is otherwise all zeros (or unspecified None).
+    grid_origin = getattr(layout, 'grid_origin', None) or ()
+    if any(origin not in (0, None) for origin in grid_origin):
+        return None
+    return read_chunk.shape
+
+
+def expand_corners_to_chunk_boundaries(
+    corners: npt.NDArray,
+    data: LayerDataProtocol,
+    axes: Sequence[int],
+) -> npt.NDArray:
+    """Expand inclusive corner bounds to include complete data chunks.
+
+    For chunked arrays, reading any part of a chunk loads the whole chunk
+    from the backing store, so this expands the requested bounds outward to chunk
+    boundaries.
+
+    Parameters
+    ----------
+    corners : array (2, D)
+        Inclusive lower (``corners[0]``) and upper (``corners[1]``) corner
+        pixel bounds in the coordinate space of ``data``. The bounds must be
+        ordered per axis (``corners[0] <= corners[1]``).
+    data : LayerDataProtocol
+        Array whose chunk metadata drives the expansion. Supported forms are
+        dask arrays (``chunks`` is a tuple of per-axis chunk-size tuples), zarr
+        arrays (``chunks`` is the regular chunk shape), and tensorstore arrays
+        (read granularity read from ``chunk_layout.read_chunk``).
+    axes : sequence of int
+        Axes to expand, typically the displayed axes. Other axes (e.g. sliced
+        ones) are left untouched, so they keep their single-plane bounds.
+
+    Returns
+    -------
+    array (2, D)
+        Corner bounds expanded outward to chunk boundaries along ``axes``. A
+        new array is returned when expansion happens; ``corners`` is returned
+        unchanged (and unmodified) for arrays without usable chunk metadata.
+    """
+    chunks = _chunks_metadata(data)
+    shape = getattr(data, 'shape', None)
+    if chunks is None or shape is None:
+        return corners
+
+    try:
+        if len(chunks) != len(shape):
+            return corners
+    except TypeError:
+        return corners
+
+    expanded = np.array(corners, copy=True)
+    for axis in axes:
+        try:
+            axis_size = operator.index(shape[axis])
+            boundaries = _chunk_boundaries(chunks[axis], axis_size)
+        except (IndexError, TypeError):
+            return corners
+        if boundaries is None:
+            return corners
+
+        axis_max = boundaries[-1] - 1
+        start = np.clip(expanded[0, axis], 0, axis_max)
+        stop = np.clip(expanded[1, axis], 0, axis_max)
+
+        start_chunk = np.searchsorted(boundaries, start, side='right') - 1
+        stop_chunk = np.searchsorted(boundaries, stop, side='right') - 1
+        # corner bounds are inclusive, while chunk boundaries are exclusive.
+        expanded[0, axis] = boundaries[start_chunk]
+        expanded[1, axis] = boundaries[stop_chunk + 1] - 1
+
+    return expanded
+
+
 def coerce_affine(
     affine: npt.ArrayLike | Affine,
     *,
@@ -636,11 +895,7 @@ def coerce_affine(
         affine = Affine(affine_matrix=np.array(affine), ndim=ndim)
     elif not isinstance(affine, Affine):
         raise TypeError(
-            trans._(
-                'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
-                deferred=True,
-                dtype=type(affine),
-            )
+            f'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {type(affine)}'
         )
     if name is not None:
         affine.name = name
@@ -712,11 +967,8 @@ def get_extent_world(
     """
     if centered is not None:
         warnings.warn(
-            trans._(
-                'The `centered` argument is deprecated. '
-                'Extents are now always centered on data points.',
-                deferred=True,
-            ),
+            'The `centered` argument is deprecated. '
+            'Extents are now always centered on data points.',
             stacklevel=2,
         )
 
@@ -1007,20 +1259,12 @@ def _validate_feature_defaults(
         extra_defaults = default_columns - value_columns
         if len(extra_defaults) > 0:
             raise ValueError(
-                trans._(
-                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
-                    deferred=True,
-                    extra_defaults=extra_defaults,
-                )
+                f'Feature defaults contain some extra columns not in feature values: {extra_defaults}'
             )
         missing_defaults = value_columns - default_columns
         if len(missing_defaults) > 0:
             raise ValueError(
-                trans._(
-                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
-                    deferred=True,
-                    missing_defaults=missing_defaults,
-                )
+                f'Feature defaults is missing some columns in feature values: {missing_defaults}'
             )
         # Convert to series first to capture the per-column dtype from values,
         # since the DataFrame initializer does not support passing multiple dtypes.
@@ -1086,6 +1330,19 @@ def _unique_element(array: Array) -> Any | None:
     if len(array) == 0:
         return None
     el = array[0]
+    if len(array) == 1:
+        return el
+    if isinstance(el, (list, tuple, np.ndarray)):
+        # Container-valued elements (e.g. list-valued features, or a 2D
+        # array of per-point RGBA colors) can't be safely compared via
+        # numpy broadcasting: `array[1:] != el` raises on ragged/differently
+        # shaped elements, and `np.equal(array[1:], array[:1])` raises
+        # "ambiguous truth value" once any element has more than one entry.
+        # Compare them individually with np.array_equal instead, which
+        # returns False rather than raising on a shape mismatch.
+        if all(np.array_equal(x, el) for x in array[1:]):
+            return el
+        return None
     if np.any(array[1:] != el):
         return None
     return el

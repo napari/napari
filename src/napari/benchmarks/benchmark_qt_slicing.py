@@ -2,7 +2,7 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import time
+import asyncio
 
 import numpy as np
 import zarr
@@ -39,13 +39,19 @@ def get_image_params():
 
 
 class SlowMemoryStore(zarr.storage.MemoryStore):
+    """Memory store that waits ``load_delay`` seconds on every read.
+
+    The wait is async, so concurrent chunk reads overlap like they would
+    against a remote store.
+    """
+
     def __init__(self, load_delay, *args, **kwargs) -> None:
         self.load_delay = load_delay
         super().__init__(*args, **kwargs)
 
-    def __getitem__(self, item: str):
-        time.sleep(self.load_delay)
-        return super().__getitem__(item)
+    async def get(self, key, prototype=None, byte_range=None):
+        await asyncio.sleep(self.load_delay)
+        return await super().get(key, prototype, byte_range)
 
 
 class AsyncImage2DSuite:
@@ -74,7 +80,11 @@ class AsyncImage2DSuite:
 
     def time_set_view_slice(self, *args):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._set_view_slice()
+        else:
+            # before https://github.com/napari/napari/pull/8254
+            self.layer._set_view_slice()
 
     def time_refresh(self, *args):
         """Time to refresh view."""
@@ -155,9 +165,9 @@ class QtViewerAsyncPointsAndImage2DSuite:
     timeout = 600
 
     skip_params = Skip(
-        if_in_pr=lambda n_points, latency, chunksize: n_points > 2**14
-        or chunksize > 512
-        or latency > 0,
+        if_in_pr=lambda n_points, latency, chunksize: (
+            n_points > 2**14 or chunksize > 512 or latency > 0
+        ),
     )
 
     def setup(self, n_points, latency, chunksize):

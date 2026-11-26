@@ -96,7 +96,7 @@ def shift_plane_along_normal(viewer, event):
     volume_layer = viewer.layers['volume']
 
     # Calculate intersection of click with data bounding box
-    near_point, far_point = volume_layer.get_ray_intersections(
+    near_point, _far_point = volume_layer.get_ray_intersections(
         event.position,
         event.view_direction,
         event.dims_displayed,
@@ -184,10 +184,10 @@ def shift_plane_along_normal(viewer, event):
     vectors_layer.mouse_pan = True
 
 
-viewer.axes.visible = True
-viewer.camera.angles = (45, 45, 45)
-viewer.camera.zoom = 5
-viewer.text_overlay.update({
+viewer.scene.overlays.axes.visible = True
+viewer.scene.camera.angles = (45, 45, 45)
+viewer.scene.camera.zoom = 5
+viewer.canvas.overlays.text.update({
     'text': 'Drag the clipping plane surface to move it along its normal.',
     'font_size': 20,
     'visible': True,

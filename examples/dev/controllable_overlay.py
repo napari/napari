@@ -1,7 +1,6 @@
-# mypy: disable-error-code="attr-defined"
 import warnings
-from collections.abc import Generator
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import numpy as np
 from magicgui import magicgui
@@ -17,6 +16,9 @@ from napari.layers.utils.interaction_box import (
     generate_interaction_box_vertices,
     get_nearby_handle,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 # define a model for the selection box overlay;

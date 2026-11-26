@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import base64
 import html
 from io import BytesIO
+from typing import TYPE_CHECKING
 from warnings import warn
 
 try:
@@ -14,14 +17,19 @@ except ImportError:
 
 from napari.utils.io import imsave_png
 
+if TYPE_CHECKING:
+    import numpy as np
+
+    from napari.viewer import Viewer
+
 __all__ = ['NotebookScreenshot', 'nbscreenshot']
 
 
 class NotebookScreenshot:
-    """Display napari screenshot in the jupyter notebook.
+    """Display a napari screenshot in a jupyter notebook.
 
     Functions returning an object with a _repr_png_() method
-    will displayed as a rich image in the jupyter notebook.
+    will be displayed as a rich image in a jupyter notebook.
 
     https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html
 
@@ -46,7 +54,8 @@ class NotebookScreenshot:
     >>> from napari.utils import nbscreenshot
     >>> from skimage.data import chelsea
 
-    >>> viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
+    >>> viewer = napari.Viewer()
+    >>> viewer.add_image(chelsea(), name='chelsea-the-cat')
     >>> nbscreenshot(viewer)
     # screenshot just the canvas without the napari viewer framing it
     >>> nbscreenshot(viewer, canvas_only=True)
@@ -55,10 +64,10 @@ class NotebookScreenshot:
 
     def __init__(
         self,
-        viewer,
+        viewer: Viewer,
         *,
-        canvas_only=False,
-        alt_text=None,
+        canvas_only: bool = False,
+        alt_text: str | None = None,
     ) -> None:
         """Initialize screenshot object.
 
@@ -74,13 +83,14 @@ class NotebookScreenshot:
             Image description alternative text, for screenreader accessibility.
             Good alt-text describes the image and any text within the image
             in no more than three short, complete sentences.
+            By default, None.
         """
         self.viewer = viewer
         self.canvas_only = canvas_only
-        self.image = None
+        self.image: np.ndarray | None = None
         self.alt_text = self._clean_alt_text(alt_text)
 
-    def _clean_alt_text(self, alt_text):
+    def _clean_alt_text(self, alt_text: str | None) -> str | None:
         """Clean user input to prevent script injection."""
         if alt_text is not None:
             if lxml_unavailable:
@@ -92,7 +102,7 @@ class NotebookScreenshot:
                 return None
             # cleaner won't recognize escaped script tags, so always unescape
             # to be safe
-            alt_text = html.unescape(str(alt_text))
+            alt_text = html.unescape(alt_text)
             cleaner = Cleaner()
             try:
                 doc = document_fromstring(alt_text)
@@ -107,7 +117,7 @@ class NotebookScreenshot:
                 alt_text = None
         return alt_text
 
-    def _repr_png_(self):
+    def _repr_png_(self) -> bytes:
         """PNG representation of the viewer object for IPython.
 
         Returns
@@ -126,11 +136,58 @@ class NotebookScreenshot:
             png = file_obj.read()
         return png
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
         _alt = html.escape(self.alt_text) if self.alt_text is not None else ''
         return f'<img src="{url}" alt="{_alt}"></img>'
 
 
-nbscreenshot = NotebookScreenshot
+def nbscreenshot(
+    viewer: Viewer,
+    *,
+    canvas_only: bool = False,
+    alt_text: str | None = None,
+) -> NotebookScreenshot:
+    """Display a napari screenshot in a Jupyter notebook.
+
+    This is a convenience wrapper around `NotebookScreenshot` for the common
+    use case of returning a rich display object directly from a notebook cell.
+
+    Parameters
+    ----------
+    viewer : napari.Viewer
+        The napari viewer.
+    canvas_only : bool, optional
+        If False include the napari viewer frame in the screenshot,
+        and if True then take screenshot of just the image display canvas.
+        By default, False.
+    alt_text : str, optional
+        Image description alternative text, for screenreader accessibility.
+        Good alt-text describes the image and any text within the image
+        in no more than three short, complete sentences.
+        By default, None.
+
+    Returns
+    -------
+    NotebookScreenshot
+        A rich display object that renders as a PNG in notebook frontends.
+
+    Examples
+    --------
+
+    >>> import napari
+    >>> from napari.utils import nbscreenshot
+    >>> from skimage.data import chelsea
+
+    >>> viewer = napari.Viewer()
+    >>> viewer.add_image(chelsea(), name='chelsea-the-cat')
+    >>> nbscreenshot(viewer)
+    >>> # screenshot just the canvas without the napari viewer framing it
+    >>> nbscreenshot(viewer, canvas_only=True)
+    """
+    return NotebookScreenshot(
+        viewer,
+        canvas_only=canvas_only,
+        alt_text=alt_text,
+    )

@@ -1,5 +1,11 @@
+import itertools
+
 import numpy as np
 import pytest
+from vispy.color import Colormap
+from vispy.visuals.filters import Alpha
+
+from napari._vispy.layers.tiled_image import TiledImageNode
 
 
 def test_big_2D_image(make_napari_viewer):
@@ -11,9 +17,14 @@ def test_big_2D_image(make_napari_viewer):
     layer = viewer.add_image(data, multiscale=False)
     visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
     assert visual.node is not None
-    if visual.MAX_TEXTURE_SIZE_2D is not None:
-        s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
-        np.testing.assert_array_equal(layer._transforms['tile2data'].scale, s)
+    if (
+        visual.MAX_TEXTURE_SIZE_2D is not None
+        and shape[0] > visual.MAX_TEXTURE_SIZE_2D
+    ):
+        assert isinstance(visual.node, TiledImageNode)
+        assert visual.MAX_TEXTURE_SIZE_2D in itertools.chain(
+            *visual.node.offsets
+        )
 
 
 def test_big_3D_image(make_napari_viewer):
@@ -58,3 +69,24 @@ def test_downsample_value(make_napari_viewer, shape):
             layer.get_value(viewer.cursor.position, world=True)
             == expected_value
         )
+
+
+def test_tiled_image_keeps_settings_when_tile_count_changes():
+    node = TiledImageNode(np.zeros((4, 4), dtype=np.float32), tile_size=2)
+    cmap = Colormap([[0, 0, 0, 1], [1, 0, 0, 1]])
+    node.cmap = cmap
+    node.clim = (0.2, 0.8)
+    node.set_gl_state(blend=True, blend_func=('one', 'one'))
+    filt = Alpha(0.5)
+    node.attach(filt)
+
+    node.set_data(np.zeros((0, 0), dtype=np.float32))
+    node.set_data(np.zeros((6, 6), dtype=np.float32))
+
+    assert len(node.adopted_children) == 9
+    for child in node.adopted_children:
+        assert child.cmap is cmap
+        assert child.clim == (0.2, 0.8)
+        assert child._vshare.gl_state['blend_func'] == ('one', 'one')
+        assert filt in child._filters
+    node.detach(filt)

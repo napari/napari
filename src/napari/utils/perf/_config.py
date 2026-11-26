@@ -1,17 +1,20 @@
 """Perf configuration flags."""
 
+from __future__ import annotations
+
 import json
 import os
-from collections.abc import Callable
 from pathlib import Path
-from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import wrapt
 
 from napari.utils.perf._patcher import patch_callables
 from napari.utils.perf._timers import perf_timer
-from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import ModuleType
 
 PERFMON_ENV_VAR = 'NAPARI_PERFMON'
 
@@ -113,12 +116,7 @@ class PerfmonConfig:
             return self.data['callable_lists'][list_name]
         except KeyError as e:
             raise PerfmonConfigError(
-                trans._(
-                    "{path} has no callable list '{list_name}'",
-                    deferred=True,
-                    path=self.config_path,
-                    list_name=list_name,
-                )
+                f"{self.config_path} has no callable list '{list_name}'"
             ) from e
 
     def _patch_callables(self) -> None:

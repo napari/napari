@@ -1,4 +1,4 @@
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 def test_str_enum():
@@ -10,5 +10,6 @@ def test_str_enum():
     assert Cake.CHOC == 'chocolate'
     assert Cake.CHOC == Cake.CHOC
     assert f'{Cake.CHOC}' == 'chocolate'
+    assert str(Cake.CHOC) == 'chocolate'
     assert Cake.CHOC != 'vanilla'
     assert Cake.CHOC != Cake.VANILLA

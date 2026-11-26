@@ -59,22 +59,29 @@ doi = '10.5281/zenodo.13380203'
 tmp_dir = pooch.os_cache('napari-surface-texture-example')
 os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
-    'mesh': 'PocilloporaDamicornisSkin.obj',
-    # "materials": "PocilloporaVerrugosaSkinCrop.mtl",  # not yet supported
-    'Texture_0': 'PocilloporaDamicornisSkin_Texture_0.jpg',
-    'GeneratedMat2': 'PocilloporaDamicornisSkin_GeneratedMat2.png',
+    'mesh': (
+        'PocilloporaDamicornisSkin.obj',
+        'sha256:1a63fc9ce7a931ecf5f5096406c694b8425344d0d9e63edd1681aa764f0534a7',
+    ),
+    # 'materials': (  # not yet supported
+    #     'PocilloporaDamicornisSkin.mtl',
+    #     'md5:f1d0e6f408eb661d6eed77db3a383f05',
+    # ),
+    'Texture_0': (
+        'PocilloporaDamicornisSkin_Texture_0.jpg',
+        'sha256:0338c79ee43783c0a372f9a65cce21709d206ac09c9142507d0a85b9e2b8003e',
+    ),
+    'GeneratedMat2': (
+        'PocilloporaDamicornisSkin_GeneratedMat2.png',
+        'sha256:76a38c400cdc3ccda2603e901adcc730f7f4bab9da728e51054961d8c8ae22c8',
+    ),
 }
+data_to_path = {}
 print(f'downloading data into {tmp_dir}')
-for file_name in data_files.values():
-    if not (tmp_dir / file_name).exists():
-        print(f'downloading {file_name}')
-        download(
-            f'doi:{doi}/{file_name}',
-            output_file=tmp_dir / file_name,
-            pooch=None,
-        )
-    else:
-        print(f'using cached {tmp_dir / file_name}')
+for id_, (file_name, known_hash) in data_files.items():
+    res = pooch.retrieve(f'doi:{doi}/{file_name}', known_hash=known_hash,  progressbar=True)
+    data_to_path[id_] = res
+
 
 ###############################################################################
 # Load the model
@@ -83,7 +90,7 @@ for file_name in data_files.values():
 # support reading material properties (.mtl files) nor separate texture and
 # vertex indices (i.e. repeated vertices). Normal vectors read from the file
 # are also ignored and re-calculated from the faces.
-vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files['mesh'])
+vertices, faces, _normals, texcoords = read_mesh(data_to_path['mesh'])
 
 ###############################################################################
 # Load the textures
@@ -91,8 +98,8 @@ vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files['mesh'])
 # This model comes with two textures: `Texture_0` is generated from
 # photogrammetry of the actual object, and `GeneratedMat2` is a generated
 # material to fill in  parts of the model lacking photographic texture.
-photo_texture = imread(tmp_dir / data_files['Texture_0'])
-generated_texture = imread(tmp_dir / data_files['GeneratedMat2'])
+photo_texture = imread(data_to_path['Texture_0'])
+generated_texture = imread(data_to_path['GeneratedMat2'])
 
 ###############################################################################
 # This is what the texture images look like in 2D:
@@ -136,8 +143,8 @@ viewer = napari.Viewer(ndisplay=3)
 viewer.add_layer(photo_texture_layer)
 viewer.add_layer(generated_texture_layer)
 
-viewer.camera.angles = (90.0, 0.0, -75.0)
-viewer.camera.zoom = 75
+viewer.scene.camera.angles = (70, -20, 5)
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

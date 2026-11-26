@@ -1,7 +1,71 @@
 import numpy as np
 
 from napari._vispy.layers.shapes import VispyShapesLayer
+from napari._vispy.utils.qt_font import FontInfo
+from napari.components import Dims
 from napari.layers import Shapes
+
+SQUARE = np.array([[0, 0], [0, 10], [10, 10], [10, 0]])
+
+
+def test_empty_shape_faces_are_hidden_until_data_is_added():
+    layer = Shapes()
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+
+    assert not vispy_layer.node.shape_faces.visible
+
+    layer.add(SQUARE)
+    assert vispy_layer.node.shape_faces.visible
+
+    layer.data = []
+    assert not vispy_layer.node.shape_faces.visible
+
+
+def test_shape_faces_are_hidden_only_while_the_slice_is_empty():
+    shape = np.pad(SQUARE, ((0, 0), (1, 0)))
+    layer = Shapes(shape)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+
+    assert vispy_layer.node.shape_faces.visible
+
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert not vispy_layer.node.shape_faces.visible
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert vispy_layer.node.shape_faces.visible
+
+
+def test_shape_highlights_are_hidden_until_a_shape_is_selected():
+    layer = Shapes(SQUARE)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+    highlight_nodes = (
+        vispy_layer.node.shape_highlights,
+        vispy_layer.node.highlight_lines,
+        vispy_layer.node.highlight_vertices,
+    )
+
+    assert [node.visible for node in highlight_nodes] == [False, False, False]
+
+    layer.mode = 'select'
+    layer.selected_data = {0}
+    assert [node.visible for node in highlight_nodes] == [True, True, True]
+
+    layer.selected_data = set()
+    assert [node.visible for node in highlight_nodes] == [False, False, False]
+
+
+def test_shape_text_is_hidden_when_no_text_is_visible():
+    layer = Shapes(text={'string': {'constant': 'label'}})
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+    text_node = vispy_layer._get_text_node()
+
+    assert not text_node.visible
+
+    layer.add(SQUARE)
+    assert text_node.visible
+
+    layer.text.visible = False
+    assert not text_node.visible
 
 
 def test_remove_selected_with_derived_text():
@@ -10,7 +74,7 @@ def test_remove_selected_with_derived_text():
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Shapes(shapes, properties=properties, text='class')
-    vispy_layer = VispyShapesLayer(layer)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
 
@@ -28,7 +92,7 @@ def test_change_text_updates_node_string():
         'name': np.array(['D', 'E', 'F']),
     }
     layer = Shapes(shapes, properties=properties, text='class')
-    vispy_layer = VispyShapesLayer(layer)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, properties['class'])
 
@@ -43,7 +107,7 @@ def test_change_text_color_updates_node_color():
     properties = {'class': np.array(['A', 'B', 'C'])}
     text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Shapes(shapes, properties=properties, text=text)
-    vispy_layer = VispyShapesLayer(layer)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
 
@@ -57,7 +121,7 @@ def test_change_properties_updates_node_strings():
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Shapes(shapes, properties=properties, text='class')
-    vispy_layer = VispyShapesLayer(layer)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
 
@@ -71,7 +135,7 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Shapes(shapes, properties=properties, text='class')
-    vispy_layer = VispyShapesLayer(layer)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
 
@@ -86,7 +150,7 @@ def test_text_with_non_empty_constant_string():
     shapes = np.random.rand(3, 4, 2)
     layer = Shapes(shapes, text={'string': {'constant': 'a'}})
 
-    vispy_layer = VispyShapesLayer(layer)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
 
     text_node = vispy_layer._get_text_node()
     # Vispy cannot broadcast a constant string and assert_array_equal

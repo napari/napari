@@ -17,6 +17,7 @@ class MouseEvent:
 
     type: str
     is_dragging: bool = False
+    button: int | None = None
     modifiers: list[str] = field(default_factory=list)
     position: tuple[int, int] | tuple[int, int, int] = (
         0,
@@ -28,17 +29,18 @@ class MouseEvent:
     view_direction: list[float] | None = None
     up_direction: list[float] | None = None
     dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
+    dims_point: list[int] = field(default_factory=lambda: [0, 0])
     delta: tuple[float, float] | None = None
     native: bool | None = None
 
 
-def read_only_mouse_event(*args, **kwargs):
+def read_only_mouse_event(*args, **kwargs) -> ReadOnlyWrapper:
     return ReadOnlyWrapper(
         MouseEvent(*args, **kwargs), exceptions=('handled',)
     )
 
 
-def validate_all_params_in_docstring(func):
+def validate_all_params_in_docstring(func) -> None:
     """
     Validate if all the parameters in the function signature are present in the docstring.
     """
@@ -59,7 +61,7 @@ def validate_all_params_in_docstring(func):
         # assert sig.annotation == doc.type_name, f"Type of parameter {sig.name} in signature and docstring do not match"
 
 
-def validate_kwargs_sorted(func):
+def validate_kwargs_sorted(func) -> None:
     """
     Validate if the keyword arguments in the function signature are sorted alphabetically.
     """
@@ -74,7 +76,9 @@ def validate_kwargs_sorted(func):
     )
 
 
-def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
+def validate_docstring_parent_class_consistency(
+    klass, skip=('data', 'ndim')
+) -> None:
     """
     Validate if the docstrings of the class parameters and type information
     are consistent with the parent class.

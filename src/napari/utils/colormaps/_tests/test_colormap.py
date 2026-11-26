@@ -1,3 +1,4 @@
+import copy
 import importlib
 from collections import defaultdict
 from itertools import product
@@ -6,8 +7,8 @@ from unittest.mock import patch
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
 from napari.utils.colormap_backend import ColormapBackend, set_backend
 from napari.utils.colormaps import (
@@ -90,7 +91,7 @@ def test_wrong_start_control_point():
     """Test wrong start of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(
-        ValidationError, match='must start with 0.0 and end with 1.0'
+        ValidationError, match=r'must start with 0.0 and end with 1.0'
     ):
         Colormap(colors, name='testing', controls=[0.1, 0.75, 1])
 
@@ -99,7 +100,7 @@ def test_wrong_end_control_point():
     """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(
-        ValidationError, match='must start with 0.0 and end with 1.0'
+        ValidationError, match=r'must start with 0.0 and end with 1.0'
     ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
 
@@ -144,7 +145,7 @@ def test_colormap_equality():
 
 def test_colormap_recreate():
     c_map = Colormap('black')
-    Colormap(**c_map.dict())
+    Colormap(**c_map.model_dump())
 
 
 @pytest.mark.parametrize('ndim', range(1, 5))
@@ -230,6 +231,27 @@ def test_direct_label_colormap_simple(direct_label_colormap):
     np.testing.assert_array_equal(
         color_dict[0], direct_label_colormap.color_dict[None]
     )
+
+
+def test_direct_label_colormap_deepcopy_after_map(direct_label_colormap):
+    """A rendered DirectLabelColormap must still be deep-copyable.
+
+    Once ``map`` has run, the numba backend caches a ``typed.Dict`` in a
+    private attribute. That object cannot be pickled/deep-copied, which broke
+    ``copy.deepcopy`` of the colormap (e.g. from napari-animation capturing
+    layer state). See the regression: the copy must be independent and map
+    identically.
+    """
+    values = np.array([0, 1, 2, 3, 12, 7], dtype=np.int32)
+    expected = direct_label_colormap.map(values)  # populates the cache
+
+    cmap_copy = copy.deepcopy(direct_label_colormap)
+
+    assert cmap_copy is not direct_label_colormap
+    np.testing.assert_array_equal(cmap_copy.map(values), expected)
+    # the rebuildable caches must be independent objects, not shared
+    assert cmap_copy._cache_other is not direct_label_colormap._cache_other
+    assert cmap_copy._cache_mapping is not direct_label_colormap._cache_mapping
 
 
 def test_direct_label_colormap_selection(direct_label_colormap):

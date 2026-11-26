@@ -1,6 +1,6 @@
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari.layers import Points
 from napari.layers._source import Source, current_source, layer_source
 

@@ -1,12 +1,16 @@
 import os
+import sys
+import warnings
 from collections import defaultdict
 from unittest.mock import Mock
 
 import pytest
-from qtpy.QtWidgets import QAction, QShortcut
+from qtpy.QtGui import QAction, QFont, QShortcut
+from qtpy.QtWidgets import QLabel
 
 from napari._qt.qt_event_loop import (
     _ipython_has_eventloop,
+    get_qapp,
     run,
     set_app_id,
 )
@@ -46,12 +50,70 @@ def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
 
     with monkeypatch.context() as m:
         mock_exec = Mock()
-        m.setattr(qapp, 'exec_', mock_exec)
+        m.setattr(qapp, 'exec', mock_exec)
         run()
         mock_exec.assert_called_once()
 
     v1.close()
     v2.close()
+
+
+def test_wayland_warning_on_preexisting_app(qapp, monkeypatch):
+    """Warn when a pre-existing QApplication is on Wayland with Nvidia."""
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    monkeypatch.setattr(qapp, 'platformName', lambda: 'wayland')
+    monkeypatch.setattr(
+        'napari._qt.qt_event_loop._nvidia_driver_loaded', lambda: True
+    )
+    with pytest.warns(UserWarning, match='Wayland startup workaround'):
+        get_qapp()
+
+
+@pytest.mark.parametrize(
+    ('platform', 'platform_name', 'nvidia'),
+    [
+        ('linux', 'xcb', True),  # not on Wayland
+        ('darwin', 'cocoa', True),  # not Linux
+        ('linux', 'wayland', False),  # Wayland but no Nvidia driver
+    ],
+)
+def test_no_wayland_warning(
+    qapp, monkeypatch, platform, platform_name, nvidia
+):
+    """No warning unless on Linux+Wayland with the Nvidia driver loaded."""
+    monkeypatch.setattr(sys, 'platform', platform)
+    monkeypatch.setattr(qapp, 'platformName', lambda: platform_name)
+    monkeypatch.setattr(
+        'napari._qt.qt_event_loop._nvidia_driver_loaded', lambda: nvidia
+    )
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter('always')
+        get_qapp()
+    assert not any(
+        'Wayland startup workaround' in str(w.message) for w in records
+    )
+
+
+def test_status_bar_requests_tabular_numerals_with_preexisting_app(
+    make_napari_viewer, qapp, qtbot
+):
+    tag = QFont.Tag('tnum')
+    app_font = QFont(qapp.font())
+    host_label = QLabel('host')
+    qtbot.addWidget(host_label)
+    host_font = QFont(host_label.font())
+
+    viewer = make_napari_viewer()
+    window = viewer.window._qt_window
+    status = window.statusBar()._status
+
+    assert status.font().isFeatureSet(tag)
+    assert qapp.font() == app_font
+    assert host_label.font() == host_font
+
+    viewer.window._update_theme()
+
+    assert status.font().isFeatureSet(tag)
 
 
 def test_shortcut_collision(qtbot, make_napari_viewer):

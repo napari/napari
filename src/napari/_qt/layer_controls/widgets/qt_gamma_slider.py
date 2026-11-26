@@ -6,16 +6,15 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import attr_to_settr
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtGammaSliderControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the current brush
-    size attribute and Qt widgets.
+    Class that wraps the connection of events/signals between the current gamma
+    attribute value and Qt widgets.
 
     Parameters
     ----------
@@ -34,24 +33,23 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
-        # Setup layer
-        self._layer.events.gamma.connect(self._on_gamma_change)
 
-        # Setup widgets
-        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent)
+        # Setup gamma slider - exactly like opacity slider
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
         sld.setValue(self._layer.gamma)
         connect_setattr(sld.valueChanged, self._layer, 'gamma')
+        self._callbacks.append(
+            attr_to_settr(self._layer, 'gamma', sld, 'setValue')
+        )
         self.gamma_slider = sld
 
-        self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
+        self.gamma_slider_label = QtWrappedLabel('gamma:')
 
-    def _on_gamma_change(self):
-        """Receive the layer model gamma change event and update the slider."""
-        with qt_signals_blocked(self.gamma_slider):
-            self.gamma_slider.setValue(self._layer.gamma)
-
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.gamma_slider_label, self.gamma_slider)]

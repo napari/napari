@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -8,13 +12,18 @@ from napari.settings import get_settings
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
 
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.layers import Points
+
 
 class VispyPointsLayer(VispyBaseLayer):
     node: PointsVisual
+    layer: Points
 
-    def __init__(self, layer) -> None:
-        node = PointsVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer, font_info: FontInfo) -> None:
+        node = PointsVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.border_width.connect(self._on_data_change)
@@ -36,15 +45,14 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
-        self.layer.events.scale_factor.connect(self._update_text)
 
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
-        if len(self.layer._indices_view) == 0:
+        if len(self.layer._view_indices) == 0:
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
@@ -63,7 +71,8 @@ class VispyPointsLayer(VispyBaseLayer):
         set_data = self.node.points_markers.set_data
 
         # use only last dimension to scale point sizes, see #5582
-        scale = self.layer.scale[-1]
+        scale = abs(self.layer.scale[-1])
+        scaled_size = size * scale
 
         if self.layer.border_width_is_relative:
             border_kw = {
@@ -71,14 +80,16 @@ class VispyPointsLayer(VispyBaseLayer):
                 'edge_width_rel': border_width,
             }
         else:
+            # cap border_width to the marker size, cause otherwise we get strange effects
+            # in the shaders which result in unbound growth of highlights)
             border_kw = {
-                'edge_width': border_width * scale,
+                'edge_width': np.minimum(border_width * scale, scaled_size),
                 'edge_width_rel': None,
             }
 
         set_data(
             data[:, ::-1],
-            size=size * scale,
+            size=scaled_size,
             symbol=symbol,
             # edge_color is the name of the vispy marker visual kwarg
             edge_color=border_color,
@@ -88,33 +99,40 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.reset()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self) -> None:
         settings = get_settings()
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
-            data = self.layer._view_data[self.layer._highlight_index]
-            if data.ndim == 1:
-                data = np.expand_dims(data, axis=0)
-            size = self.layer._view_size[self.layer._highlight_index]
-            border_width = self.layer._view_border_width[
+
+            # _highlight_index contains indices into the view arrays, but we can get the
+            # actual data indices once to avoid materializing the entire view for each property
+            data_indices = self.layer._view_indices[
                 self.layer._highlight_index
             ]
-            if self.layer.border_width_is_relative:
-                border_width = (
-                    border_width
-                    * self.layer._view_size[self.layer._highlight_index][-1]
-                )
-            symbol = self.layer._view_symbol[self.layer._highlight_index]
+
+            data = self.layer.data[
+                np.ix_(data_indices, self.layer._slice_input.displayed)
+            ]
+            if data.ndim == 1:
+                data = np.expand_dims(data, axis=0)
+            # size including the (capped) border, as used for hit-testing
+            size = self.layer._view_size_with_border[
+                self.layer._highlight_index
+            ]
+            symbol = self.layer.symbol[data_indices]
         else:
             data = np.empty((0, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
-            border_width = np.empty(0)
 
-        scale = self.layer.scale[-1]
+        scale = abs(self.layer.scale[-1])
         highlight_thickness = settings.appearance.highlight.highlight_thickness
-        scaled_highlight = highlight_thickness * self.layer.scale_factor
-        scaled_size = (size + border_width) * scale
+        scaled_size = size * scale
+        # cap scaled_highlight to the marker size, cause otherwise we get strange effects
+        # in the shaders which result in unbound growth of highlights)
+        scaled_highlight = np.minimum(
+            highlight_thickness * self.layer.scale_factor, scaled_size
+        )
         highlight_color = tuple(settings.appearance.highlight.highlight_color)
 
         self.node.selection_markers.set_data(
@@ -146,7 +164,12 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _update_text(self, *, update_node=True):
+    def _on_font_size_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._update_text()
+
+    def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
         Parameters
@@ -154,11 +177,15 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self.node.text, layer=self.layer)
+        update_text(
+            node=self.node.text,
+            layer=self.layer,
+            default_font_size=self._default_font_size,
+        )
         if update_node:
             self.node.update()
 
-    def _on_text_change(self, event=None):
+    def _on_text_change(self, event=None) -> None:
         if event is not None:
             if event.type == 'blending':
                 self._on_blending_change(event)
@@ -167,7 +194,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 return
         self._update_text()
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, event=None) -> None:
         """Function to set the blending mode"""
         super()._on_blending_change()
 
@@ -180,28 +207,30 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _on_antialiasing_change(self):
+    def _on_antialiasing_change(self) -> None:
         self.node.antialias = self.layer.antialiasing
 
-    def _on_shading_change(self):
+    def _on_shading_change(self) -> None:
         shading = self.layer.shading
         self.node.spherical = shading == 'spherical'
 
-    def _on_canvas_size_limits_change(self):
-        self.node.points_markers.canvas_size_limits = (
-            self.layer.canvas_size_limits
-        )
+    def _on_canvas_size_limits_change(self) -> None:
+        if len(self.layer.data) == 0:
+            canvas_limits = 0, 0
+        else:
+            canvas_limits = self.layer.canvas_size_limits
+        self.node.points_markers.canvas_size_limits = canvas_limits
         highlight_thickness = (
             get_settings().appearance.highlight.highlight_thickness
         )
-        low, high = self.layer.canvas_size_limits
+        low, high = canvas_limits
         self.node.selection_markers.canvas_size_limits = (
             low + highlight_thickness,
             high + highlight_thickness,
         )
         self.node.update()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._update_text(update_node=False)
         self._on_highlight_change()
@@ -209,7 +238,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_shading_change()
         self._on_canvas_size_limits_change()
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()

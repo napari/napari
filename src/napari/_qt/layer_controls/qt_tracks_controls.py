@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
@@ -6,6 +8,7 @@ from napari._qt.layer_controls.widgets._tracks import (
     QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
+    QtHideCompletedTracksCheckBoxControl,
     QtIdCheckBoxControl,
     QtTailDisplayCheckBoxControl,
     QtTailLengthSliderControl,
@@ -14,7 +17,7 @@ from napari._qt.layer_controls.widgets._tracks import (
 from napari.layers.base._base_constants import Mode
 
 if TYPE_CHECKING:
-    import napari.layers
+    from napari.layers.tracks import Tracks
 
 
 class QtTracksControls(QtLayerControls):
@@ -43,14 +46,16 @@ class QtTracksControls(QtLayerControls):
         Widget that wraps a slider controlling tail length of the layer.
     _tail_width_slider_control : napari._qt.layer_controls.widgets._tracks.QtTailWidthSliderControl
         Widget that wraps a slider controlling tail width of the layer.
+    _hide_completed_tracks_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtHideCompletedTracksCheckBoxControl
+        Widget that wraps a checkbox controlling if completed tracks of the layer should be hidden.
     """
 
-    layer: 'napari.layers.Tracks'
+    layer: Tracks
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_tracks_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_tracks_transform_mode'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: Tracks) -> None:
         super().__init__(layer)
         # Setup widgets controls
         self._color_properties_combobox_control = (
@@ -79,3 +84,7 @@ class QtTracksControls(QtLayerControls):
         self._add_widget_controls(self._id_checkbox_control)
         self._graph_checkbox_control = QtGraphCheckBoxControl(self, layer)
         self._add_widget_controls(self._graph_checkbox_control)
+        self._hide_completed_tracks_checkbox_control = (
+            QtHideCompletedTracksCheckBoxControl(self, layer)
+        )
+        self._add_widget_controls(self._hide_completed_tracks_checkbox_control)

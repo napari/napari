@@ -1,28 +1,42 @@
+from __future__ import annotations
+
 import gc
+import logging
 import os
+import shutil
 import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 from unittest.mock import patch
 from weakref import WeakSet
 
 import pytest
 
 if TYPE_CHECKING:
-    from pytest import FixtureRequest  # noqa: PT013
+    from collections.abc import Callable, Generator, Sequence
+    from typing import Any
+
+    from npe2._pytest_plugin import TestPluginManager
+    from pytestqt.qtbot import QtBot
+
+    from napari import Viewer
+    from napari._app_model._app import NapariApplication
+    from napari._qt.qt_viewer import QtViewer
+    from napari._vispy.mouse_event import VectorF64
+    from napari.utils._proxies import PublicOnlyProxy
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
 
-def _empty(*_, **__):
+def _empty(*_: Any, **__: Any) -> None:
     """Empty function for mocking"""
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         '--show-napari-viewer',
         action='store_true',
@@ -42,7 +56,7 @@ def pytest_addoption(parser):
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):  # pragma: no cover
+def fail_obj_graph(Klass: type[QtViewer]) -> None:  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -59,65 +73,53 @@ def fail_obj_graph(Klass):  # pragma: no cover
 
         leaked_objects_count = len(Klass._instances)
 
+        graphviz_available = (
+            shutil.which('dot') is not None
+            or shutil.which('dot.exe') is not None
+        )
+
+        # objects frozen with gc.freeze() are not reported by gc.get_referrers,
+        # so unfreeze them to get the full graph of references
+        gc.unfreeze()
         gc.collect()
-        file_path = Path(
-            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        pdf_info = '.'
+        if graphviz_available:
+            file_path = Path(
+                f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+            ).absolute()
+            objgraph.show_backrefs(
+                list(Klass._instances),
+                max_depth=20,
+                filename=str(file_path),
+            )
+            pdf_info = f' and in PDF version in {file_path}.'
+        file_path_dot = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
         ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=str(file_path),
+            filename=str(file_path_dot),
         )
 
         Klass._instances.clear()
 
-        assert file_path.exists()
+        assert file_path_dot.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
         pytest.fail(
-            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
-            f'The object graph is saved in {file_path}.'
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}. '
+            f'The object graph is saved in {file_path_dot}{pdf_info} '
             f'{len(Klass._instances)} objects left after cleanup'
         )
-
-
-@pytest.fixture
-def napari_plugin_manager(monkeypatch):
-    """A napari plugin manager that blocks discovery by default.
-
-    Note you can still use `napari_plugin_manager.register()` to directly
-    register a plugin module, class or dict for testing.
-
-    Or, to re-enable global discovery, use:
-    `napari_plugin_manager.discovery_blocker.stop()`
-    """
-    import napari
-    import napari.plugins.io
-    from napari.plugins._plugin_manager import NapariPluginManager
-
-    pm = NapariPluginManager()
-
-    # make it so that internal requests for the plugin_manager
-    # get this test version for the duration of the test.
-    monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
-    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
-    with suppress(AttributeError):
-        monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    # prevent discovery of plugins in the environment
-    # you can still use `pm.register` to explicitly register something.
-    pm.discovery_blocker = patch.object(pm, 'discover')
-    pm.discovery_blocker.start()
-    pm._initialize()  # register our builtins
-    yield pm
-    pm.discovery_blocker.stop()
 
 
 GCPASS = 0
 
 
 @pytest.fixture(autouse=True)
-def _clean_themes():
+def _clean_themes() -> Generator[None, None, None]:
     from napari.utils import theme
 
     themes = set(theme.available_themes())
@@ -128,7 +130,9 @@ def _clean_themes():
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo[Any]
+) -> Generator[None, Any, None]:
     # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
     # execute all other hooks to obtain the report object
     outcome = yield
@@ -141,7 +145,7 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture
-def mock_app_model():
+def mock_app_model() -> Generator[NapariApplication, None, None]:
     """Mock clean 'test_app' `NapariApplication` instance.
 
     This fixture must be used whenever `napari._app_model.get_app_model()` is called to
@@ -173,11 +177,11 @@ def mock_app_model():
     except ImportError:
 
         @lru_cache
-        def init_qactions():
+        def init_qactions() -> None:
             pass
 
         @lru_cache
-        def _initialize_plugins():
+        def _initialize_plugins() -> None:
             pass
 
     app = NapariApplication('test_app')
@@ -192,13 +196,83 @@ def mock_app_model():
 
 
 @pytest.fixture
+def plugin_settings(
+    npe2pm: TestPluginManager,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    """Make `napari.settings.get_plugin_settings` fresh for each test.
+
+    Clears the `_PLUGIN_SETTINGS` cache and redirects the default plugin
+    settings directory to this test's `tmp_path` (by patching `_CFG_PATH`,
+    the same variable `get_plugin_settings` uses to locate napari's own
+    settings file), so plugin settings are never read from or written to
+    the real config directory.
+
+    This depends on npe2's `npe2pm` fixture, so plugin discovery is
+    blocked and any plugins you register only exist for this test.
+
+    It also connects `_clear_plugin_settings_cache` to `npe2pm`'s
+    `plugins_registered` and `enablement_changed` signals for the duration
+    of the test to allow dynamic registration/enablement during testing.
+
+    Examples
+    --------
+    >>> def test_my_settings(plugin_settings, npe2pm):
+    ...     if 'example-plugin' not in npe2pm:
+    ...         npe2pm.register(
+    ...             PluginManifest.from_distribution('example-plugin')
+    ...         )
+    ...     from napari.settings import get_plugin_settings
+    ...     s = get_plugin_settings('example-plugin')
+    ...     assert s.reader.max_size_mb == 512 # default value
+    ...     s.reader.max_size_mb = 1024  # auto-saves under tmp_path
+    ...     assert 'max_size_mb: 1024' in s.config_path.read_text()
+    """
+    from napari import settings as napari_settings
+
+    npe2pm.events.plugins_registered.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+    # redirect the default plugin-settings directory to this test's tmp_path
+    monkeypatch.setattr(
+        napari_settings, '_CFG_PATH', str(tmp_path / 'settings.yaml')
+    )
+
+    yield
+
+    npe2pm.events.plugins_registered.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+
+
+class ViewerFactory(Protocol):
+    """Callable returned by the ``make_napari_viewer`` fixture."""
+
+    def __call__(
+        self,
+        *model_args: Any,
+        ViewerClass: type[Viewer] = ...,
+        strict_qt: bool | str | None = ...,
+        **model_kwargs: Any,
+    ) -> Viewer: ...
+
+
+@pytest.fixture
 def make_napari_viewer(
-    qtbot,
-    request: 'FixtureRequest',
-    mock_app_model,
-    napari_plugin_manager,
-    monkeypatch,
-):
+    qtbot: QtBot,
+    request: pytest.FixtureRequest,
+    mock_app_model: NapariApplication,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[ViewerFactory, None, None]:
     """A pytest fixture function that creates a napari viewer for use in testing.
 
     This fixture will take care of creating a viewer and cleaning up at the end of the
@@ -230,10 +304,6 @@ def make_napari_viewer(
         the napari package.
         This can be made globally true by setting the 'NAPARI_STRICT_QT'
         environment variable.
-    block_plugin_discovery : bool, optional
-        Block discovery of non-builtin plugins.  Note: plugins can still be
-        manually registered by using the 'napari_plugin_manager' fixture and
-        the `napari_plugin_manager.register()` method. By default, True.
 
     Examples
     --------
@@ -241,9 +311,6 @@ def make_napari_viewer(
     ...     viewer = make_napari_viewer()
     ...     viewer.add_shapes()
     ...     assert len(viewer.layers) == 1
-
-    >>> def test_something_with_plugins(make_napari_viewer):
-    ...     viewer = make_napari_viewer(block_plugin_discovery=False)
 
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
@@ -287,7 +354,7 @@ def make_napari_viewer(
     request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
-    _strict = False
+    _strict: bool | str = False
 
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
@@ -301,34 +368,38 @@ def make_napari_viewer(
 
     if 'enable_console' not in request.keywords:
 
-        def _dummy_widget(*_):
-            w = QWidget()
-            w._update_theme = _empty
-            return w
+        class _DummyConsole(QWidget):
+            def _update_theme(self, *_: Any, **__: Any) -> None:
+                pass
+
+        def _dummy_widget(*_: Any) -> QWidget:
+            return _DummyConsole()
 
         monkeypatch.setattr(
             'napari._qt.qt_viewer.QtViewer._get_console', _dummy_widget
         )
 
     def actual_factory(
-        *model_args,
-        ViewerClass=Viewer,
-        strict_qt=None,
-        block_plugin_discovery=True,
-        **model_kwargs,
-    ):
+        *model_args: Any,
+        ViewerClass: type[Viewer] = Viewer,
+        strict_qt: bool | str | None = None,
+        **model_kwargs: Any,
+    ) -> Viewer:
         if strict_qt is None:
-            strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
+            strict_qt = is_internal_test or os.getenv(
+                'NAPARI_STRICT_QT', False
+            )
         nonlocal _strict
         _strict = strict_qt
 
-        if not block_plugin_discovery:
-            napari_plugin_manager.discovery_blocker.stop()
-
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
+        model_kwargs.setdefault('show_welcome_screen', False)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
+
+        if model_kwargs.get('show', False):
+            qtbot.wait_exposed(viewer.window._qt_window, timeout=5000)
 
         return viewer
 
@@ -374,15 +445,20 @@ def make_napari_viewer(
     # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
-        leak = set(QApplication.topLevelWidgets()).difference(initial)
-        leak = (x for x in leak if x.objectName() != 'handled_widget')
+        leak: set[QWidget] = set(QApplication.topLevelWidgets()).difference(
+            initial
+        )
+        leak_filtered = [x for x in leak if x.objectName() != 'handled_widget']
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
         # observed in `test_sys_info.py`
-        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
+        if any(
+            n.__class__.__name__ != 'CanvasBackendDesktop'
+            for n in leak_filtered
+        ):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
-            msg = f"""The following Widgets leaked!: {leak}.
+            msg = f"""The following Widgets leaked!: {leak_filtered}.
 
             Note: If other tests are failing it is likely that widgets will leak
             as they will be (indirectly) attached to the tracebacks of previous failures.
@@ -401,7 +477,10 @@ def make_napari_viewer(
 
 
 @pytest.fixture
-def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
+def make_napari_viewer_proxy(
+    make_napari_viewer: ViewerFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[..., PublicOnlyProxy[Viewer]]:
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
     Use in the same way like `make_napari_viewer` fixture.
 
@@ -417,9 +496,11 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     """
     from napari.utils._proxies import PublicOnlyProxy
 
-    proxies = []
+    proxies: list[PublicOnlyProxy[Viewer]] = []
 
-    def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
+    def actual_factory(
+        *model_args: Any, ensure_main_thread: bool = True, **model_kwargs: Any
+    ) -> PublicOnlyProxy[Viewer]:
         monkeypatch.setenv(
             'NAPARI_ENSURE_PLUGIN_MAIN_THREAD', str(ensure_main_thread)
         )
@@ -432,27 +513,52 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     return actual_factory
 
 
+@dataclass
+class _MouseEvent:
+    type: str
+    position: tuple[float, ...]
+    is_dragging: bool = False
+    dims_displayed: Sequence[int] = (0, 1)
+    dims_point: tuple[float, ...] = (0, 0)
+    view_direction: Sequence[float] | VectorF64 | None = None
+    pos: tuple[int, int] = (0, 0)
+    button: int | None = None
+    handled: bool = False
+
+
 @pytest.fixture
-def MouseEvent():
-    """Create a subclass for simulating vispy mouse events.
+def MouseEvent() -> type[_MouseEvent]:
+    """Return a dataclass for simulating napari mouse events.
 
     Returns
     -------
-    Event : Type
-        A new dataclass named Event that can be used to create an
-        object with fields "type" and "is_dragging".
+    type[_MouseEvent]
+        A dataclass that can be used in place of a NapariMouseEvent in tests.
     """
+    return _MouseEvent
 
-    @dataclass
-    class Event:
-        type: str
-        position: tuple[float]
-        is_dragging: bool = False
-        dims_displayed: tuple[int] = (0, 1)
-        dims_point: list[float] = None
-        view_direction: list[int] = None
-        pos: list[int] = (0, 0)
-        button: int = None
-        handled: bool = False
 
-    return Event
+class LeakSafeLogRecord(logging.LogRecord):
+    """LogRecord that converts args to strings to prevent reference retention."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # Convert args to strings immediately
+        if self.args:
+            self.args = tuple(
+                str(arg) if not isinstance(arg, int | float) else arg
+                for arg in self.args
+            )
+
+
+@pytest.fixture(autouse=True, scope='session')
+def use_leak_safe_log_records() -> Generator[None, None, None]:
+    """Use custom LogRecord factory that doesn't retain object references."""
+    original_record_factory = logging.getLogRecordFactory()
+
+    logging.setLogRecordFactory(LeakSafeLogRecord)
+
+    yield
+
+    # Restore original factory
+    logging.setLogRecordFactory(original_record_factory)

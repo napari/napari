@@ -1,23 +1,28 @@
+from __future__ import annotations
+
 import typing
 import warnings
 from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
+    NamedTuple,
+    TypeAlias,
 )
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
-from scipy import ndimage as ndi
-from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldSlicingState,
+)
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -39,11 +44,14 @@ from napari.layers.labels._labels_utils import (
     expand_slice,
     get_contours,
     get_dtype,
-    indices_in_shape,
     interpolate_coordinates,
-    sphere_indices,
 )
-from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.labels._slice import _LabelsSliceRequest
+from napari.layers.utils.layer_utils import (
+    _FeatureTable,
+    _resize_to_thumbnail,
+)
+from napari.types import LayerDataType
 from napari.utils._dtype import (
     get_dtype_limits,
     normalize_dtype,
@@ -62,11 +70,54 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import StringEnum, _is_array_type
+from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
-from napari.utils.translations import trans
+from napari.utils.status_messages import format_feature_value
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from napari.types import Vector1D
 
 __all__ = ('Labels',)
+
+
+class _MaskedPaintAtom(NamedTuple):
+    """A single undoable mask-based edit of a Labels layer.
+
+    Replay (see ``Labels._replay_masked_atom``) reads the bounding box with
+    basic slicing, applies the masked update locally on a numpy array, and
+    writes the bounding box back. Only basic indexing ever reaches the data
+    backend, so replay behaves identically across numpy, zarr, tensorstore,
+    dask and xarray (whose advanced-indexing semantics all differ).
+
+    Attributes
+    ----------
+    slice_key : tuple of slice
+        Bounding box of the edit in data coordinates.
+    mask : ndarray of bool or None
+        Changed pixels within the bounding box, or None when every pixel in
+        the bounding box changed (the mask is dropped to save memory).
+    old_values : ndarray
+        The values under ``mask`` before the edit (1D), or a snapshot of the
+        whole bounding box when ``mask`` is None.
+    new_value : int
+        The label that was painted.
+    """
+
+    slice_key: tuple[slice, ...]
+    mask: npt.NDArray[np.bool_] | None
+    old_values: np.ndarray
+    new_value: int
+
+
+# A single atom stored in the undo/redo history: either a mask-based edit
+# (paint/fill/paint_polygon) or the legacy fancy-index 3-tuple of
+# ``(indices, old_values, new_values)`` produced by ``data_setitem`` (where
+# ``indices`` is a numpy multi-index and the new values may be a scalar).
+HistoryAtom: TypeAlias = (
+    _MaskedPaintAtom | tuple[Any, npt.NDArray, np.ndarray | int]
+)
 
 
 class Labels(ScalarFieldBase):
@@ -79,8 +130,11 @@ class Labels(ScalarFieldBase):
     ----------
     data : array or list of array
         Labels data as an array or multiscale. Must be integer type or bools.
-        Please note multiscale rendering is only supported in 2D. In 3D, only
-        the lowest resolution scale is displayed.
+        In 2D, the displayed resolution is chosen automatically based on
+        the viewport. In 3D, the lowest resolution scale is displayed by
+        default. The resolution level can be locked via
+        ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
@@ -89,7 +143,7 @@ class Labels(ScalarFieldBase):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -116,6 +170,11 @@ class Labels(ScalarFieldBase):
         'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
         isotropic Sobel gradient, which is smoother but more computationally expensive.
         The default value is 'fast'.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -123,9 +182,11 @@ class Labels(ScalarFieldBase):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     name : str
         Name of the layer.
     opacity : float
@@ -170,17 +231,21 @@ class Labels(ScalarFieldBase):
     data : array or list of array
         Integer label data as an array or multiscale. Can be N dimensional.
         Every pixel contains an integer ID corresponding to the region it
-        belongs to. The label 0 is rendered as transparent. Please note
-        multiscale rendering is only supported in 2D. In 3D, only
-        the lowest resolution scale is displayed.
+        belongs to. The label 0 is rendered as transparent. In 2D, the
+        displayed resolution is chosen automatically based on the viewport.
+        In 3D, the lowest resolution scale is displayed by default. The
+        resolution level can be locked via ``locked_data_level`` or the
+        resolution control in the layer controls UI.
     axis_labels : tuple of str
         Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        list should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     metadata : dict
         Labels metadata.
     num_colors : int
@@ -262,9 +327,9 @@ class Labels(ScalarFieldBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[
-        dict[Mode, Callable[['Labels', Event], None | Generator]]
-    ] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[  # pyrefly: ignore [bad-override]
+        dict[Mode, Callable[[Labels, Event], Generator | None]]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -276,9 +341,9 @@ class Labels(ScalarFieldBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[
-        dict[StringEnum, Callable[['Labels', Event], None]]
-    ] = {  # type: ignore[assignment]
+    _move_modes: ClassVar[  # pyrefly: ignore [bad-override]
+        dict[StringEnum, Callable[[Labels, Event], None]]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -288,7 +353,7 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {  # pyrefly: ignore [bad-override]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -313,6 +378,7 @@ class Labels(ScalarFieldBase):
         experimental_clipping_planes=None,
         features=None,
         iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
+        locked_data_level: int | None = None,
         metadata=None,
         multiscale=None,
         name=None,
@@ -388,11 +454,19 @@ class Labels(ScalarFieldBase):
             show_selected_label=Event,
         )
 
+        from napari.components.overlays.labels_brush_stroke import (
+            LabelsBrushStrokeOverlay,
+        )
         from napari.components.overlays.labels_polygon import (
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'polygon': LabelsPolygonOverlay()})
+        self._overlays.update(
+            {
+                'polygon': LabelsPolygonOverlay(visible=True),
+                'brush_stroke': LabelsBrushStrokeOverlay(visible=True),
+            }
+        )
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -410,27 +484,36 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice = None
+        self._updated_slice: tuple[slice, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
 
-    def _slice_dtype(self):
+        # Each history undo step is a list of atoms.
+        self._undo_history: deque[list[HistoryAtom]]
+        self._redo_history: deque[list[HistoryAtom]]
+        self._staged_history: list[HistoryAtom]
+        self._block_history: bool
+
+        if locked_data_level is not None:
+            self.locked_data_level = locked_data_level
+
+    def _slice_dtype(self) -> np.dtype:
         """Calculate dtype of data view based on data dtype and current colormap"""
         return self.colormap._data_to_texture(
             np.zeros(0, dtype=normalize_dtype(self.dtype))
         ).dtype
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         self._reset_history()
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
 
     @property
-    def rendering(self):
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -451,7 +534,7 @@ class Labels(ScalarFieldBase):
         return str(self._rendering)
 
     @rendering.setter
-    def rendering(self, rendering):
+    def rendering(self, rendering) -> None:
         self._rendering = LabelsRendering(rendering)
         self.events.rendering()
 
@@ -472,26 +555,28 @@ class Labels(ScalarFieldBase):
         return str(self._iso_gradient_mode)
 
     @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value: IsoCategoricalGradientMode | str):
+    def iso_gradient_mode(
+        self, value: IsoCategoricalGradientMode | str
+    ) -> None:
         self._iso_gradient_mode = IsoCategoricalGradientMode(value)
         self.events.iso_gradient_mode()
 
     @property
-    def contiguous(self):
+    def contiguous(self) -> bool:
         """bool: fill bucket changes only connected pixels of same label."""
         return self._contiguous
 
     @contiguous.setter
-    def contiguous(self, contiguous):
+    def contiguous(self, contiguous) -> None:
         self._contiguous = contiguous
         self.events.contiguous()
 
     @property
-    def n_edit_dimensions(self):
+    def n_edit_dimensions(self) -> int:
         return self._n_edit_dimensions
 
     @n_edit_dimensions.setter
-    def n_edit_dimensions(self, n_edit_dimensions):
+    def n_edit_dimensions(self, n_edit_dimensions) -> None:
         self._n_edit_dimensions = n_edit_dimensions
         self.events.n_edit_dimensions()
 
@@ -504,22 +589,22 @@ class Labels(ScalarFieldBase):
     def contour(self, contour: int) -> None:
         if contour < 0:
             raise ValueError('contour value must be >= 0')
-        self._contour = int(contour)
+        self._contour = contour
         self.events.contour()
         self.refresh(extent=False)
 
     @property
-    def brush_size(self):
-        """float: Size of the paint in world coordinates."""
+    def brush_size(self) -> int:
+        """int: Size of the paint in world coordinates."""
         return self._brush_size
 
     @brush_size.setter
-    def brush_size(self, brush_size):
+    def brush_size(self, brush_size) -> None:
         self._brush_size = int(brush_size)
         self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
 
-    def _calculate_cursor_size(self):
+    def _calculate_cursor_size(self) -> int:
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
@@ -528,14 +613,19 @@ class Labels(ScalarFieldBase):
         )
         return abs(self.brush_size * min_scale)
 
-    def new_colormap(self, seed: int | None = None):
+    def new_colormap(self, seed: int | None = None) -> None:
         if seed is None:
             seed = int(np.random.default_rng().integers(2**32 - 1))
 
         orig = self._original_random_colormap
-        self.colormap = shuffle_and_extend_colormap(
+        new_cmap = shuffle_and_extend_colormap(
             self._original_random_colormap, seed
         )
+        # Sync from the layer (source of truth) before assignment, so
+        # `events.colormap` listeners observe the correct `use_selection`.
+        new_cmap.use_selection = self._show_selected_label
+        new_cmap.selection = self._selected_label
+        self.colormap = new_cmap
         self._original_random_colormap = orig
 
     @property
@@ -543,10 +633,10 @@ class Labels(ScalarFieldBase):
         return self._colormap
 
     @colormap.setter
-    def colormap(self, colormap: LabelColormapBase):
+    def colormap(self, colormap: LabelColormapBase) -> None:
         self._set_colormap(colormap)
 
-    def _set_colormap(self, colormap):
+    def _set_colormap(self, colormap) -> None:
         colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
@@ -576,19 +666,10 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
         self.refresh(extent=False)
 
-    @property
-    def data(self) -> LayerDataProtocol | MultiScaleData:
-        """array: Image data."""
-        return self._data
-
-    @data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData):
-        data = self._ensure_int_labels(data)
-        self._data = data
-        self._ndim = len(self._data.shape)
-        self._update_dims()
-        self.events.data(value=self.data)
-        self._reset_editable()
+    @ScalarFieldBase.data.setter
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+        data = self._ensure_int_labels(data)  # pyrefly: ignore [bad-assignment]
+        ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         self.events.features()
 
     @property
@@ -625,7 +706,7 @@ class Labels(ScalarFieldBase):
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: dict[str, Array]):
+    def properties(self, properties: dict[str, Array]) -> None:
         self.features = properties
 
     def _make_label_index(self) -> dict[int, int]:
@@ -637,7 +718,7 @@ class Labels(ScalarFieldBase):
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
 
-    def _is_default_colors(self, color):
+    def _is_default_colors(self, color: dict) -> bool:
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
@@ -670,15 +751,12 @@ class Labels(ScalarFieldBase):
         for data_level in data:
             # normalize_dtype turns e.g. tensorstore or torch dtypes into
             # numpy dtypes
-            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
+            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):  # pyrefly: ignore [missing-attribute]
                 raise TypeError(
-                    trans._(
-                        'Only integer types are supported for Labels layers, but data contains {data_level_type}.',
-                        data_level_type=data_level.dtype,
-                    )
+                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'  # pyrefly: ignore [missing-attribute]
                 )
-            if data_level.dtype == bool:
-                int_data.append(data_level.view(np.uint8))
+            if data_level.dtype == bool:  # pyrefly: ignore [missing-attribute]
+                int_data.append(data_level.view(np.uint8))  # pyrefly: ignore [missing-attribute]
             else:
                 int_data.append(data_level)
         data = int_data
@@ -698,13 +776,15 @@ class Labels(ScalarFieldBase):
         state.update(
             {
                 'multiscale': self.multiscale,
+                'locked_data_level': self.locked_data_level,
                 'properties': self.properties,
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
-                'plane': self.plane.dict(),
+                'plane': self.plane.model_dump(),
                 'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
+                    plane.model_dump()
+                    for plane in self.experimental_clipping_planes
                 ],
                 'data': self.data,
                 'features': self.features,
@@ -713,26 +793,45 @@ class Labels(ScalarFieldBase):
         )
         return state
 
+    def _validate_label_in_range(self, label: int) -> None:
+        """Raise if ``label`` is outside the layer dtype's representable range."""
+        layer_dtype = get_dtype(self)
+        dtype_lims = get_dtype_limits(layer_dtype)
+        if dtype_lims[0] > label or dtype_lims[1] < label:
+            raise WrongSelectedLabelError(
+                dtype=layer_dtype,
+                value=label,
+                lower_bound=dtype_lims[0],
+                upper_bound=dtype_lims[1],
+            )
+
+    def _validate_non_painted_coord(
+        self, slice_coord: list[int], dims_to_paint: list[int]
+    ) -> None:
+        """Resolve negative indexes and bounds-check non-painted dims."""
+        for i, coord in enumerate(slice_coord):
+            if i in dims_to_paint:
+                continue
+            resolved = coord + self.data.shape[i] if coord < 0 else coord
+            if not 0 <= resolved < self.data.shape[i]:
+                raise IndexError(
+                    f'Coordinate {coord} for non-painted dimension {i} is out '
+                    f'of bounds for axis with size {self.data.shape[i]}.'
+                )
+            slice_coord[i] = resolved
+
     @property
-    def selected_label(self):
+    def selected_label(self) -> int:
         """int: Index of selected label."""
         return self._selected_label
 
     @selected_label.setter
-    def selected_label(self, selected_label):
+    def selected_label(self, selected_label) -> None:
         if selected_label == self.selected_label:
             return
+        self._validate_label_in_range(selected_label)
         # when setting the label to the background, store the previous
         # otherwise, clear it
-        layer_dtype = get_dtype(self)
-        dtype_lims = get_dtype_limits(layer_dtype)
-        if dtype_lims[0] > selected_label or dtype_lims[1] < selected_label:
-            raise WrongSelectedLabelError(
-                dtype=layer_dtype,
-                value=selected_label,
-                lower_bound=dtype_lims[0],
-                upper_bound=dtype_lims[1],
-            )
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
         else:
@@ -746,7 +845,7 @@ class Labels(ScalarFieldBase):
         if self.show_selected_label:
             self.refresh(extent=False)
 
-    def swap_selected_and_background_labels(self):
+    def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
@@ -754,12 +853,12 @@ class Labels(ScalarFieldBase):
             self.selected_label = self._prev_selected_label
 
     @property
-    def show_selected_label(self):
+    def show_selected_label(self) -> bool:
         """Whether to filter displayed labels to only the selected label or not"""
         return self._show_selected_label
 
     @show_selected_label.setter
-    def show_selected_label(self, show_selected):
+    def show_selected_label(self, show_selected) -> None:
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
@@ -768,7 +867,7 @@ class Labels(ScalarFieldBase):
 
     # Only overriding to change the docstring
     @property
-    def mode(self):
+    def mode(self) -> str:
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
@@ -792,26 +891,28 @@ class Labels(ScalarFieldBase):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
         """
-        return Layer.mode.fget(self)
+        return super().mode
 
     # Only overriding to change the docstring of the setter above
     @mode.setter
-    def mode(self, mode):
-        Layer.mode.fset(self, mode)
+    def mode(self, mode) -> None:
+        # See https://github.com/python/mypy/issues/16426 for type ignore reason
+        Layer.mode.fset(self, mode)  # pyrefly: ignore [not-callable]
 
-    def _mode_setter_helper(self, mode):
+    def _mode_setter_helper(self, mode) -> StringEnum:  # pyrefly: ignore [bad-override-param-name]
         mode = super()._mode_setter_helper(mode)
         if mode == self._mode:
             return mode
 
         self._overlays['polygon'].enabled = mode == Mode.POLYGON
+        self._overlays['brush_stroke'].enabled = mode == Mode.PAINT
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
         return mode
 
     @property
-    def preserve_labels(self):
+    def preserve_labels(self) -> bool:
         """Defines if painting should preserve existing labels.
 
         Default to false to allow paint on existing labels. When
@@ -820,7 +921,7 @@ class Labels(ScalarFieldBase):
         return self._preserve_labels
 
     @preserve_labels.setter
-    def preserve_labels(self, preserve_labels: bool):
+    def preserve_labels(self, preserve_labels: bool) -> None:
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
 
@@ -843,17 +944,10 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        """Override to convert raw slice data to displayed label colors."""
-        response = response.to_displayed(self._raw_to_displayed)
-        super()._update_slice_response(response)
-
-    def _partial_labels_refresh(self):
+    def _partial_labels_refresh(self) -> None:
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None or not self.loaded:
+        if self._updated_slice is None or not self._slicing_state.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
@@ -905,22 +999,18 @@ class Labels(ScalarFieldBase):
         if self.contour < 1:
             return None
         if labels.ndim > 2:
-            warnings.warn(
-                trans._(
-                    'Contours are not displayed during 3D rendering',
-                    deferred=True,
-                )
-            )
+            warnings.warn('Contours are not displayed during 3D rendering')
             return None
 
-        expanded_slice = expand_slice(data_slice, labels.shape, 1)
+        contour_offset = max(1, self.contour)
+        expanded_slice = expand_slice(data_slice, labels.shape, contour_offset)
         sliced_labels = get_contours(
             labels[expanded_slice],
             self.contour,
             self.colormap.background_value,
         )
 
-        # Remove the latest one-pixel border from the result
+        # Remove the border that was added to compute thick contours locally.
         delta_slice = tuple(
             slice(s1.start - s2.start, s1.stop - s2.start)
             for s1, s2 in zip(data_slice, expanded_slice, strict=False)
@@ -965,14 +1055,14 @@ class Labels(ScalarFieldBase):
 
         return self.colormap._data_to_texture(sliced_labels)
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update the thumbnail with current data and colormap.
 
         This is overridden from _ImageBase because we don't need to do things
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded:
+        if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
@@ -984,22 +1074,15 @@ class Labels(ScalarFieldBase):
             # use max projection. For labels, ideally we would use "first
             # nonzero projection", but we leave that for a future PR. (TODO)
             image = np.max(image, axis=0)
-        imshape = np.array(image.shape[:2])
-        thumbshape = np.array(self._thumbnail_shape[:2])
-
-        raw_zoom_factor = np.min(thumbshape / imshape)
-        new_shape = np.clip(
-            raw_zoom_factor * imshape, a_min=1, a_max=thumbshape
-        )
-        zoom_factor = tuple(new_shape / imshape)
-
-        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+        downsampled = _resize_to_thumbnail(image, self._thumbnail_shape[:2])
         color_array = self.colormap.map(downsampled)
         color_array[..., 3] *= self.opacity
 
         self.thumbnail = color_array
 
-    def get_color(self, label):
+    def get_color(
+        self, label
+    ) -> np.ndarray[tuple[Literal[4]], np.dtype[np.float32]] | None:
         """Return the color corresponding to a specific label."""
         if label == self.colormap.background_value:
             col = None
@@ -1011,7 +1094,7 @@ class Labels(ScalarFieldBase):
             col = self.colormap.map(label)
         return col
 
-    def _reset_history(self, event=None):
+    def _reset_history(self, event: Event | None = None) -> None:
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
         self._staged_history = []
@@ -1034,24 +1117,49 @@ class Labels(ScalarFieldBase):
         finally:
             self._block_history = prev
 
-    def _commit_staged_history(self):
+    def _commit_staged_history(self) -> None:
         """Save staged history to undo history and clear it."""
         if self._staged_history:
             self._append_to_undo_history(self._staged_history)
             self._staged_history = []
 
-    def _append_to_undo_history(self, item):
+    def _begin_stroke(self) -> None:
+        """Start grouping edits that span multiple events into one undo item.
+
+        Unlike `block_history`, a stroke spans discrete mouse events and so
+        cannot be expressed as a single `with` block.
+        """
+        self._block_history = True
+
+    def _commit_stroke(self) -> None:
+        """Commit a stroke started with `_begin_stroke` as one undo item."""
+        self._block_history = False
+        self._commit_staged_history()
+
+    def _abort_stroke(self) -> None:
+        """Discard the staged (uncommitted) edits of an in-progress stroke."""
+        for atom in reversed(self._staged_history):
+            if isinstance(atom, _MaskedPaintAtom):
+                self._replay_masked_atom(atom, undoing=True)
+                continue
+            indices, prev_values, _ = atom
+            self.data[indices] = prev_values  # pyrefly: ignore [unsupported-operation]
+        self._staged_history = []
+        self._block_history = False
+        self.refresh()
+
+    def _append_to_undo_history(self, item) -> None:
         """Append item to history and emit paint event.
 
         Parameters
         ----------
-        item : List[Tuple[ndarray, ndarray, int]]
-            list of history atoms to append to undo history.
+        item : list of HistoryAtoms
+            They are applied together as a single undoable step.
         """
         self._undo_history.append(item)
         self.events.paint(value=item)
 
-    def _save_history(self, value):
+    def _save_history(self, value) -> None:
         """Save a history "atom" to the undo history.
 
         A history "atom" is a single change operation to the array. A history
@@ -1063,8 +1171,10 @@ class Labels(ScalarFieldBase):
 
         Parameters
         ----------
-        value : 3-tuple of arrays
-            The value is a 3-tuple containing:
+        value : _MaskedPaintAtom or 3-tuple of arrays
+            The change to record. The mask-based editing methods (paint,
+            fill, paint_polygon) store a ``_MaskedPaintAtom``;
+            ``data_setitem`` stores a 3-tuple containing:
 
             - a numpy multi-index, pointing to the array elements that were
               changed
@@ -1077,7 +1187,7 @@ class Labels(ScalarFieldBase):
         else:
             self._append_to_undo_history([value])
 
-    def _load_history(self, before, after, undoing=True):
+    def _load_history(self, before, after, undoing=True) -> None:
         """Load a history item and apply it to the array.
 
         Parameters
@@ -1088,9 +1198,10 @@ class Labels(ScalarFieldBase):
             The list of element to which to append the loaded element. In the
             case of an undo operation, this is the redo queue, and vice versa.
         undoing : bool
-            Whether we are undoing (default) or redoing. In the case of
-            redoing, we apply the "after change" element of a history element
-            (the third element of the history "atom").
+            Whether we are undoing (default) or redoing. When redoing, each
+            atom is replayed forwards, applying its "after change" value
+            (``new_value`` for a ``_MaskedPaintAtom``, or the third element
+            of the legacy 3-tuple).
 
         See Also
         --------
@@ -1101,102 +1212,208 @@ class Labels(ScalarFieldBase):
 
         history_item = before.pop()
         after.append(list(reversed(history_item)))
-        for prev_indices, prev_values, next_values in reversed(history_item):
-            values = prev_values if undoing else next_values
-            self.data[prev_indices] = values
+        for atom in reversed(history_item):
+            if isinstance(atom, _MaskedPaintAtom):
+                self._replay_masked_atom(atom, undoing)
+                continue
+            prev_indices, prev_values, next_values = atom
+            self.data[prev_indices] = prev_values if undoing else next_values  # pyrefly: ignore [unsupported-operation]
 
         self.refresh()
 
-    def undo(self):
+    def _replay_masked_atom(
+        self, atom: _MaskedPaintAtom, undoing: bool
+    ) -> None:
+        """Replay a mask-based edit via read-modify-write.
+
+        Only basic slicing reaches the data backend; the masked update is
+        applied locally on a numpy array, so replay does not depend on any
+        backend's advanced-indexing semantics.
+        """
+        assert not isinstance(self.data, MultiScaleData)
+        values = atom.old_values if undoing else atom.new_value
+        if atom.mask is None:
+            # The whole bounding box changed: assign directly.
+            self.data[atom.slice_key] = values  # pyrefly: ignore [unsupported-operation]
+            return
+        region = np.asarray(self.data[atom.slice_key])
+        region[atom.mask] = values
+        self.data[atom.slice_key] = region  # pyrefly: ignore [unsupported-operation]
+
+    def undo(self) -> None:
         self._load_history(
             self._undo_history, self._redo_history, undoing=True
         )
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
 
-    def fill(self, coord, new_label, refresh=True):
-        """Replace an existing label with a new label, either just at the
-        connected component if the `contiguous` flag is `True` or everywhere
-        if it is `False`, working in the number of dimensions specified by
-        the `n_edit_dimensions` flag.
+    def fill(
+        self,
+        coord: Vector1D,
+        new_label: int,
+        refresh: bool = True,
+    ) -> None:
+        """Replace an existing label with a new label.
+
+        This replaces the label at the cursor position with `new_label`.
+        If `contiguous` is True, only the orthogonally connected component is
+        replaced using ``skimage.segmentation.flood(..., connectivity=1)``.
+        Otherwise, all pixels with the same label are replaced.
 
         Parameters
         ----------
         coord : sequence of float
             Position of mouse cursor in image coordinates.
+            Note: Floats are rounded to the nearest integer before indexing.
         new_label : int
             Value of the new label to be filled in.
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        self._validate_label_in_range(new_label)
+        _, dims_to_paint = self._get_shape_and_dims_to_paint()
+
+        slice_coord = [int(np.round(c)) for c in coord]
+        self._validate_non_painted_coord(slice_coord, dims_to_paint)
+
+        fill_info = self._get_flood_mask_and_bbox(
+            slice_coord, new_label, dims_to_paint
+        )
+
+        if fill_info is None:
+            return
+
+        mask, min_vals, max_vals, region_data = fill_info
+        slice_key = self._build_slice_key(
+            slice_coord, dims_to_paint, min_vals, max_vals
+        )
+
+        self._paint_region_with_mask(
+            slice_key,
+            mask,
+            new_label,
+            dims_to_paint,
+            refresh,
+            region_data=region_data,
+        )
+
+    def _get_flood_mask_and_bbox(
+        self,
+        coord: Sequence[float],
+        new_label: int,
+        dims_to_paint: list[int],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None:
+        """Compute the mask and bounding box for a flood fill operation.
+
+        Parameters
+        ----------
+        coord : Sequence[float]
+            Position of mouse cursor in image coordinates.
+        new_label : int
+            Value of the new label to be filled in.
+        dims_to_paint : list[int]
+            The dimensions across which the fill will be performed.
+
+        Returns
+        -------
+        tuple | None
+            A 4-tuple containing:
+            - mask : np.ndarray
+                Boolean mask indicating the region to be filled.
+            - min_vals : np.ndarray
+                Minimum (inclusive) indices for each painted dimension.
+            - max_vals : np.ndarray
+                Maximum (exclusive) indices for each painted dimension.
+            - region_data : np.ndarray
+                The data within the bounding box.
+            Returns None if the fill operation is invalid.
+        """
+        from skimage.segmentation import flood
+
+        assert not isinstance(self.data, MultiScaleData)
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
             np.greater_equal(int_coord, self.data.shape)
         ):
-            return
+            return None
 
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label:
-            return
-        # If preserve_labels is True, then we only want to fill:
-        # - pixels of the background label, filling with the new label
-        # - pixels of the previous label, filling with the background
-        # the previous label is stored when the selected label is set
-        # to the background, e.g. by swap_selected_and_background_labels
-        if (
-            self.preserve_labels
-            and old_label != self._prev_selected_label
-            and old_label != self.colormap.background_value
-        ):
-            return
+            return None
 
-        dims_to_fill = sorted(
-            self._slice_input.order[-self.n_edit_dimensions :]
-        )
+        if self.preserve_labels:
+            source_label = self._get_preserve_labels_source_label(new_label)
+            if old_label != source_label:
+                return None
+
+        # Create the slice to extract the full working volume/plane
         data_slice_list = list(int_coord)
-        for dim in dims_to_fill:
+        for dim in dims_to_paint:
             data_slice_list[dim] = slice(None)
         data_slice = tuple(data_slice_list)
+
         labels = np.asarray(self.data[data_slice])
-        slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
-        matches = labels == old_label
+        # Coordinate of the seed point relative to the extracted labels
+        slice_coord = tuple(int_coord[d] for d in dims_to_paint)
+
         if self.contiguous:
-            # if contiguous replace only selected connected component
-            labeled_matches, num_features = ndi.label(matches)
-            if num_features != 1:
-                match_label = labeled_matches[slice_coord]
-                matches = np.logical_and(
-                    matches, labeled_matches == match_label
-                )
-
-        match_indices_local = np.nonzero(matches)
-        if self.ndim not in {2, self.n_edit_dimensions}:
-            n_idx = len(match_indices_local[0])
-            match_indices = []
-            j = 0
-            for d in data_slice:
-                if isinstance(d, slice):
-                    match_indices.append(match_indices_local[j])
-                    j += 1
-                else:
-                    match_indices.append(np.full(n_idx, d, dtype=np.intp))
+            mask = flood(labels, slice_coord, connectivity=1)
         else:
-            match_indices = match_indices_local
+            mask = labels == old_label
 
-        match_indices = _coerce_indices_for_vectorization(
-            self.data, match_indices
-        )
+        # Calculate bounding box of the mask to minimize update size.
+        # When the fill already spans the full extracted region, skip the
+        # bbox scan and reuse the full slice directly.
+        mask_is_full = mask.all()
+        if mask_is_full:
+            bbox_slices = tuple(slice(None) for _ in dims_to_paint)
+            cropped_mask = mask
+            min_vals = np.zeros(mask.ndim, dtype=int)
+            max_vals = np.array(mask.shape)
+        else:
+            min_vals, max_vals = self._compute_mask_bbox(mask)
 
-        self.data_setitem(match_indices, new_label, refresh)
+            bbox_slices = tuple(
+                slice(min_v, max_v)
+                for min_v, max_v in zip(min_vals, max_vals, strict=True)
+            )
+            cropped_mask = mask[bbox_slices]
 
-    def _draw(self, new_label, last_cursor_coord, coordinates):
+        return cropped_mask, min_vals, max_vals, labels[bbox_slices]
+
+    def _get_preserve_labels_source_label(self, new_label: int) -> int:
+        """Return the existing label value that preserve_labels allows to change.
+
+        Painting with a non-background label may only replace background.
+        Painting with the background label may only replace the previously
+        selected label, falling back to the current selected label when no
+        previous label is stored.
+
+        Parameters
+        ----------
+        new_label : int
+            The label value that will be written.
+
+        Returns
+        -------
+        int
+            The only existing label value that may be overwritten.
+        """
+        if new_label == self.colormap.background_value:
+            if self._prev_selected_label is not None:
+                return self._prev_selected_label
+            return self.selected_label
+        return self.colormap.background_value
+
+    def _draw(self, new_label, last_cursor_coord, coordinates) -> None:
         """Paint into coordinates, accounting for mode and cursor movement.
 
         The draw operation depends on the current mode of the layer.
@@ -1210,31 +1427,94 @@ class Labels(ScalarFieldBase):
         coordinates : sequence
             new cursor coordinates
         """
+        assert not isinstance(self.data, MultiScaleData)
         if coordinates is None:
             return
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size
         )
-        for c in interp_coord:
-            if (
-                self._slice_input.ndisplay == 3
-                and self.data[tuple(np.round(c).astype(int))] == 0
-            ):
-                continue
-            if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(c, new_label, refresh=False)
-            elif self._mode == Mode.FILL:
+        if self._slice_input.ndisplay == 3:
+            # In 3D, drop interpolated points that were background before
+            # this event. The cursor only picks labelled voxels, so points
+            # are always inside the data.
+            centers = np.round(interp_coord).astype(int)
+            lo, hi = centers.min(axis=0), centers.max(axis=0) + 1
+            region = np.asarray(self.data[tuple(map(slice, lo, hi))])
+            on_label = region[tuple((centers - lo).T)] != 0
+            interp_coord = interp_coord[on_label]
+        if self._mode in [Mode.PAINT, Mode.ERASE]:
+            self._paint_coordinates(interp_coord, new_label, refresh=False)
+        elif self._mode == Mode.FILL:
+            for c in interp_coord:
                 self.fill(c, new_label, refresh=False)
         self._partial_labels_refresh()
 
-    def paint(self, coord, new_label, refresh=True):
-        """Paint over existing labels with a new label, using the selected
-        brush shape and size, either only on the visible slice or in all
-        n dimensions.
+    def _paint_coordinates(
+        self,
+        coords: np.ndarray,
+        new_label: int,
+        refresh: bool,
+    ) -> None:
+        """Paint a brush stamp at each coordinate as one combined edit.
+
+        If the coordinates differ in a non-painted dim, the stamps lie in
+        different planes and are painted one at a time instead.
 
         Parameters
         ----------
-        coord : sequence of int
+        coords : np.ndarray, shape (N, ndim)
+            Brush centers in image coordinates.
+        new_label : int
+            Value of the new label to be painted.
+        refresh : bool
+            Whether to refresh view slice or not.
+        """
+        self._validate_label_in_range(new_label)
+        centers = np.round(coords).astype(int)
+        if len(centers) == 0:
+            return
+        shape, dims_to_paint = self._get_shape_and_dims_to_paint()
+
+        non_painted = [d for d in range(self.ndim) if d not in dims_to_paint]
+        planes = centers[:, non_painted]
+        if np.any(planes != planes[0]):
+            # e.g. a 2D brush dragged through a 3D view, or a slice change
+            # mid-drag
+            for center in centers:
+                self._paint_coordinates(center[np.newaxis], new_label, refresh)
+            return
+
+        slice_coord = centers[0].tolist()
+        self._validate_non_painted_coord(slice_coord, dims_to_paint)
+
+        brush_info = self._get_brush_mask_and_bbox(
+            centers, dims_to_paint, shape
+        )
+        if brush_info is None:
+            return
+
+        mask, min_vals, max_vals = brush_info
+        slice_key = self._build_slice_key(
+            slice_coord, dims_to_paint, min_vals, max_vals
+        )
+        self._paint_region_with_mask(
+            slice_key, mask, new_label, dims_to_paint, refresh
+        )
+
+    def paint(
+        self,
+        coord: Vector1D,
+        new_label: int,
+        refresh: bool = True,
+    ) -> None:
+        """Paint over existing labels with a new label.
+
+        This uses the selected brush shape and size, painting either on the
+        visible slice or in n dimensions depending on `n_edit_dimensions`.
+
+        Parameters
+        ----------
+        coord : Sequence[float]
             Position of mouse cursor in image coordinates.
         new_label : int
             Value of the new label to be filled in.
@@ -1242,126 +1522,640 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        shape, dims_to_paint = self._get_shape_and_dims_to_paint()
+        coords = np.asarray([coord], dtype=float)
+        if not np.isfinite(coords).all():
+            raise ValueError(f'Coordinate {coord} must be finite.')
+        self._paint_coordinates(coords, new_label, refresh)
+
+    def _get_brush_mask_and_bbox(
+        self,
+        centers: np.ndarray,
+        dims_to_paint: list[int],
+        shape: list[int],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+        """Compute the union mask and bounding box of brush stamps at centers.
+
+        Parameters
+        ----------
+        centers : np.ndarray of int, shape (N, ndim)
+            Brush centers in image coordinates.
+        dims_to_paint : list[int]
+            The dimensions across which the painting will be performed.
+        shape : list[int]
+            The shape of the data being painted.
+
+        Returns
+        -------
+        tuple | None
+            A 3-tuple containing:
+            - mask : np.ndarray
+                Boolean mask indicating the brush region.
+            - min_vals : np.ndarray
+                Minimum (inclusive) indices for each painted dimension.
+            - max_vals : np.ndarray
+                Maximum (exclusive) indices for each painted dimension.
+            Returns None if stamp's bounding box does not overlap the data.
+        """
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
 
-        slice_coord = [int(np.round(c)) for c in coord]
-        if self.n_edit_dimensions < self.ndim:
-            coord_paint = [coord[i] for i in dims_to_paint]
-        else:
-            coord_paint = coord
+        painted_centers = centers[:, dims_to_paint]
 
-        # Ensure circle doesn't have spurious point
-        # on edge by keeping radius as ##.5
+        # Ensure circle doesn't have spurious point on edge by keeping radius as 0.5
         radius = np.floor(self.brush_size / 2) + 0.5
-        mask_indices = sphere_indices(radius, tuple(paint_scale))
 
-        mask_indices = mask_indices + np.round(np.array(coord_paint)).astype(
-            int
+        # Radius in pixels for each dimension (accounting for scale)
+        # Use floor to match old sphere_indices behavior: points where dist <= radius
+        # means integer coordinates from -floor(radius) to +floor(radius)
+        normalized_scale = np.abs(paint_scale)
+        normalized_scale = normalized_scale / np.min(normalized_scale)
+        radius_pixels = np.floor(radius / normalized_scale).astype(int)
+
+        # Clip each stamp's bbox to the data and drop stamps entirely outside
+        origins = painted_centers - radius_pixels
+        stamp_mins = np.maximum(origins, 0)
+        stamp_maxs = np.minimum(painted_centers + radius_pixels + 1, shape)
+        inside = np.all(stamp_mins < stamp_maxs, axis=1)
+        if not np.any(inside):
+            return None
+        origins = origins[inside]
+        stamp_mins, stamp_maxs = stamp_mins[inside], stamp_maxs[inside]
+        min_vals = stamp_mins.min(axis=0)
+        max_vals = stamp_maxs.max(axis=0)
+
+        # Each stamp is the clipped part of one shared brush template
+        template = self._create_brush_mask(
+            tuple(2 * radius_pixels + 1),
+            radius,
+            radius_pixels,
+            normalized_scale,
         )
+        mask = np.zeros(tuple(max_vals - min_vals), dtype=bool)
+        for origin, lo, hi in zip(
+            origins, stamp_mins, stamp_maxs, strict=True
+        ):
+            mask[tuple(map(slice, lo - min_vals, hi - min_vals))] |= template[
+                tuple(map(slice, lo - origin, hi - origin))
+            ]
 
-        self._paint_indices(
-            mask_indices, new_label, shape, dims_to_paint, slice_coord, refresh
-        )
+        return mask, min_vals, max_vals
 
-    def paint_polygon(self, points, new_label):
+    def paint_polygon(
+        self,
+        points: list | np.ndarray,
+        new_label: int,
+    ) -> None:
         """Paint a polygon over existing labels with a new label.
+
+        Uses a bounding box optimization: extracts a rectangular region around
+        the polygon, paints within that region in-place, then writes back.
+        This approach works for both contiguous and non-contiguous dimension orderings.
 
         Parameters
         ----------
-        points : list of coordinates
+        points : list or array
             List of coordinates of the vertices of a polygon.
         new_label : int
             Value of the new label to be filled in.
         """
+        self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
+        points = np.array(points, dtype=int)
+        slice_coord = points[0].tolist()
+        self._validate_non_painted_coord(slice_coord, dims_to_paint)
+        polygon_info = self._get_polygon_mask_and_bbox(
+            points, dims_to_paint, shape
+        )
+
+        if polygon_info is None:
+            return
+
+        mask, min_vals, max_vals = polygon_info
+        slice_key = self._build_slice_key(
+            slice_coord, dims_to_paint, min_vals, max_vals
+        )
+
+        self._paint_region_with_mask(slice_key, mask, new_label, dims_to_paint)
+
+    def _get_polygon_mask_and_bbox(
+        self,
+        points: np.ndarray,
+        dims_to_paint: list[int],
+        shape: list[int],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+        """Compute the mask and bounding box for a polygon painting operation.
+
+        Parameters
+        ----------
+        points : np.ndarray
+            Integer array of coordinates of the vertices of a polygon.
+        dims_to_paint : list[int]
+            The dimensions across which the painting will be performed.
+        shape : list[int]
+            The shape of the data being painted.
+
+        Returns
+        -------
+        tuple | None
+            A 3-tuple containing:
+            - mask : np.ndarray
+                Boolean mask indicating the polygon region.
+            - min_vals : np.ndarray
+                Minimum (inclusive) indices for each painted dimension.
+            - max_vals : np.ndarray
+                Maximum (exclusive) indices for each painted dimension.
+            Returns None if the polygon operation is invalid.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``dims_to_paint`` is not 2D, because polygon painting is 2D only.
+        """
         if len(dims_to_paint) != 2:
             raise NotImplementedError(
                 'Polygon painting is implemented only in 2D.'
             )
 
-        points = np.array(points, dtype=int)
-        slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = polygon2mask(shape, points2d)
-        mask_indices = np.argwhere(polygon_mask)
-        self._paint_indices(
-            mask_indices,
-            new_label,
-            shape,
-            dims_to_paint,
-            slice_coord,
-            refresh=True,
-        )
+        min_vals = np.min(points2d, axis=0)
+        max_vals = np.max(points2d, axis=0) + 1  # exclusive
 
-    def _paint_indices(
-        self,
-        mask_indices,
-        new_label,
-        shape,
-        dims_to_paint,
-        slice_coord=None,
-        refresh=True,
-    ):
-        """Paint over existing labels with a new label, using the selected
-        mask indices, either only on the visible slice or in all n dimensions.
+        min_vals = np.maximum(min_vals, 0)
+        max_vals = np.minimum(max_vals, shape)
+
+        if np.any(min_vals >= max_vals):
+            return None
+
+        bbox_shape = list(max_vals - min_vals)
+        points2d_shifted = points2d - min_vals
+
+        polygon_mask = self._create_polygon_mask(points2d_shifted, bbox_shape)
+
+        if not np.any(polygon_mask):
+            return None
+
+        return polygon_mask, min_vals, max_vals
+
+    @staticmethod
+    def _create_polygon_mask(
+        points2d: np.ndarray, shape: list[int]
+    ) -> np.ndarray:
+        """Create a boolean mask from polygon points using PIL rasterization.
 
         Parameters
         ----------
-        mask_indices : numpy array of integer coordinates
-            Mask to paint represented by an array of its coordinates.
-        new_label : int
-            Value of the new label to be filled in.
-        shape : list
-            The label data shape upon which painting is performed.
-        dims_to_paint : list
-            List of dimensions of the label data that are used for painting.
-        refresh : bool
-            Whether to refresh view slice or not. Set to False to batch paint
-            calls.
+        points2d : ndarray
+            2D polygon vertices in (row, col) format, relative to the mask
+            coordinate system.
+        shape : list of int
+            Shape of the mask to create [height, width].
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside polygon.
         """
-        dims_not_painted = sorted(
-            self._slice_input.order[: -self.n_edit_dimensions]
+        from PIL import Image, ImageDraw
+
+        # PIL uses (x, y) = (col, row), so reverse the points
+        img = Image.new('L', (shape[1], shape[0]), 0)
+        draw = ImageDraw.Draw(img)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
+        return np.array(img, dtype=bool)
+
+    @staticmethod
+    def _create_brush_mask(
+        shape: tuple[int, ...],
+        radius: float,
+        center: np.ndarray,
+        normalized_scale: np.ndarray,
+    ) -> np.ndarray:
+        """Create boolean mask for nD circular/spherical/ellipsoidal brush.
+
+        This method generates a boolean mask for brushes in arbitrary dimensions,
+        supporting 2D circles, 3D spheres, 4D hyperspheres, etc. with anisotropic
+        scaling (ellipsoids). The mask is created by computing the scaled distance
+        from the center point and comparing against the radius.
+
+        Parameters
+        ----------
+        shape : tuple of int
+            Shape of the mask to create (matches bounding box shape)
+        radius : float
+            Brush radius in data coordinates
+        center : ndarray
+            Center position within the mask (already adjusted for bounding box offset)
+            Shape: (n_edit_dimensions,)
+        normalized_scale : ndarray
+            Scale factors normalized so the smallest painted axis has scale 1.
+            These are used to support ellipsoids with anisotropic scaling.
+            Shape: (n_edit_dimensions,)
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside brush shape, False outside
+            Shape matches input `shape` parameter
+        """
+        ndim = len(shape)
+
+        grids = np.ogrid[tuple(slice(0, s) for s in shape)]
+
+        # Calculate squared distance from center in scaled space
+        dist_sq = sum(
+            ((grids[i] - center[i]) * normalized_scale[i]) ** 2
+            for i in range(ndim)
         )
-        # discard candidate coordinates that are out of bounds
-        mask_indices = indices_in_shape(mask_indices, shape)
 
-        # Transfer valid coordinates to slice_coord,
-        # or expand coordinate if 3rd dim in 2D image
-        slice_coord_temp = list(mask_indices.T)
-        if self.n_edit_dimensions < self.ndim:
-            for j, i in enumerate(dims_to_paint):
-                slice_coord[i] = slice_coord_temp[j]
-            for i in dims_not_painted:
-                slice_coord[i] = slice_coord[i] * np.ones(
-                    mask_indices.shape[0], dtype=int
-                )
-        else:
-            slice_coord = slice_coord_temp
+        return dist_sq <= radius**2  # pyrefly: ignore [bad-return]
 
-        slice_coord = _coerce_indices_for_vectorization(self.data, slice_coord)
+    @staticmethod
+    def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Compute the bounding box of True values in a boolean mask.
 
-        # slice coord is a tuple of coordinate arrays per dimension
-        # subset it if we want to only paint into background/only erase
-        # current label, accounting for swap_selected_and_background_labels
+        Uses np.argmax on axis projections to find the first and last True
+        values along each dimension, avoiding intermediate index arrays.
+
+        Parameters
+        ----------
+        mask : np.ndarray
+            Boolean mask array. Must contain at least one True value.
+
+        Returns
+        -------
+        min_vals : np.ndarray
+            Minimum (inclusive) index for each dimension.
+        max_vals : np.ndarray
+            Maximum (exclusive) index for each dimension.
+        """
+        min_vals = np.empty(mask.ndim, dtype=int)
+        max_vals = np.empty(mask.ndim, dtype=int)
+
+        for i in range(mask.ndim):
+            axes = tuple(j for j in range(mask.ndim) if j != i)
+            any_on_axis = np.any(mask, axis=axes)
+            # argmax finds the first True; reverse search finds the last
+            min_vals[i] = np.argmax(any_on_axis)
+            max_vals[i] = len(any_on_axis) - np.argmax(any_on_axis[::-1])
+
+        return min_vals, max_vals
+
+    @staticmethod
+    def _build_slice_key(
+        slice_coord: list[int],
+        dims_to_paint: list[int],
+        min_vals: np.ndarray,
+        max_vals: np.ndarray,
+    ) -> tuple[slice, ...]:
+        """Build an N-dimensional slice key with bounding-box slices for painted dims.
+
+        Parameters
+        ----------
+        slice_coord : list[int]
+            Base coordinate list for the volume slice; non-painted dims
+            become length-1 slices around their coordinate.
+        dims_to_paint : list[int]
+            Dimensions that will be painted (these receive the bbox bounds)
+        min_vals, max_vals : ndarray
+            Minimum (inclusive) and maximum (exclusive) bounds for each painted dimension
+
+        Returns
+        -------
+        tuple of slice
+            N-dimensional slice key. Every entry is a slice with explicit
+            bounds, so indexing with it never drops dimensions.
+        """
+        slice_key_list = [slice(coord, coord + 1) for coord in slice_coord]
+        for i, dim in enumerate(dims_to_paint):
+            slice_key_list[dim] = slice(min_vals[i], max_vals[i])
+        return tuple(slice_key_list)
+
+    def _expand_updated_slice_for_contour(
+        self, updated_slice: tuple[slice, ...]
+    ) -> tuple[slice, ...]:
+        """Expand dirty slices so contour refresh includes the full contour halo."""
+        if self.contour < 1:
+            return updated_slice
+
+        contour_offset = max(1, self.contour)
+        return expand_slice(updated_slice, self.data.shape, contour_offset)
+
+    def _accumulate_updated_slice(
+        self, updated_slice: tuple[slice, ...]
+    ) -> None:
+        """Merge a newly dirtied region into the pending partial refresh."""
+        updated_slice = self._expand_updated_slice_for_contour(updated_slice)
+
+        if self._updated_slice is None:
+            self._updated_slice = updated_slice
+            return
+
+        self._updated_slice = tuple(
+            slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
+            for s1, s2 in zip(self._updated_slice, updated_slice, strict=True)
+        )
+
+    def _paint_region_with_mask(
+        self,
+        slice_key: tuple[slice, ...],
+        mask: np.ndarray,
+        new_label: int,
+        dims_to_paint: list[int],
+        refresh: bool = True,
+        region_data: np.ndarray | None = None,
+    ) -> None:
+        """Universal painting method using a boolean mask within a bounding box.
+
+        This method extracts the common pattern shared by brush painting, fill
+        and polygon painting: extract a region, apply a mask, write back, update
+        caches. It manages cache updates for non-shared memory backends, respects
+        the preserve_labels setting (handled by _apply_mask_to_data), and updates
+        undo/redo history.
+
+        Parameters
+        ----------
+        slice_key : tuple of slice
+            N-dimensional slice key in volume space specifying the bounding box
+            region; length-1 slices for non-painted dims. Example:
+            (slice(5, 6), slice(100, 200), slice(150, 250)) for a 3D volume
+            where dims_to_paint=[1, 2].
+        mask : ndarray
+            Boolean mask indicating which pixels to paint within the bounding
+            box, with one axis per painted dimension.
+        new_label : int
+            Label value to paint.
+        dims_to_paint : list of int
+            Indices of dimensions being painted (e.g., [1, 2] for YX in a ZYX volume).
+        refresh : bool, optional
+            Whether to refresh the display after painting. Default is True.
+        region_data : np.ndarray | None, optional
+            Pre-loaded data for the region defined by slice_key, with one axis
+            per painted dimension. If None (default), data will be read from
+            self.data[slice_key]. Providing this avoids redundant reads when
+            data is already available (e.g. in fill).
+        """
+        assert not isinstance(self.data, MultiScaleData)
+        # slice_key consists solely of slices, so the extracted region keeps
+        # the full data dimensionality; give the painted-dims mask (and a
+        # pre-loaded region, if any) matching length-1 axes.
+        extra_axes = tuple(
+            dim for dim in range(self.ndim) if dim not in dims_to_paint
+        )
+        if extra_axes:
+            mask = np.expand_dims(mask, extra_axes)
+            if region_data is not None:
+                region_data = np.expand_dims(region_data, extra_axes)
+
+        if region_data is None:
+            region_data = np.asarray(self.data[slice_key])
+
+        effective_mask = self._apply_mask_to_data(
+            region_data, mask, new_label, slice_key
+        )
+
+        if effective_mask is None:
+            return
+
+        # For numpy-backed data, region_data is a view into self.data, so
+        # _apply_mask_to_data already wrote through and this assignment is a
+        # no-op; for copy-returning backends (zarr, tensorstore, dask, ...)
+        # this is the actual write-back.
+        self.data[slice_key] = region_data  # pyrefly: ignore [unsupported-operation]
+
+        # Update caches (raw and view) for non-shared memory backends
+        # This handles mapping the N-D painted region to the currently displayed slice
+        self._refresh_caches_from_region(
+            region_data, slice_key, effective_mask, new_label
+        )
+
+        # Accumulate updated slices for batch painting (refresh=False)
+        self._accumulate_updated_slice(slice_key)
+
+        if refresh:
+            self._partial_labels_refresh()
+
+    def _apply_mask_to_data(
+        self,
+        data: np.ndarray,
+        mask: np.ndarray,
+        new_label: int,
+        volume_slice: tuple[slice, ...],
+    ) -> np.ndarray | None:
+        """Paint within a data region using a boolean mask.
+
+        This method operates on the data array in-place, using boolean mask
+        indexing. It handles preserve_labels logic and optimization to skip
+        unchanged pixels. The return value is the effective mask of pixels that
+        were actually painted.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The data to paint (e.g., extracted region/bounding box around polygon).
+            This array is modified IN PLACE.
+        mask : np.ndarray
+            Boolean mask indicating which pixels to paint, with shape matching data.
+        new_label : int
+            Label value to paint.
+        volume_slice : tuple of slice
+            Slice key in volume space for undo/redo history.
+
+        Returns
+        -------
+        np.ndarray | None
+            Boolean mask of the pixels that were painted, or None if the
+            operation made no changes.
+
+        Notes
+        -----
+        - Saves to undo/redo history
+        - Does NOT update caches or refresh display (caller's responsibility)
+        """
+        effective_mask = np.array(mask, copy=True)
+
         if self.preserve_labels:
-            if new_label == self.colormap.background_value:
-                keep_coords = self.data[slice_coord] == (
-                    self._prev_selected_label
-                    if self._prev_selected_label
-                    else self.selected_label
-                )
-            else:
-                keep_coords = (
-                    self.data[slice_coord] == self.colormap.background_value
-                )
-            slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
+            source_label = self._get_preserve_labels_source_label(new_label)
+            keep_mask = data == source_label
+            if not np.any(keep_mask):
+                return None
+            effective_mask &= keep_mask
 
-        self.data_setitem(slice_coord, new_label, refresh)
+        effective_mask &= data != new_label
+        if not np.any(effective_mask):
+            return None
+
+        self._save_history(
+            self._history_atom_for_mask_paint(
+                volume_slice, data, effective_mask, new_label
+            )
+        )
+        data[effective_mask] = new_label
+
+        return effective_mask
+
+    @staticmethod
+    def _history_atom_for_mask_paint(
+        volume_slice: tuple[slice, ...],
+        region_data: np.ndarray,
+        mask: np.ndarray,
+        new_label: int,
+    ) -> _MaskedPaintAtom:
+        """Build the undo history atom for a bbox+mask edit.
+
+        When every pixel in the bbox changed, the mask is dropped and a
+        snapshot of the old bbox is stored instead (redo only needs the
+        scalar label). Otherwise the mask and the old values under it are
+        stored. The atom takes ownership of ``mask``, which must not be
+        mutated afterwards.
+        """
+        if mask.all():
+            return _MaskedPaintAtom(
+                volume_slice, None, region_data.copy(), new_label
+            )
+        return _MaskedPaintAtom(
+            volume_slice, mask, region_data[mask], new_label
+        )
+
+    def _refresh_caches_from_region(
+        self,
+        region_data: np.ndarray,
+        slice_key: tuple[slice, ...],
+        mask: np.ndarray,
+        new_label: int,
+    ) -> None:
+        """Update raw and view caches with new data from a painted region.
+
+        Checks if the painted region intersects with the currently displayed slice.
+        If so, extracts the visible sub-region and updates the caches. This method
+        handles painting on non-shared memory backends (zarr, tensorstore, etc.)
+        that require manual cache updates.
+
+        Parameters
+        ----------
+        region_data : np.ndarray
+            The data of the painted region, with full data dimensionality.
+        slice_key : tuple of slice
+            The slices used to extract region_data from the full volume;
+            length-1 slices for non-painted dims.
+        mask : np.ndarray
+            Boolean mask indicating modified pixels in region_data.
+            Used to optimize texture updates.
+        new_label : int
+            The new label value that was painted. Used to optimize texture updates.
+        """
+        # If the slice has not loaded yet (e.g. async slicing), the caches
+        # are placeholders; the pending slice load will pick up the painted
+        # data directly, so there is nothing to patch here.
+        if not self._slicing_state.loaded or self._slice.empty:
+            return
+
+        # Invariant: for numpy-backed data, both raw and view caches are
+        # already views into self.data, so manual cache patching would be
+        # redundant.
+        if isinstance(self.data, np.ndarray) and np.shares_memory(
+            self.data, self._slice.image.view
+        ):
+            return
+
+        update_slices = self._get_update_slices(slice_key)
+        if update_slices is None:
+            return
+
+        region_slices, view_slices = update_slices
+
+        # Extract visible data from region_data using computed slices
+        visible_data = region_data[tuple(region_slices)]
+        visible_mask = mask[tuple(region_slices)]
+
+        visible_data, visible_mask = self._align_data_to_view(
+            visible_data, visible_mask
+        )
+
+        # Update raw cache (always safe to do if not sharing memory, updates display source)
+        if not (
+            isinstance(self.data, np.ndarray)
+            and np.shares_memory(self.data, self._slice.image.raw)
+        ):
+            self._slice.image.raw[tuple(view_slices)] = visible_data
+
+        # Contours are recomputed from the raw cache during
+        # _partial_labels_refresh (via _raw_to_displayed), so patching the
+        # texture view cache here would be redundant and immediately stale.
+        if self.contour > 0:
+            return
+
+        # Update texture view cache by compute new color only once
+        new_color = self.colormap._data_to_texture(
+            np.array([new_label], dtype=visible_data.dtype)
+        )[0]
+
+        # Update cache in-place for changed pixels only
+        if visible_mask.all():
+            self._slice.image.view[tuple(view_slices)] = new_color
+        else:
+            self._slice.image.view[tuple(view_slices)][visible_mask] = (
+                new_color
+            )
+
+    def _get_update_slices(
+        self, slice_key: tuple[slice, ...]
+    ) -> tuple[list[slice | int], list[slice]] | None:
+        """Calculate slices for extracting region data and updating the view.
+
+        Returns
+        -------
+        tuple[list[slice | int], list[slice]] | None
+            A tuple (region_slices, view_slices). region_slices extracts
+            the currently visible part of the painted region (integer
+            indices collapse the non-displayed dims); view_slices addresses
+            that part within the displayed slice caches.
+            Returns None if the painted region is not currently visible.
+        """
+        displayed_dims = self._slice_input.displayed
+        pt_not_disp = self._get_pt_not_disp()
+
+        # Two coordinate systems: region_slices indexes region_data (full ndim,
+        # so non-displayed dims collapse to an int that picks the visible plane);
+        # view_slices indexes the 2D display caches (one entry per displayed dim,
+        # all slices).
+        region_slices: list[slice | int] = [slice(None)] * self.ndim
+        view_slices: list[slice] = [slice(None)] * len(displayed_dims)
+
+        for d in range(self.ndim):
+            axis_slice = slice_key[d]
+            if d in displayed_dims:
+                view_slices[displayed_dims.index(d)] = axis_slice
+            else:
+                # Non-displayed dims must contain the current slice position
+                current_pos = pt_not_disp[d]
+                if not (axis_slice.start <= current_pos < axis_slice.stop):
+                    return None
+                region_slices[d] = int(current_pos - axis_slice.start)
+
+        return region_slices, view_slices
+
+    def _align_data_to_view(
+        self,
+        visible_data: np.ndarray,
+        visible_mask: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Transpose data from ascending dimension order to the displayed order.
+
+        ``displayed`` may not be sorted (e.g. a transposed view), so the
+        extracted region (whose axes are in ascending dimension order) is
+        permuted to match the order the display caches expect.
+        """
+        displayed_dims = self._slice_input.displayed
+        sorted_dims = sorted(displayed_dims)
+        if list(displayed_dims) != sorted_dims:
+            perm = [sorted_dims.index(d) for d in displayed_dims]
+            visible_data = np.transpose(visible_data, perm)
+            visible_mask = np.transpose(visible_mask, perm)
+        return visible_data, visible_mask
 
     def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
@@ -1385,7 +2179,7 @@ class Labels(ScalarFieldBase):
         ).astype(int)
         return {dim: point[dim] for dim in slice_input.not_displayed}
 
-    def data_setitem(self, indices, value, refresh=True):
+    def data_setitem(self, indices, value, refresh=True) -> None:
         """Set `indices` in `data` to `value`, while writing to edit history.
 
         Parameters
@@ -1403,6 +2197,7 @@ class Labels(ScalarFieldBase):
         ----------
         .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
+        assert not isinstance(self.data, MultiScaleData)
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
 
@@ -1427,7 +2222,7 @@ class Labels(ScalarFieldBase):
         )
 
         # update the labels image
-        self.data[indices] = value
+        self.data[indices] = value  # pyrefly: ignore [unsupported-operation]
 
         pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(
@@ -1455,34 +2250,17 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            [
-                slice(min(axis_indices), max(axis_indices) + 1)
-                for axis_indices in indices
-            ]
+            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
+            for axis_indices in indices
         )
 
-        if self.contour > 0:
-            # Expand the slice by 1 pixel as the changes can go beyond
-            # the original slice because of the morphological dilation
-            # (1 pixel because get_contours always applies 1 pixel dilation)
-            updated_slice = expand_slice(updated_slice, self.data.shape, 1)
-        else:
+        if self.contour == 0:
             # update data view
             self._slice.image.view[displayed_indices] = (
                 self.colormap._data_to_texture(visible_values)
             )
 
-        if self._updated_slice is None:
-            self._updated_slice = updated_slice
-        else:
-            self._updated_slice = tuple(
-                [
-                    slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
-                    for s1, s2 in zip(
-                        updated_slice, self._updated_slice, strict=False
-                    )
-                ]
-            )
+        self._accumulate_updated_slice(updated_slice)
 
         if refresh is True:
             self._partial_labels_refresh()
@@ -1573,14 +2351,26 @@ class Labels(ScalarFieldBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return '\n'.join(
-            self._get_properties(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
+        if value is None:
+            return ''
+
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+
+        if not properties:
+            return f'{value}'
+
+        return f'{value}\n' + '\n'.join(properties)
 
     def _get_properties(
         self,
@@ -1607,11 +2397,11 @@ class Labels(ScalarFieldBase):
             int, value[1] if self.multiscale else value
         )
         if label_value not in self._label_index:
-            return [trans._('[No Properties]')]
+            return ['[No Properties]']
 
         idx = self._label_index[label_value]
         return [
-            f'{k}: {v[idx]}'
+            f'{k}: {format_feature_value(v[idx])}'
             for k, v in self.features.items()
             if k != 'index'
             and len(v) > idx
@@ -1619,24 +2409,24 @@ class Labels(ScalarFieldBase):
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
 
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _LabelsSlicingState:
+        return _LabelsSlicingState(self, data, cache)
 
-def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
-    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
-    if _is_array_type(array, 'xarray.DataArray'):
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-        except ModuleNotFoundError:
-            pass
-        else:
-            return tuple(xr.DataArray(i) for i in indices)
-    return tuple(indices)
+
+class _LabelsSlicingState(ScalarFieldSlicingState):
+    layer: Labels
+    _slice_request_class = _LabelsSliceRequest
 
 
 class WrongSelectedLabelError(ValueError):
-    """Raised when the selected label is not in the data array."""
+    """Raised when a label value is out of range for the layer's data dtype.
+
+    Raised both when setting ``selected_label`` and when painting
+    (``paint``/``fill``/``paint_polygon``) with a value the data dtype cannot
+    represent.
+    """
 
     def __init__(
         self,
@@ -1645,7 +2435,7 @@ class WrongSelectedLabelError(ValueError):
         lower_bound: float,
         upper_bound: float,
         message: str = '',
-    ):
+    ) -> None:
         self.dtype = dtype
         self.value = value
         self.lower_bound = lower_bound

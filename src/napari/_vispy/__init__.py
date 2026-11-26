@@ -14,27 +14,25 @@ vispy_logger.setLevel(logging.WARNING)
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.canvas import VispyCanvas
-from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
+from napari._vispy.overlays.scene_axes import VispySceneAxesOverlay
 from napari._vispy.overlays.text import VispyTextOverlay
-from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import create_vispy_layer, create_vispy_overlay
 
 __all__ = [
-    'VispyAxesOverlay',
     'VispyCamera',
     'VispyCanvas',
     'VispyLabelsPolygonOverlay',
     'VispyScaleBarOverlay',
+    'VispySceneAxesOverlay',
     'VispySelectionBoxOverlay',
     'VispyTextOverlay',
     'VispyTransformBoxOverlay',
     'create_vispy_layer',
     'create_vispy_overlay',
-    'quaternion2euler_degrees',
 ]

@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QApplication
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._tests.utils import skip_local_popups
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import (
     IsoCategoricalGradientMode,
@@ -76,29 +78,34 @@ def test_rendering_combobox(make_labels_controls):
     assert combo.findText(new_mode) == combo.currentIndex()
 
 
-def test_changing_colormap_updates_colorbox(make_labels_controls):
+@skip_local_popups
+def test_changing_colormap_updates_colorbox(
+    make_labels_controls, qtbot, colorbox_painted_colors
+):
     """Test that changing the colormap on a layer will update color swatch in the combo box"""
     layer, qtctrl = make_labels_controls(colormap=_COLOR)
-    color_box = qtctrl._label_control.colorbox
+
+    # QtColorBox is not painted until its window is exposed
+    with qtbot.waitExposed(qtctrl):
+        qtctrl.show()
 
     layer.selected_label = 1
 
-    # For a paint event, which does not occur in a headless qtbot
-    color_box.paintEvent(None)
+    # QtColorBox only requests a repaint with update(). Run the event loop so
+    # that colorbox_painted_colors holds the color which it really painted.
+    QApplication.processEvents()
 
+    np.testing.assert_equal(colorbox_painted_colors[-1], (255, 255, 255, 255))
+
+    new_colormap = colormap_utils.label_colormap(num_colors=5)
+    layer.colormap = new_colormap
+
+    QApplication.processEvents()
+
+    # compare with the new colormap, as layer._selected_color may be stale
     np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
-    )
-
-    layer.colormap = colormap_utils.label_colormap(num_colors=5)
-
-    # For a paint event, which does not occur in a headless qtbot
-    color_box.paintEvent(None)
-
-    np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
+        colorbox_painted_colors[-1],
+        np.round(np.asarray(new_colormap.map(1)) * 255),
     )
 
 
@@ -160,6 +167,14 @@ def test_change_label_selector_range(make_labels_controls):
     assert qtctrl._label_control.selection_spinbox.maximum() == 127
 
 
+def test_initial_label_selector_value(make_labels_controls):
+    """Initializing the label selector spinbox to an initial value."""
+    layer, qtctrl = make_labels_controls()
+    assert (
+        qtctrl._label_control.selection_spinbox.value() == layer.selected_label
+    )
+
+
 def test_change_iso_gradient_mode(make_labels_controls):
     """Changing the iso gradient mode should update the layer and vice versa."""
     layer, qtctrl = make_labels_controls()
@@ -207,3 +222,29 @@ def test_iso_gradient_mode_with_rendering(make_labels_controls):
     assert not qtctrl._render_control.iso_gradient_combobox.isEnabled()
     layer.rendering = LabelsRendering.ISO_CATEGORICAL
     assert qtctrl._render_control.iso_gradient_combobox.isEnabled()
+
+
+def test_label_button_exists(make_labels_controls):
+    """Test that the new label button exists."""
+    layer, qtctrl = make_labels_controls()
+    layer.data = np.random.randint(5, size=(10, 15), dtype=np.uint8)
+    assert qtctrl._label_control.new_label_button is not None
+    assert qtctrl._label_control.new_label_button.text() == 'new'
+
+
+def test_label_button_adds_new_label(make_labels_controls):
+    """Test that clicking the new label button sets selected_label to max + 1."""
+    layer, qtctrl = make_labels_controls()
+    expected = int(layer.data.max()) + 1
+    layer.selected_label = 1
+    qtctrl._label_control._on_button_click()
+    assert layer.selected_label == expected
+
+
+def test_label_button_no_change_if_reached_at_max(make_labels_controls):
+    """Test that clicking again when already at max+1 does not change selected_label."""
+    layer, qtctrl = make_labels_controls()
+    layer.selected_label = int(layer.data.max()) + 1
+    before = layer.selected_label
+    qtctrl._label_control._on_button_click()
+    assert layer.selected_label == before

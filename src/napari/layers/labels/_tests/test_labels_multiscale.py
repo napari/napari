@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.components.dims import Dims
 from napari.layers import Labels
+from napari.layers.base.base import Layer
 
 
 def test_random_multiscale():
@@ -58,7 +59,7 @@ def test_3D_multiscale_labels_in_2D():
 
 def test_3D_multiscale_labels_in_3D():
     """Test instantiating Labels layer with 3D data, 3D dims."""
-    data_multiscale, layer = instantiate_3D_multiscale_labels()
+    layer = instantiate_3D_multiscale_labels()[1]
 
     # use 3D dims
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
@@ -85,6 +86,20 @@ def test_3D_multiscale_labels_in_3D():
     ) == (2, 5)
 
 
+def test_multiscale_labels_data_setter():
+    """Setting .data on a multiscale Labels layer should not crash."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.int8) for s in shapes]
+    layer = Labels(data, multiscale=True)
+
+    new_data = [np.ones(s, dtype=np.int8) for s in shapes]
+    layer.data = new_data
+
+    assert layer.multiscale is True
+    assert len(layer.data) == 3
+    assert layer.data[0].shape == (40, 20)
+
+
 def instantiate_3D_multiscale_labels():
     lowest_res_scale = np.arange(8).reshape(2, 2, 2)
     middle_res_scale = (
@@ -97,3 +112,21 @@ def instantiate_3D_multiscale_labels():
     data_multiscale = [highest_res_scale, middle_res_scale, lowest_res_scale]
 
     return data_multiscale, Labels(data_multiscale, multiscale=True)
+
+
+def test_locked_data_level_argument_and_get_state_method_recreate_layer() -> (
+    None
+):
+    multiscale_data = [
+        np.zeros((8, 8), dtype=np.uint8),
+        np.zeros((4, 4), dtype=np.uint8),
+        np.zeros((2, 2), dtype=np.uint8),
+    ]
+    label_layer = Labels(data=multiscale_data, locked_data_level=1)
+
+    assert label_layer.locked_data_level == 1
+    assert label_layer.data_level == 1
+    assert label_layer._get_state()['locked_data_level'] == 1
+
+    recreated_layer = Layer.create(*label_layer.as_layer_data_tuple())
+    assert recreated_layer.locked_data_level == 1  # type: ignore

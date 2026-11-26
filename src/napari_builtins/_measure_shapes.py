@@ -23,8 +23,7 @@ def path_length(vertices, connect_last=False):
 
 def polygon_area(vertices):
     coords = np.asarray(vertices)
-    n, dims = coords.shape
-    area = 0
+    n, _dims = coords.shape
 
     if n < 3:
         return 0

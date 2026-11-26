@@ -1,5 +1,4 @@
 import typing
-from pathlib import Path
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -11,6 +10,8 @@ from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
     # helpful for IDE support
+    from pathlib import Path
+
     from napari._qt.qt_main_window import Window
 
 
@@ -34,7 +35,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: 'Window' = None  # pyrefly: ignore [bad-assignment]
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
@@ -45,6 +46,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        show_welcome_screen=True,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -64,7 +66,9 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(self, show=show)
+        self._window = Window(  # pyrefly: ignore [bad-assignment]
+            self, show=show, show_welcome_screen=show_welcome_screen
+        )
         self._instances.add(self)
 
     def __new__(cls, *args, **kwargs):
@@ -114,6 +118,7 @@ class Viewer(ViewerModel):
         if self.window._qt_viewer._console is None:
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
+        assert self.window._qt_viewer.console is not None
         self.window._qt_viewer.console.push(variables)
 
     def export_figure(
@@ -172,7 +177,7 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: 'str | Path | list[str | Path] | None' = None,
         scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
@@ -266,6 +271,11 @@ class Viewer(ViewerModel):
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
+        # The canvas is deleted with the window, so it does not need to
+        # update its scene graph after the layers are removed. The window is
+        # gone if the viewer was already closed.
+        if hasattr(self.window, '_qt_window'):
+            self.window._qt_viewer.canvas._closing = True
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
@@ -304,4 +314,4 @@ def current_viewer() -> Viewer | None:
     except ImportError:
         return None
     else:
-        return _QtMainWindow.current_viewer()
+        return _QtMainWindow.current_viewer()  # pyrefly: ignore [bad-return]

@@ -1,16 +1,17 @@
 """guess_rgb, guess_multiscale, guess_labels."""
 
+from __future__ import annotations
+
 import itertools
-from collections.abc import Callable, Sequence
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers.image._image_constants import ImageProjectionMode
-from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
@@ -85,19 +86,11 @@ def guess_multiscale(
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.
         raise ValueError(
-            trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}',
-                deferred=True,
-                size=sizes[0],
-            )
+            f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {sizes[0]}'
         )
     if not consistent:
         raise ValueError(
-            trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}',
-                deferred=True,
-                sizes=sizes,
-            )
+            f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}'
         )
 
     return True, MultiScaleData(data)
@@ -115,28 +108,3 @@ def guess_labels(data: Any) -> Literal['labels', 'image']:
         return 'labels'
 
     return 'image'
-
-
-def project_slice(
-    data: npt.NDArray, axis: tuple[int, ...], mode: ImageProjectionMode
-) -> npt.NDArray:
-    """Project a thick slice along axis based on mode."""
-    if all(data.shape[axis] == 1 for axis in axis):
-        # If all axes are of size 1, return the data as is
-        return data[
-            tuple(
-                slice(None) if i not in axis else 0 for i in range(data.ndim)
-            )
-        ]
-    func: Callable
-    if mode == ImageProjectionMode.SUM:
-        func = np.sum
-    elif mode == ImageProjectionMode.MEAN:
-        func = np.mean
-    elif mode == ImageProjectionMode.MAX:
-        func = np.max
-    elif mode == ImageProjectionMode.MIN:
-        func = np.min
-    else:
-        raise NotImplementedError(f'unimplemented projection: {mode}')
-    return func(data, tuple(axis))

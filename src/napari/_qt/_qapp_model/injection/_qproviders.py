@@ -8,11 +8,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from napari import components, layers, viewer
+from napari._app_model import get_app_model
 from napari.utils._proxies import PublicOnlyProxy
-from napari.utils.translations import trans
+from napari.utils.events.containers._selection import Selection
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
@@ -39,13 +42,7 @@ def _provide_viewer_or_raise(
         return viewer
     if msg:
         msg = ' ' + msg
-    raise RuntimeError(
-        trans._(
-            'No current `Viewer` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
-    )
+    raise RuntimeError(f'No current `Viewer` found.{msg}')
 
 
 def _provide_qt_viewer() -> QtViewer | None:
@@ -62,13 +59,7 @@ def _provide_qt_viewer_or_raise(msg: str = '') -> QtViewer:
         return qt_viewer
     if msg:
         msg = ' ' + msg
-    raise RuntimeError(
-        trans._(
-            'No current `QtViewer` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
-    )
+    raise RuntimeError(f'No current `QtViewer` found.{msg}')
 
 
 def _provide_window() -> Window | None:
@@ -85,30 +76,40 @@ def _provide_window_or_raise(msg: str = '') -> Window:
         return window
     if msg:
         msg = ' ' + msg
-    raise RuntimeError(
-        trans._(
-            'No current `Window` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
-    )
+    raise RuntimeError(f'No current `Window` found.{msg}')
 
 
 def _provide_active_layer() -> layers.Layer | None:
     return v.layers.selection.active if (v := _provide_viewer()) else None
 
 
+def _provide_selected_layers() -> Selection[layers.Layer] | None:
+    return v.layers.selection if (v := _provide_viewer()) else None
+
+
 def _provide_active_layer_list() -> components.LayerList | None:
     return v.layers if (v := _provide_viewer()) else None
 
 
+def register_qt_types() -> None:
+    from napari._qt.qt_viewer import QtViewer
+
+    app = get_app_model()
+    if 'QtViewer' not in app.injection_store.namespace:
+        app.injection_store.namespace = {
+            **app.injection_store.namespace,
+            'QtViewer': QtViewer,
+        }
+
+
 # syntax could be simplified after
 # https://github.com/tlambert03/in-n-out/issues/31
-QPROVIDERS = [
+QPROVIDERS: list[tuple[Callable]] = [
     (_provide_viewer,),
     (_provide_viewer_model,),
     (_provide_qt_viewer,),
     (_provide_window,),
     (_provide_active_layer,),
     (_provide_active_layer_list,),
+    (_provide_selected_layers,),
 ]

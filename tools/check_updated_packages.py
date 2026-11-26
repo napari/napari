@@ -7,7 +7,6 @@ import re
 import subprocess  # nosec
 import sys
 from pathlib import Path
-
 from tomllib import loads
 
 REPO_DIR = Path(__file__).parent.parent
@@ -85,7 +84,9 @@ def calc_changed_packages(
     command = [
         'git',
         'diff',
+        '--end-of-options',
         base_branch,
+        '--',
         str(
             src_dir
             / 'resources'
@@ -103,8 +104,8 @@ def calc_changed_packages(
     except subprocess.CalledProcessError as e:
         raise ValueError(
             f'git diff failed with return code {e.returncode}'
-            ' stderr: {e.stderr.decode()!r}'
-            ' stdout: {e.stdout.decode()!r}'
+            f' stderr: {e.stderr.decode()!r}'
+            f' stdout: {e.stdout.decode()!r}'
         ) from e
 
     return [
@@ -139,9 +140,7 @@ def calc_only_direct_updates(
 
     packages = (
         metadata['dependencies']
-        + optional_dependencies['pyqt5']
         + optional_dependencies['pyqt6']
-        + optional_dependencies['pyside2']
         + optional_dependencies['pyside6']
         + optional_dependencies['testing']
         + optional_dependencies['all']
@@ -157,7 +156,7 @@ def calc_only_direct_updates(
 def get_changed_dependencies(
     base_branch: str,
     all_packages=False,
-    python_version='3.10',
+    python_version='3.11',
     src_dir: Path | None = None,
 ):
     """

@@ -13,9 +13,9 @@ def test_labeled_particles2d():
     assert 'seed' in img[1]['metadata']
     assert 'seed' in labels[1]['metadata']
     assert 'seed' in points[1]['metadata']
-    assert img[1]['metadata']['seed'] == 275961054812084171
-    assert labels[1]['metadata']['seed'] == 275961054812084171
-    assert points[1]['metadata']['seed'] == 275961054812084171
+    assert img[1]['metadata']['seed'] == 20180812
+    assert labels[1]['metadata']['seed'] == 20180812
+    assert points[1]['metadata']['seed'] == 20180812
     assert img[2] == 'image'
     assert labels[2] == 'labels'
     assert points[2] == 'points'
@@ -30,9 +30,9 @@ def test_labeled_particles3d():
     assert 'seed' in img[1]['metadata']
     assert 'seed' in labels[1]['metadata']
     assert 'seed' in points[1]['metadata']
-    assert img[1]['metadata']['seed'] == 275961054812084171
-    assert labels[1]['metadata']['seed'] == 275961054812084171
-    assert points[1]['metadata']['seed'] == 275961054812084171
+    assert img[1]['metadata']['seed'] == 20180812
+    assert labels[1]['metadata']['seed'] == 20180812
+    assert points[1]['metadata']['seed'] == 20180812
     assert img[2] == 'image'
     assert labels[2] == 'labels'
     assert points[2] == 'points'

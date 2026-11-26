@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import warnings
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -12,13 +13,14 @@ from napari.layers.utils.interaction_box import (
 )
 from napari.utils.events import Event
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from napari.layers.base import Layer
 
 
-def highlight_box_handles(layer: 'Layer', event: Event) -> None:
+def highlight_box_handles(layer: Layer, event: Event) -> None:
     """
     Highlight the hovered handle of a TransformBox.
     """
@@ -32,7 +34,8 @@ def highlight_box_handles(layer: 'Layer', event: Event) -> None:
     )
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
     handle_coords = generate_transform_box_from_layer(
-        layer, layer._slice_input.displayed
+        layer,
+        layer._slice_input.displayed,  # pyrefly: ignore [bad-argument-type]
     )
     # TODO: dynamically set tolerance based on canvas size so it's not hard to pick small layer
     nearby_handle = get_nearby_handle(pos, handle_coords)
@@ -42,7 +45,7 @@ def highlight_box_handles(layer: 'Layer', event: Event) -> None:
 
 
 def _translate_with_box(
-    layer: 'Layer',
+    layer: Layer,
     initial_affine: Affine,
     initial_mouse_pos: npt.NDArray,
     mouse_pos: npt.NDArray,
@@ -56,7 +59,7 @@ def _translate_with_box(
 
 
 def _rotate_with_box(
-    layer: 'Layer',
+    layer: Layer,
     initial_affine: Affine,
     initial_mouse_pos: npt.NDArray,
     initial_handle_coords: npt.NDArray,
@@ -96,7 +99,7 @@ def _rotate_with_box(
 
 
 def _scale_with_box(
-    layer: 'Layer',
+    layer: Layer,
     initial_affine: Affine,
     initial_world_to_data: Affine,
     initial_data2physical: Affine,
@@ -112,10 +115,7 @@ def _scale_with_box(
             locked_aspect_ratio = True
         else:
             warnings.warn(
-                trans._(
-                    'Aspect ratio can only be blocked when resizing from a corner',
-                    deferred=True,
-                ),
+                'Aspect ratio can only be blocked when resizing from a corner',
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -171,7 +171,7 @@ def _scale_with_box(
 
 
 def transform_with_box(
-    layer: 'Layer', event: Event
+    layer: Layer, event: Event
 ) -> Generator[None, None, None]:
     """
     Translate, rescale or rotate a layer by dragging a TransformBox handle.
@@ -188,7 +188,8 @@ def transform_with_box(
     initial_mouse_pos_data = initial_world_to_data(initial_mouse_pos)
 
     initial_handle_coords_data = generate_transform_box_from_layer(
-        layer, layer._slice_input.displayed
+        layer,
+        layer._slice_input.displayed,  # pyrefly: ignore [bad-argument-type]
     )
     nearby_handle = get_nearby_handle(
         initial_mouse_pos_data, initial_handle_coords_data

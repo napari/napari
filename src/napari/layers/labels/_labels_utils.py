@@ -1,10 +1,22 @@
+from __future__ import annotations
+
 from functools import lru_cache
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-from scipy import ndimage as ndi
+
+if TYPE_CHECKING:
+    from vispy.app import MouseEvent
+
+    from napari.layers import Labels
+
+_ShapeT = TypeVar('_ShapeT', bound=tuple[int, ...])
+_DTypeT = TypeVar('_DTypeT', bound=np.dtype[Any])
 
 
-def interpolate_coordinates(old_coord, new_coord, brush_size):
+def interpolate_coordinates(
+    old_coord, new_coord, brush_size
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Interpolates coordinates depending on brush size.
 
     Useful for ensuring painting is continuous in labels layer.
@@ -126,18 +138,9 @@ def get_dtype(layer):
     Returns
     -------
     dtype
-        dtype of Layer data
+        dtype of Layer data (of level 0 if multiscale)
     """
-    layer_data = layer.data
-    if not isinstance(layer_data, list):
-        layer_data = [layer_data]
-    layer_data_level = layer_data[0]
-    if hasattr(layer_data_level, 'dtype'):
-        layer_dtype = layer_data_level[0].dtype
-    else:
-        layer_dtype = type(layer_data_level)
-
-    return layer_dtype
+    return layer.data.dtype
 
 
 def first_nonzero_coordinate(data, start_point, end_point):
@@ -166,7 +169,9 @@ def first_nonzero_coordinate(data, start_point, end_point):
     return None if len(nonzero) == 0 else clipped_coords[nonzero[0]]
 
 
-def mouse_event_to_labels_coordinate(layer, event):
+def mouse_event_to_labels_coordinate(
+    layer: Labels, event: MouseEvent
+) -> np.ndarray | None:
     """Return the data coordinate of a Labels layer mouse event in 2D or 3D.
 
     In 2D, this is just the event's position transformed by the layer's
@@ -204,7 +209,11 @@ def mouse_event_to_labels_coordinate(layer, event):
     return coordinates
 
 
-def get_contours(labels: np.ndarray, thickness: int, background_label: int):
+def get_contours(
+    labels: np.ndarray[_ShapeT, _DTypeT],
+    thickness: int,
+    background_label: int,
+) -> np.ndarray[_ShapeT, _DTypeT]:
     """Computes the contours of a 2D label image.
 
     Parameters
@@ -221,6 +230,8 @@ def get_contours(labels: np.ndarray, thickness: int, background_label: int):
     -------
     A new label image in which only the boundaries of the input image are kept.
     """
+    from scipy import ndimage as ndi
+
     struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
 
     thick_struct_elem = ndi.iterate_structure(struct_elem, thickness).astype(

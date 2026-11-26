@@ -11,7 +11,7 @@ from napari.utils.tree import Group, Node
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 NodeType = TypeVar('NodeType', bound=Node)
@@ -24,7 +24,7 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
 
     This class is an adapter between :class:`~napari.utils.tree.Group` and Qt's
     `QAbstractItemView` interface (see `Qt Model/View Programming
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_). It allows python
     users to interact with a list of lists in the "usual" python ways, updating
     any Qt Views that may be connected, and also updates the python list object
     if any GUI events occur in the view.
@@ -32,27 +32,29 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     See docstring of :class:`_BaseEventedItemView` for additional background.
     """
 
-    _root: Group[Node]
+    _root: Group[NodeType]
 
     def __init__(
         self, root: Group[Node], parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
         self.setHeaderHidden(True)
-        self.setDragDropMode(QTreeView.InternalMove)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QTreeView.ExtendedSelection)
+        self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
-    def setRoot(self, root: Group[Node]):
-        super().setRoot(root)
+    def setRoot(self, root: Group[Node]) -> None:  # pyrefly: ignore [bad-override]
+        super().setRoot(root)  # pyrefly: ignore [bad-argument-type]
 
         # make tree look like a list if it contains no lists.
         self.model().rowsRemoved.connect(self._redecorate_root)
         self.model().rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
 
-    def _redecorate_root(self, parent: QModelIndex = None, *_):
+    def _redecorate_root(
+        self, parent: QModelIndex | None = None, *args: object
+    ) -> None:
         """Add a branch/arrow column only if there are Groups in the root.
 
         This makes the tree fall back to looking like a simple list if there
@@ -63,4 +65,4 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
             self.setRootIsDecorated(hasgroup)
 
     def model(self) -> QtNodeTreeModel[NodeType]:
-        return super().model()
+        return super().model()  # pyrefly: ignore [bad-return]

@@ -1,0 +1,19 @@
+from napari._qt.layer_controls.dynamic.widgets._image.qt_depiction_control import (
+    QtDepictionControl,
+)
+from napari._qt.layer_controls.dynamic.widgets._image.qt_interpolation_combobox import (
+    QtInterpolationComboBoxControl,
+)
+from napari._qt.layer_controls.dynamic.widgets._image.qt_render_control import (
+    QtImageRenderControl,
+)
+from napari._qt.layer_controls.dynamic.widgets.qt_histogram_control import (
+    QtHistogramControl,
+)
+
+__all__ = [
+    'QtDepictionControl',
+    'QtHistogramControl',
+    'QtImageRenderControl',
+    'QtInterpolationComboBoxControl',
+]

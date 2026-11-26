@@ -21,6 +21,7 @@ def test_imshow_signature_consistency():
     del imshow_parameters['viewer']
     del viewer_parameters['self']
     del viewer_parameters['kwargs']
+    del viewer_parameters['show_welcome_screen']
 
     # Ensure both have the same parameter names
     assert imshow_parameters.keys() == viewer_parameters.keys()
@@ -29,6 +30,10 @@ def test_imshow_signature_consistency():
     for name, parameter in viewer_parameters.items():
         # data is a required for imshow, but optional for add_image
         if name == 'data':
+            continue
+        # ndisplay and order default to None for imshow, but default to 2 and () for
+        # Viewer.__init__
+        if name in ('ndisplay', 'order'):
             continue
         fail_msg = f'Signature mismatch on {parameter}'
         assert imshow_parameters[name].default == parameter.default, fail_msg

@@ -2,7 +2,6 @@ import numpy as np
 import numpy.typing as npt
 
 from napari.layers.utils._text_constants import Anchor
-from napari.utils.translations import trans
 
 
 def get_text_anchors(
@@ -61,10 +60,7 @@ def _calculate_bbox_centers(view_data: np.ndarray | list) -> np.ndarray:
         )
     else:
         raise TypeError(
-            trans._(
-                'view_data should be a numpy array or list when using Anchor.CENTER',
-                deferred=True,
-            )
+            'view_data should be a numpy array or list when using Anchor.CENTER'
         )
     return bbox_centers
 
@@ -73,7 +69,7 @@ def _calculate_anchor_upper_left(
     view_data: np.ndarray | list, ndisplay: int
 ) -> tuple[np.ndarray, str, str]:
     if ndisplay == 2:
-        bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+        bbox_min, _bbox_max = _calculate_bbox_extents(view_data)
         text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
 
         anchor_x = 'left'
@@ -127,7 +123,7 @@ def _calculate_anchor_lower_right(
     view_data: np.ndarray | list, ndisplay: int
 ) -> tuple[np.ndarray, str, str]:
     if ndisplay == 2:
-        bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+        _bbox_min, bbox_max = _calculate_bbox_extents(view_data)
         text_anchors = np.array([bbox_max[:, 0], bbox_max[:, 1]]).T
 
         anchor_x = 'right'
@@ -157,12 +153,7 @@ def _calculate_bbox_extents(
         bbox_min = np.array([np.min(coords, axis=0) for coords in view_data])
         bbox_max = np.array([np.max(coords, axis=0) for coords in view_data])
     else:
-        raise TypeError(
-            trans._(
-                'view_data should be a numpy array or list',
-                deferred=True,
-            )
-        )
+        raise TypeError('view_data should be a numpy array or list')
     return bbox_min, bbox_max
 
 

@@ -11,14 +11,6 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
-def qt_viewer(qt_viewer_):
-    # show the qt_viewer and hide its welcome widget
-    qt_viewer_.show()
-    qt_viewer_.set_welcome_visible(False)
-    return qt_viewer_
-
-
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
@@ -227,26 +219,37 @@ def test_changing_image_gamma(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
+    # CMYBGR is the default color order when adding multichannel images.
+    # See `napari.layers.utils.stack_utils.split_channels`.
+    color = [
+        [0, 255, 255, 255],
+        [255, 0, 255, 255],
+        [255, 255, 0, 255],
+        [0, 0, 255, 255],
+        [0, 255, 0, 255],
+        [255, 0, 0, 255],
+    ]
+
     viewer = make_napari_viewer(show=True)
 
-    # Add images
+    # Add 6 image layers
     data = np.ones((6, 15, 15))
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+    np.testing.assert_almost_equal(screenshot[center], color[-1])
 
     # enter grid view
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
-    assert viewer.grid.stride == 1
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 3)
+    assert viewer.canvas.grid.stride == 1
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -259,15 +262,6 @@ def test_grid_mode(make_napari_viewer):
         (3 / 4, 3 / 6),
         (3 / 4, 5 / 6),
     ]
-    # CYMRGB color order
-    color = [
-        [0, 255, 255, 255],
-        [255, 255, 0, 255],
-        [255, 0, 255, 255],
-        [255, 0, 0, 255],
-        [0, 255, 0, 255],
-        [0, 0, 255, 255],
-    ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
@@ -277,18 +271,11 @@ def test_grid_mode(make_napari_viewer):
     # reorder layers, swapping 0 and 5
     viewer.layers.move(5, 0)
     viewer.layers.move(1, 6)
+    # swapping the expected colors
+    color = np.array(color)[[5, 1, 2, 3, 4, 0]]
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    # CGRMYB color order
-    color = [
-        [0, 0, 255, 255],
-        [255, 255, 0, 255],
-        [255, 0, 255, 255],
-        [255, 0, 0, 255],
-        [0, 255, 0, 255],
-        [0, 255, 255, 255],
-    ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
@@ -296,10 +283,10 @@ def test_grid_mode(make_napari_viewer):
         np.testing.assert_almost_equal(screenshot[coord], c)
 
     # return to stack view
-    viewer.grid.enabled = False
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
+    viewer.canvas.grid.enabled = False
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
 
 
 @skip_on_win_ci
@@ -394,12 +381,11 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@pytest.mark.skip('Welcome visual temporarily disabled')
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_napari_viewer):
-    """Test that something visible on launch."""
-    viewer = make_napari_viewer(show=True)
+    """Test that the welcome widget is visible in canvas screenshots."""
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
 
     # Check something is visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -421,26 +407,86 @@ def test_welcome(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
+    """Test that the welcome widget covers scale bar and axes when no layers."""
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
+    launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
+
+    viewer.scale_bar.visible = True
+    viewer.scene.overlays.axes.visible = True
+
+    screenshot_with_overlays = viewer.screenshot(canvas_only=True, flash=False)
+
+    np.testing.assert_array_equal(launch_screenshot, screenshot_with_overlays)
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
 
     # Make axes visible and check something is seen
-    viewer.axes.visible = True
+    viewer.scene.overlays.axes.visible = True
     on_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert viewer.axes.visible
+    assert viewer.scene.overlays.axes.visible
     assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make axes not visible and check they are gone
-    viewer.axes.visible = False
+    viewer.scene.overlays.axes.visible = False
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_crosshair_drawn_at_cursor(make_napari_viewer):
+    """Test the crosshair is drawn around the cursor position."""
+    viewer = make_napari_viewer(show=True)
+    viewer.add_image(np.zeros((100, 100)))
+    viewer.cursor.position = (50.0, 50.0)
+
+    crosshair = viewer.scene.overlays.crosshair
+    crosshair.visible = True
+    crosshair.gap = 40
+    crosshair.color = 'red'
+    crosshair.opacity = 1
+
+    def red_pixels():
+        """Mask of the red crosshair pixels in the canvas."""
+        screenshot = viewer.screenshot(canvas_only=True, flash=False)
+        # the lines are antialiased: when one falls between two pixel rows,
+        # each row only gets about half of the color. The background is
+        # black, so a low threshold is enough to tell them apart.
+        return (
+            (screenshot[..., 0] > 50)
+            & (screenshot[..., 1] < 50)
+            & (screenshot[..., 2] < 50)
+        )
+
+    red = red_pixels()
+
+    # the crosshair is made of a horizontal and a vertical line. Check both
+    # are found, as otherwise argmax picks the first row/column with any red
+    assert red.sum(axis=1).max() > crosshair.gap
+    assert red.sum(axis=0).max() > crosshair.gap
+    row = int(np.argmax(red.sum(axis=1)))
+    col = int(np.argmax(red.sum(axis=0)))
+
+    # the centre of the crosshair is empty, the gap is as wide as requested
+    assert not red[row, col]
+    assert red[row, col - crosshair.gap]
+    assert red[row, col + crosshair.gap]
+
+    # moving the cursor moves the crosshair
+    viewer.cursor.position = (25.0, 75.0)
+    moved = red_pixels()
+    assert int(np.argmax(moved.sum(axis=0))) != col
 
 
 @skip_on_win_ci
@@ -448,22 +494,21 @@ def test_axes_visible(make_napari_viewer):
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar visible and check something is seen
-    viewer.scale_bar.visible = True
+    viewer.canvas.overlays.scale_bar.visible = True
     on_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert viewer.scale_bar.visible
+    assert viewer.canvas.overlays.scale_bar.visible
     assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make scale bar not visible and check it is gone
-    viewer.scale_bar.visible = False
+    viewer.canvas.overlays.scale_bar.visible = False
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
@@ -472,15 +517,70 @@ def test_scale_bar_visible(make_napari_viewer):
 def test_screenshot_has_no_border(make_napari_viewer):
     """See https://github.com/napari/napari/issues/3357"""
     viewer = make_napari_viewer(show=True)
-    image_data = np.ones((60, 80))
+    image_data = np.ones((60, 80), dtype=np.float32)
     viewer.add_image(image_data, colormap='red')
     # Zoom in dramatically to make the screenshot all red.
-    viewer.camera.zoom = 1000
+    viewer.scene.camera.zoom = 1000
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
     expected = np.broadcast_to([255, 0, 0, 255], screenshot.shape)
     np.testing.assert_array_equal(screenshot, expected)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_screenshot_scale_keeps_view(make_napari_viewer):
+    """Scaling a screenshot should keep the same field of view."""
+    viewer = make_napari_viewer(show=True)
+
+    # four quadrants with a distinct colour each, so we can tell which part of
+    # the image is visible regardless of the scale factor
+    data = np.zeros((60, 80, 4), dtype=np.uint8)
+    data[:30, :40] = [255, 0, 0, 255]  # top-left, red
+    data[:30, 40:] = [0, 255, 0, 255]  # top-right, green
+    data[30:, :40] = [0, 0, 255, 255]  # bottom-left, blue
+    data[30:, 40:] = [255, 255, 0, 255]  # bottom-right, yellow
+    viewer.add_image(data, rgb=True)
+
+    # make the image fill the canvas exactly
+    viewer.window._qt_viewer.canvas.size = data.shape[:2]
+    viewer.scene.camera.zoom = 1
+
+    device_px_ratio = viewer.window._qt_viewer.canvas._scene_canvas.pixel_scale
+
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    assert screenshot.shape == (
+        data.shape[0] * device_px_ratio,
+        data.shape[1] * device_px_ratio,
+        4,
+    )
+
+    # scaling the screenshot should keep the same field of view, but at double
+    # the resolution
+    scale_factor = 2
+    scaled = viewer.screenshot(
+        canvas_only=True, flash=False, scale=scale_factor
+    )
+    assert scaled.shape == (
+        data.shape[0] * device_px_ratio * scale_factor,
+        data.shape[1] * device_px_ratio * scale_factor,
+        4,
+    )
+
+    # the same four quadrants should be visible at the same relative positions
+    # in both screenshots
+    for relative_position, expected in [
+        ((0.2, 0.2), [255, 0, 0, 255]),
+        ((0.2, 0.8), [0, 255, 0, 255]),
+        ((0.8, 0.2), [0, 0, 255, 255]),
+        ((0.8, 0.8), [255, 255, 0, 255]),
+    ]:
+        for image in (screenshot, scaled):
+            position = tuple(
+                (np.array(image.shape[:2]) * relative_position).astype(int)
+            )
+            np.testing.assert_array_equal(image[position], expected)
 
 
 @skip_on_win_ci
@@ -496,7 +596,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img2_layer = viewer.add_image(img2)
 
     viewer.window._qt_viewer.canvas.size = shape
-    viewer.camera.zoom = 1
+    viewer.scene.camera.zoom = 1
 
     # check that additive behaves correctly with black canvas
     img1_layer.blending = 'additive'
@@ -567,12 +667,8 @@ def test_shapes_with_holes(make_napari_viewer):
 
 @skip_local_popups
 def test_active_layer_highlight_visibility(qt_viewer):
+    qt_viewer.show()
     viewer = qt_viewer.viewer
-
-    # take initial screenshot (full black/empty screenshot since welcome message is hidden)
-    launch_screenshot = qt_viewer.screenshot(flash=False)
-    # check screenshot ignoring alpha
-    assert launch_screenshot[..., :-1].max() == 0
 
     # add shapes layer setting edge and face color to `black` (so shapes aren't
     # visible unless they're selected), create a rectangle and select the created shape

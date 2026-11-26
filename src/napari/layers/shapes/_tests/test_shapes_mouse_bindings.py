@@ -3,8 +3,11 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
+from napari.components.dims import Dims
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
+from napari.layers.shapes import _shapes_key_bindings as key_bindings
+from napari.layers.shapes._shapes_constants import Box
 from napari.layers.shapes.shapes import Mode
 from napari.settings import get_settings
 from napari.utils._test_utils import read_only_mouse_event
@@ -72,7 +75,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
     # Add shape at location where non exists
-    layer.mode = 'add_' + shape_type
+    layer.mode = f'add_{shape_type}'
 
     # Simulate click
     event = read_only_mouse_event(
@@ -158,6 +161,123 @@ def test_line_fixed_angles(create_known_shapes_layer):
     assert np.allclose(theta, 45.0)
 
 
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+@pytest.mark.parametrize(
+    ('known_non_shape_end', 'expected_sign'),
+    [
+        # Diagonal drags: verify all four quadrants
+        ([40, 60], [1, 1]),
+        ([0, 10], [-1, -1]),
+        ([0, 60], [-1, 1]),
+        ([40, 10], [1, -1]),
+        # Axis-aligned drags: zero component filled from the nonzero one
+        ([40, 30], [1, 1]),  # pure South -> SE
+        ([0, 30], [-1, -1]),  # pure North -> NW
+        ([20, 60], [1, 1]),  # pure East  -> SE
+        ([20, 10], [-1, -1]),  # pure West  -> NW
+    ],
+)
+def test_add_fixed_aspect_shape_in_drag_direction(
+    shape_type,
+    known_non_shape_end,
+    expected_sign,
+    create_known_shapes_layer,
+):
+    """Locked-aspect shapes should expand into the cursor quadrant."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+    layer._fixed_aspect = True
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+
+    new_shape = layer.data[-1]
+    start = np.asarray(known_non_shape, dtype=float)
+
+    # the press point should be one of the four corners (the fixed anchor)
+    assert any(np.allclose(v, start) for v in new_shape)
+    # the shape center should lie in the expected quadrant relative to the press point
+    assert np.all(np.sign(new_shape.mean(axis=0) - start) == expected_sign)
+    # the bounding box must be square (equal width and height)
+    bbox_size = np.max(new_shape, axis=0) - np.min(new_shape, axis=0)
+    assert np.isclose(bbox_size[0], bbox_size[1], rtol=1e-3)
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+def test_add_fixed_aspect_shape_preserves_ratio_when_locked_during_drag(
+    shape_type,
+    create_known_shapes_layer,
+):
+    """Pressing Shift during a drag should lock the current aspect ratio."""
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+
+    press_pos = [20, 20]
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=press_pos,
+    )
+    mouse_press_callbacks(layer, event)
+
+    # First drag to create a non-square shape (e.g. 100x50 = 2:1)
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[120, 70],
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate Shift pressed at this point
+    box = layer._selected_box
+    size = box[Box.BOTTOM_RIGHT] - box[Box.TOP_LEFT]
+    expected_ratio = size[1] / size[0]
+    gen = key_bindings.hold_to_lock_aspect_ratio(layer)
+    next(gen)
+
+    # Second drag in a more vertical direction
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[120, 180],
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=[120, 180],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+
+    new_shape = layer.data[-1]
+    bbox_size = np.max(new_shape, axis=0) - np.min(new_shape, axis=0)
+    actual_ratio = bbox_size[1] / bbox_size[0]
+
+    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-4)
+
+
 def test_path_tablet(create_known_shapes_layer):
     layer, n_shapes, _ = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
@@ -201,7 +321,7 @@ def test_path_tablet(create_known_shapes_layer):
 
 
 def test_polyline_mouse(create_known_shapes_layer):
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     layer.mode = 'add_path'
@@ -213,6 +333,13 @@ def test_polyline_mouse(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.shape_type[-1] == 'path'
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_release_callbacks(layer, event)
 
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
@@ -241,7 +368,7 @@ def test_polyline_mouse(create_known_shapes_layer):
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     get_settings().experimental.rdp_epsilon = 0
@@ -284,9 +411,50 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+def test_polygon_lasso_release_after_keyboard_finish(
+    create_known_shapes_layer,
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40]])
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+
+    for coord in desired_shape[1:]:
+        event = read_only_mouse_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    key_bindings.finish_drawing_shape(layer)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert not layer._is_creating
+
+
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     get_settings().experimental.rdp_epsilon = 0
@@ -299,6 +467,13 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.shape_type[-1] != 'polygon'
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_release_callbacks(layer, event)
 
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
@@ -327,7 +502,7 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
 
 def test_distance_polygon_creating(create_known_shapes_layer):
     """Test that distance threshold in polygon creating works as intended"""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
 
     # While drawing only 2 of the vertices should be added to shape data because distance threshold is 10
     vertices = [[x, 0] for x in range(11)]
@@ -353,11 +528,11 @@ def test_distance_polygon_creating(create_known_shapes_layer):
 @pytest.mark.parametrize('shape_type', ['polyline', 'polygon'])
 def test_add_complex_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
 
     desired_shape = [[20, 30], [10, 50], [60, 40], [80, 20]]
     # Add shape at location where non exists
-    layer.mode = 'add_' + shape_type
+    layer.mode = f'add_{shape_type}'
 
     for coord in desired_shape:
         # Simulate move, click, and release
@@ -400,6 +575,67 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+@pytest.mark.parametrize('shape_type', ['polyline', 'polygon'])
+def test_mode_change_finishes_complex_shape(
+    shape_type, create_known_shapes_layer
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+
+    desired_shape = [[20, 30], [10, 50], [60, 40]]
+    layer.mode = f'add_{shape_type}'
+    for coord in desired_shape:
+        for event_type, callback in [
+            ('mouse_move', mouse_move_callbacks),
+            ('mouse_press', mouse_press_callbacks),
+            ('mouse_release', mouse_release_callbacks),
+        ]:
+            callback(
+                layer,
+                read_only_mouse_event(
+                    type=event_type, position=coord, pos=np.array(coord)
+                ),
+            )
+    mouse_move_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_move', position=[70, 70], pos=np.array([70, 70])
+        ),
+    )
+
+    layer.mode = 'select'
+
+    assert len(layer.data) == n_shapes + 1
+    np.testing.assert_allclose(layer.data[-1], desired_shape)
+
+
+def test_disabling_editing_in_3d_mid_draw_finishes_polygon():
+    layer = Shapes(ndim=3)
+
+    desired_shape = [[0, 20, 30], [0, 10, 50], [0, 60, 40]]
+    layer.mode = 'add_polygon'
+    for coord in desired_shape:
+        for event_type, callback in [
+            ('mouse_move', mouse_move_callbacks),
+            ('mouse_press', mouse_press_callbacks),
+            ('mouse_release', mouse_release_callbacks),
+        ]:
+            callback(
+                layer,
+                read_only_mouse_event(
+                    type=event_type,
+                    position=coord,
+                    pos=np.array(coord[1:]),
+                    dims_displayed=[1, 2],
+                ),
+            )
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    layer.editable = False
+
+    assert layer.shape_type == ['polygon']
+    np.testing.assert_allclose(layer.data[0], desired_shape)
+
+
 @pytest.mark.parametrize(
     'shape_type_vertices',
     [
@@ -409,7 +645,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
 )
 def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
     """Check invalid shape clicking behavior in add polygon mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
 
     # Add shape at location where non exists
     shape_type, shape_vertices = shape_type_vertices
@@ -502,7 +738,7 @@ def test_vertex_insert(create_known_shapes_layer):
 
 def test_vertex_remove(create_known_shapes_layer):
     """Remove vertex from shape."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     old_data = layer.data
     layer.events.data = Mock()
     n_coord = len(layer.data[0])
@@ -540,7 +776,7 @@ def test_vertex_remove(create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -564,9 +800,83 @@ def test_select_shape(mode, create_known_shapes_layer):
     assert layer.selected_data == {0}
 
 
+def test_shift_click_multiselection(
+    create_known_shapes_layer,
+):
+    """Check multiselection of shapes using shift-click."""
+    layer, _, _ = create_known_shapes_layer
+    layer.mode = 'select'
+
+    # Check that initially nothing is selected and there is no box
+    assert len(layer.selected_data) == 0
+    assert layer._selected_box is None
+
+    # Simulate shift-click on the first shape
+    position_1 = tuple(layer.data[0][0])
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_1, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_1, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that the first shape is selected and a box is created
+    assert set(layer.selected_data) == {0}
+    assert layer._selected_box is not None
+    box_1 = layer._selected_box.copy()
+
+    # Simulate shift-click on the second shape
+    position_2 = tuple(layer.data[1][0])
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_2, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_2, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that both shapes are selected and the box has changed
+    assert set(layer.selected_data) == {0, 1}
+    assert layer._selected_box is not None
+    assert not np.array_equal(layer._selected_box, box_1)
+    box_2 = layer._selected_box.copy()
+
+    # Simulate shift-click on the first shape again to deselect it
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_1, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_1, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that only the second shape is selected and the box has changed
+    assert set(layer.selected_data) == {1}
+    assert layer._selected_box is not None
+    assert not np.array_equal(layer._selected_box, box_2)
+
+    # Simulate shift-click on the second shape again to deselect all
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_2, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_2, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that no shapes are selected and the box is gone
+    assert len(layer.selected_data) == 0
+    assert layer._selected_box is None
+
+
 def test_drag_shape(create_known_shapes_layer):
     """Select and drag vertex."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
     layer.events.data = Mock()
 
     old_data = layer.data
@@ -651,7 +961,7 @@ def test_drag_shape(create_known_shapes_layer):
 
 def test_rotate_shape(create_known_shapes_layer):
     """Select and drag handle to rotate shape."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
 
     layer.mode = 'select'
     layer.selected_data = {1}
@@ -696,9 +1006,96 @@ def test_rotate_shape(create_known_shapes_layer):
     np.testing.assert_allclose(layer.data[1][2], original_data[0])
 
 
+def _drag(layer, start, end):
+    callbacks = {
+        'mouse_press': mouse_press_callbacks,
+        'mouse_move': mouse_move_callbacks,
+        'mouse_release': mouse_release_callbacks,
+    }
+    for event_type, position in (
+        ('mouse_press', start),
+        ('mouse_move', start),
+        ('mouse_move', end),
+        ('mouse_release', end),
+    ):
+        callbacks[event_type](
+            layer,
+            read_only_mouse_event(
+                type=event_type, is_dragging=True, position=tuple(position)
+            ),
+        )
+
+
+def test_resize_selection_by_dragging_corner(create_known_shapes_layer):
+    """Dragging a corner scales all selected shapes."""
+    layer = create_known_shapes_layer[0]
+    layer.mode = 'select'
+    layer.selected_data = {0, 1}
+    original_data = [data.copy() for data in layer.data]
+    fixed = layer._selected_box[Box.BOTTOM_RIGHT].copy()
+    corner = layer._selected_box[Box.TOP_LEFT].copy()
+
+    _drag(layer, corner, fixed + 2 * (corner - fixed))
+
+    for original, resized in zip(original_data, layer.data, strict=True):
+        np.testing.assert_allclose(resized, fixed + 2 * (original - fixed))
+    np.testing.assert_allclose(layer._selected_box[Box.BOTTOM_RIGHT], fixed)
+
+
+def test_resize_rotated_selection_by_dragging_corner(
+    create_known_shapes_layer,
+):
+    """A rotated selection is resized along the box axes, not the data axes."""
+    layer = create_known_shapes_layer[0]
+    layer.mode = 'select'
+    layer._data_view.rotate(1, 30)
+    layer.selected_data = {1}
+    original_data = layer.data[1].copy()
+    corner = layer._selected_box[Box.TOP_LEFT].copy()
+    new_corner = corner + [-3, -1]
+
+    _drag(layer, corner, new_corner)
+
+    resized = layer.data[1]
+    np.testing.assert_allclose(resized[0], new_corner, atol=1e-5)
+    np.testing.assert_allclose(resized[2], original_data[2], atol=1e-5)
+    # scaling along the data axes instead would shear this into a parallelogram
+    assert np.dot(
+        resized[1] - resized[0], resized[3] - resized[0]
+    ) == pytest.approx(0, abs=1e-4)
+
+
+def test_resize_display_rebuilds_do_not_scale_with_selection():
+    """Display rebuilds during a resize should be batched."""
+
+    def rebuild_count(selected_data):
+        layer = Shapes([[[1, 3], [8, 4]], [[10, 10], [15, 4]]])
+        layer.scale_factor = 0.001
+        layer.mode = 'select'
+        layer.selected_data = selected_data
+        fixed = layer._selected_box[Box.BOTTOM_RIGHT].copy()
+        corner = layer._selected_box[Box.TOP_LEFT].copy()
+
+        rebuilds = []
+        # proxy for full mesh rebuild, so count calls
+        original = layer._data_view._update_displayed_triangles_to_shape_index
+
+        def counting(displayed_indices):
+            rebuilds.append(displayed_indices)
+            return original(displayed_indices)
+
+        layer._data_view._update_displayed_triangles_to_shape_index = counting
+        _drag(layer, corner, fixed + 2 * (corner - fixed))
+        return len(rebuilds)
+
+    one_shape = rebuild_count({0})
+    assert one_shape > 0
+    assert rebuild_count({0, 1}) == one_shape
+
+
 def test_drag_vertex(create_known_shapes_layer):
     """Select and drag vertex."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
     layer.events.data = Mock()
     layer.mode = 'direct'
     layer.selected_data = {0}
@@ -794,7 +1191,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
 def test_clicking_the_same_point_is_not_crashing(
     mode, create_known_shapes_layer
 ):
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -818,7 +1215,7 @@ def test_clicking_the_same_point_is_not_crashing(
     ],
 )
 def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -856,7 +1253,7 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_unselect_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -884,7 +1281,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_not_selecting_shape(mode, create_known_shapes_layer):
     """Don't select a shape by not clicking on one in select mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, _n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 
@@ -909,7 +1306,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_unselecting_shapes(mode, create_known_shapes_layer):
     """Unselect shapes by not clicking on one in select mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, _n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
     layer.selected_data = {0, 1}
@@ -973,7 +1370,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
     """Select all shapes when drag box includes all of them."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, _n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 

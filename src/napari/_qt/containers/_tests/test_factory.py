@@ -13,6 +13,7 @@ from napari.utils.tree import Group, Node
 
 class T(Node):
     def __init__(self, x) -> None:
+        super().__init__()
         self.x = x
 
 

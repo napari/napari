@@ -30,7 +30,6 @@ from napari.utils.geometry import (
     intersect_line_with_triangles,
     line_in_triangles_3d,
 )
-from napari.utils.translations import trans
 
 
 class MeshArrayDict(TypedDict):
@@ -122,10 +121,7 @@ def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
 
     if not len(face_colors) == len(edge_colors) == len(shapes):
         raise ValueError(
-            trans._(
-                'shapes, face_colors, and edge_colors must be the same length',
-                deferred=True,
-            )
+            'shapes, face_colors, and edge_colors must be the same length'
         )
 
     return face_colors, edge_colors
@@ -190,7 +186,7 @@ def _preallocate_arrays(
         Dictionary containing preallocated arrays
     """
     n_shapes = len(shapes)
-    n_vertices, n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
+    n_vertices, _n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
 
     # Determine the displayed dimensionality from the first shape
     # All shapes in a batch will have the same dimensionality
@@ -220,12 +216,12 @@ def _preallocate_arrays(
 
     return {
         'z_index': z_index,
-        'vertices': vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices': mesh_vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices_centers': mesh_vertices_centers,  # type: ignore[typeddict-item]
-        'mesh_vertices_offsets': mesh_vertices_offsets,  # type: ignore[typeddict-item]
-        'mesh_triangles': mesh_triangles,  # type: ignore[typeddict-item]
-        'mesh_triangles_colors': mesh_triangles_colors,  # type: ignore[typeddict-item]
+        'vertices': vertices,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices': mesh_vertices,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices_centers': mesh_vertices_centers,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices_offsets': mesh_vertices_offsets,  # pyrefly: ignore [bad-assignment]
+        'mesh_triangles': mesh_triangles,  # pyrefly: ignore [bad-assignment]
+        'mesh_triangles_colors': mesh_triangles_colors,  # pyrefly: ignore [bad-assignment]
         'vertices_index': vertices_index,
         'mesh_triangles_index': mesh_triangles_index,
         'mesh_vertices_index': mesh_vertices_index,
@@ -444,8 +440,8 @@ class ShapeList:
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
-        self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
-        self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
+        self._edge_color: ShapeColorArray = np.empty((0, 4))  # pyrefly: ignore [bad-assignment]
+        self._face_color: ShapeColorArray = np.empty((0, 4))  # pyrefly: ignore [bad-assignment]
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -673,15 +669,10 @@ class ShapeList:
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        n_shapes = len(self.data)
+        n_shapes = len(self.shapes)
         if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
-                trans._(
-                    '{attribute}_color must have shape ({n_shapes}, 4)',
-                    deferred=True,
-                    attribute=attribute,
-                    n_shapes=n_shapes,
-                )
+                f'{attribute}_color must have shape ({n_shapes}, 4)'
             )
 
         update_method = getattr(self, f'update_{attribute}_colors')
@@ -700,14 +691,14 @@ class ShapeList:
         return [s.z_index for s in self.shapes]
 
     @property
-    def slice_key(self):
-        """list: slice key for slicing n-dimensional shapes."""
+    def slice_key(self) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
+        """(P,) array: slice key for slicing n-dimensional shapes."""
         return self._slice_key
 
     @slice_key.setter
     @_batch_dec
-    def slice_key(self, slice_key):
-        slice_key = list(slice_key)
+    def slice_key(self, slice_key: npt.ArrayLike) -> None:
+        slice_key = np.asarray(slice_key, dtype=float)
         if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key
             self._clear_cache()
@@ -780,7 +771,7 @@ class ShapeList:
             )
         else:
             self._displayed = np.array([])
-        disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # type: ignore[assignment]
+        disp_indices: IndexArray = np.nonzero(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
 
@@ -788,20 +779,21 @@ class ShapeList:
         vertices_range: IndexArray | slice
 
         if disp_indices.size == 0:
-            triangle_ranges = np.array([], dtype=np.int64)
-            vertices_range = np.array([], dtype=np.int64)
+            triangle_ranges = np.array([], dtype=np.int64)  # pyrefly: ignore [bad-assignment]
+            vertices_range = np.array([], dtype=np.int64)  # pyrefly: ignore [bad-assignment]
         else:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
 
-        self._mesh.displayed_triangles = self._mesh.triangles[z_order][
-            triangle_ranges
+        self._mesh.displayed_triangles = self._mesh.triangles[
+            z_order[triangle_ranges]
         ]
+
         self._update_displayed_triangles_to_shape_index(disp_indices)
 
         self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
-            z_order
-        ][triangle_ranges]
+            z_order[triangle_ranges]
+        ]
 
         self.displayed_vertices = self._vertices[vertices_range]
         self._update_displayed_vertices_to_shape_num(disp_indices)
@@ -814,7 +806,7 @@ class ShapeList:
         edge_color=None,
         shape_index=None,
         z_refresh=True,
-    ):
+    ) -> None:
         """Adds a single Shape object (single add mode) or multiple Shapes (multiple shape mode, which is much faster)
 
         If shape is a single instance of subclass Shape then single add mode will be used, otherwise multiple add mode
@@ -851,10 +843,7 @@ class ShapeList:
         elif isinstance(shape, Iterable):
             if shape_index is not None:
                 raise ValueError(
-                    trans._(
-                        'shape_index must be None when adding multiple shapes',
-                        deferred=True,
-                    )
+                    'shape_index must be None when adding multiple shapes'
                 )
             self._add_multiple_shapes(
                 shapes=shape,
@@ -863,12 +852,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise TypeError(
-                trans._(
-                    'Cannot add single nor multiple shape',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Cannot add single nor multiple shape')
 
     def _add_single_shape(
         self,
@@ -877,7 +861,7 @@ class ShapeList:
         edge_color=None,
         shape_index=None,
         z_refresh=True,
-    ):
+    ) -> None:
         """Adds a single Shape object
 
         Parameters
@@ -897,12 +881,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise TypeError(
-                trans._(
-                    'shape must be subclass of Shape',
-                    deferred=True,
-                )
-            )
+            raise TypeError('shape must be subclass of Shape')
 
         if shape_index is None:
             self.shapes.append(shape)
@@ -998,7 +977,9 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _extend_meshes(self, face_colors, edge_colors, arrays: MeshArrayDict):
+    def _extend_meshes(
+        self, face_colors, edge_colors, arrays: MeshArrayDict
+    ) -> None:
         """Assemble mesh properties from filled arrays.
 
         Parameters
@@ -1086,12 +1067,7 @@ class ShapeList:
 
         # Validate inputs and prepare colors
         if not all(issubclass(type(shape), Shape) for shape in shapes):
-            raise ValueError(
-                trans._(
-                    'all shapes must be subclass of Shape',
-                    deferred=True,
-                )
-            )
+            raise ValueError('all shapes must be subclass of Shape')
         face_colors, edge_colors = _ensure_color_arrays(
             shapes, face_colors, edge_colors
         )
@@ -1125,15 +1101,15 @@ class ShapeList:
         self._clear_cache()
 
     @_batch_dec
-    def remove_all(self):
+    def remove_all(self) -> None:
         """Removes all shapes"""
         self.shapes = []
-        self._vertices = np.empty((0, self.ndisplay))  # type: ignore[assignment]
+        self._vertices = np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-assignment]
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
-        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
-        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
+        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)
+        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)
         self._mesh.clear()
         self._update_displayed()
 
@@ -1189,9 +1165,12 @@ class ShapeList:
             ).stop
         triangles_slice = self._mesh_triangles_slice_available(index)
         current_triangles_count = triangles_slice.stop - triangles_slice.start
-        new_triangle_count = (
-            shape.face_triangles_count + shape.edge_triangles_count
+        new_triangle_count = shape.triangles_count
+        prev_vertices_slice = self._mesh_vertices_slice_available(index)
+        prev_vertices_count = (
+            prev_vertices_slice.stop - prev_vertices_slice.start
         )
+        new_vertices_count = shape.vertices_count
         if new_triangle_count <= current_triangles_count:
             face_slice = slice(
                 triangles_slice.start,
@@ -1204,20 +1183,27 @@ class ShapeList:
             self._mesh.triangles[face_slice] = (
                 shape._face_triangles + triangle_shift
             )
+            self._mesh.triangles_colors[face_slice] = self._face_color[index]
             self._mesh.triangles[edge_slice] = shape._edge_triangles + (
                 triangle_shift + shape.face_vertices_count
             )
+            self._mesh.triangles_colors[edge_slice] = self._edge_color[index]
             if new_triangle_count < current_triangles_count:
                 padding_slice = slice(
                     triangles_slice.start + shape.triangles_count,
                     triangles_slice.stop,
                 )
                 self._mesh.triangles[padding_slice] = triangle_shift
+            if new_vertices_count > prev_vertices_count:
+                # Shift triangles indices if more vertices were added
+                self._mesh.triangles[triangles_slice.stop :] += (
+                    new_vertices_count - prev_vertices_count
+                )
         else:
             # there are more triangles in the shape than in the mesh
             before_array = self._mesh.triangles[: triangles_slice.start]
             after_array = self._mesh.triangles[triangles_slice.stop :]
-            after_array += new_triangle_count - current_triangles_count
+            after_array += new_vertices_count - prev_vertices_count
             self._mesh.triangles = np.concatenate(
                 [
                     before_array,
@@ -1247,6 +1233,7 @@ class ShapeList:
                     self._mesh.triangles_colors[triangles_slice.stop :],
                 ]
             )
+            # Callers that only change geometry rely on this.
             self._update_z_order()
 
     def remove(self, index: int, renumber: bool = True) -> None:
@@ -1261,48 +1248,95 @@ class ShapeList:
             expectation is that this shape is being immediately added back to the
             list using `add_shape`.
         """
-        indices = self._vertices_slice_available(index)
-        self._vertices = np.delete(self._vertices, indices, axis=0)
-        diff = indices.stop - indices.start
-        self._vertices_index = np.delete(self._vertices_index, index)
-        self._vertices_index[index:] -= diff
+        self.remove_multiple([index], renumber=renumber)
+
+    @_batch_dec
+    def remove_multiple(
+        self, indices: list[int], renumber: bool = True
+    ) -> None:
+        """Removes multiple shapes located at indices.
+
+        Parameters
+        ----------
+        indices : list of int
+            Locations in list of the shapes to be removed. Assumed to be sorted descending.
+        renumber : bool
+            Bool to indicate whether to renumber all shapes or not.
+        """
+        if not indices:
+            return
+
+        # Remove indices
+        vert_slices = [self._vertices_slice_available(i) for i in indices]
+        vert_indices_to_del = np.concatenate(
+            [np.arange(s.start, s.stop) for s in vert_slices]
+        )
+        self._vertices = np.delete(self._vertices, vert_indices_to_del, axis=0)
+
+        vert_counts = np.diff(self._vertices_index)
+        new_vert_counts = np.delete(vert_counts, indices)
+        self._vertices_index = np.concatenate(
+            ([0], np.cumsum(new_vert_counts))
+        ).astype(IndexDtype)
 
         # Remove vertices
-        indices = self._mesh_vertices_slice_available(index)
-        self._mesh.vertices = np.delete(self._mesh.vertices, indices, axis=0)
+        mesh_vert_slices = [
+            self._mesh_vertices_slice_available(i) for i in indices
+        ]
+        mesh_vert_indices_to_del = np.concatenate(
+            [np.arange(s.start, s.stop) for s in mesh_vert_slices]
+        )
+        # Get the shift for triangles caused by the removal of mesh vertices
+        deleted_vertex_shift = np.zeros(len(self._mesh.vertices), dtype=int)
+        deleted_vertex_shift[mesh_vert_indices_to_del] = 1
+        deleted_vertex_shift = np.cumsum(deleted_vertex_shift)
+        self._mesh.vertices = np.delete(
+            self._mesh.vertices, mesh_vert_indices_to_del, axis=0
+        )
         self._mesh.vertices_centers = np.delete(
-            self._mesh.vertices_centers, indices, axis=0
+            self._mesh.vertices_centers, mesh_vert_indices_to_del, axis=0
         )
         self._mesh.vertices_offsets = np.delete(
-            self._mesh.vertices_offsets, indices, axis=0
+            self._mesh.vertices_offsets, mesh_vert_indices_to_del, axis=0
         )
-        self._mesh.vertices_index = np.delete(self._mesh.vertices_index, index)
-        diff = indices.stop - indices.start
-        self._mesh.vertices_index[index:] -= diff
 
-        vertices_diff = diff
+        mesh_vert_counts = np.diff(self._mesh.vertices_index)
+        new_mesh_vert_counts = np.delete(mesh_vert_counts, indices)
+        self._mesh.vertices_index = np.concatenate(
+            ([0], np.cumsum(new_mesh_vert_counts))
+        ).astype(IndexDtype)
 
         # Remove triangles
-        indices = self._mesh_triangles_slice_available(index)
-        self._mesh.triangles = np.delete(self._mesh.triangles, indices, axis=0)
+        mesh_tri_slices = [
+            self._mesh_triangles_slice_available(i) for i in indices
+        ]
+        mesh_tri_indices_to_del = np.concatenate(
+            [np.arange(s.start, s.stop) for s in mesh_tri_slices]
+        )
+        self._mesh.triangles -= deleted_vertex_shift[self._mesh.triangles]
+        self._mesh.triangles = np.delete(
+            self._mesh.triangles, mesh_tri_indices_to_del, axis=0
+        )
         self._mesh.triangles_colors = np.delete(
-            self._mesh.triangles_colors, indices, axis=0
+            self._mesh.triangles_colors, mesh_tri_indices_to_del, axis=0
         )
-        self._mesh.triangles_index = np.delete(
-            self._mesh.triangles_index, index
-        )
-        diff = indices.stop - indices.start
-        self._mesh.triangles_index[index:] -= diff
-        self._mesh.triangles[indices.start :] -= vertices_diff
+
+        mesh_tri_counts = np.diff(self._mesh.triangles_index)
+        new_mesh_tri_counts = np.delete(mesh_tri_counts, indices)
+        self._mesh.triangles_index = np.concatenate(
+            ([0], np.cumsum(new_mesh_tri_counts))
+        ).astype(IndexDtype)
 
         if renumber:
-            del self.shapes[index]
-            self._z_index = np.delete(self._z_index, index)
+            for i in indices:
+                del self.shapes[i]
+            self._z_index = np.delete(self._z_index, indices)
             self._update_z_order()
+
         self._clear_cache()
 
     @_batch_dec
-    def _update_mesh_vertices(self, index, edge=False, face=False):
+    def _update_mesh_vertices(self, index, edge=False, face=False) -> None:
         """Updates the mesh vertex data and vertex data for a single shape
         located at index.
 
@@ -1322,12 +1356,17 @@ class ShapeList:
             shape_slice = self._mesh_vertices_slice_available(index)
             current_range = shape_slice.stop - shape_slice.start
             if current_range < shape.vertices_count:
+                # account for edge width
+                edge_vertices_with_width = (
+                    shape._edge_vertices
+                    + shape.edge_width * shape._edge_offsets
+                )
                 # need to allocate_more space
                 self._mesh.vertices = np.concatenate(
                     [
                         self._mesh.vertices[: shape_slice.start],
                         shape._face_vertices,
-                        shape._edge_vertices,
+                        edge_vertices_with_width,
                         self._mesh.vertices[shape_slice.stop :],
                     ]
                 )
@@ -1380,9 +1419,9 @@ class ShapeList:
         self._clear_cache()
 
     @_batch_dec
-    def _update_z_order(self):
+    def _update_z_order(self) -> None:
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index)  # type: ignore[assignment]
+        self._z_order = np.argsort(self._z_index, kind='stable')  # pyrefly: ignore [bad-assignment]
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
@@ -1396,9 +1435,10 @@ class ShapeList:
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
         self._update_displayed()
 
+    @_batch_dec
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
-    ):
+    ) -> None:
         """Updates the data of a single shape located at index. If
         `new_type` is not None then converts the shape type to the new type
 
@@ -1420,12 +1460,7 @@ class ShapeList:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
-                        trans._(
-                            '{shape_type} must be one of {shape_classes}',
-                            deferred=True,
-                            shape_type=shape_type,
-                            shape_classes=set(shape_classes),
-                        )
+                        f'{shape_type} must be one of {set(shape_classes)}'
                     )
             else:
                 shape_cls = new_type
@@ -1434,6 +1469,7 @@ class ShapeList:
                 edge_width=cur_shape.edge_width,
                 z_index=cur_shape.z_index,
                 dims_order=cur_shape.dims_order,
+                ndisplay=cur_shape.ndisplay,
             )
             self.shapes[index] = shape
         else:
@@ -1448,7 +1484,7 @@ class ShapeList:
         self.update(index)
         self._update_z_order()
 
-    def update_edge_width(self, index, edge_width):
+    def update_edge_width(self, index, edge_width) -> None:
         """Updates the edge width of a single shape located at index.
 
         Parameters
@@ -1546,7 +1582,7 @@ class ShapeList:
         if update:
             self._update_displayed()
 
-    def update_dims_order(self, dims_order):
+    def update_dims_order(self, dims_order) -> None:
         """Updates dimensions order for all shapes.
 
         Parameters
@@ -1561,7 +1597,7 @@ class ShapeList:
                 self.update(index)
         self._update_z_order()
 
-    def update_z_index(self, index, z_index):
+    def update_z_index(self, index, z_index) -> None:
         """Updates the z order of a single shape located at index.
 
         Parameters
@@ -1576,7 +1612,27 @@ class ShapeList:
         self._z_index[index] = z_index
         self._update_z_order()
 
-    def shift(self, index, shift):
+    @_batch_dec
+    def update_z_indices(
+        self, indices: Iterable[int], z_indices: int | Iterable[int]
+    ) -> None:
+        """same as update_z_index() but for multiple indices/z_indices at once
+
+        A single int is broadcast to every index. The z order is rebuilt once
+        for the whole batch instead of once per shape, which is what makes
+        this cheaper than a loop over `update_z_index`.
+        """
+        pairs: Iterable[tuple[int, int]]
+        if isinstance(z_indices, (int, np.integer)):
+            pairs = zip(indices, repeat(z_indices), strict=False)
+        else:
+            pairs = zip(indices, z_indices, strict=True)
+        for index, z_index in pairs:
+            self.shapes[index].z_index = z_index
+            self._z_index[index] = z_index
+        self._update_z_order()
+
+    def shift(self, index, shift) -> None:
         """Performs a 2D shift on a single shape located at index
 
         Parameters
@@ -1589,7 +1645,7 @@ class ShapeList:
         self.shapes[index].shift(shift)
         self._update_mesh_vertices(index, edge=True, face=True)
 
-    def scale(self, index, scale, center=None):
+    def scale(self, index, scale, center=None) -> None:
         """Performs a scaling on a single shape located at index
 
         Parameters
@@ -1603,9 +1659,8 @@ class ShapeList:
         """
         self.shapes[index].scale(scale, center=center)
         self.update(index)
-        self._update_z_order()
 
-    def rotate(self, index, angle, center=None):
+    def rotate(self, index, angle, center=None) -> None:
         """Performs a rotation on a single shape located at index
 
         Parameters
@@ -1620,7 +1675,7 @@ class ShapeList:
         self.shapes[index].rotate(angle, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
-    def flip(self, index, axis, center=None):
+    def flip(self, index, axis, center=None) -> None:
         """Performs an vertical flip on a single shape located at index
 
         Parameters
@@ -1636,7 +1691,7 @@ class ShapeList:
         self.shapes[index].flip(axis, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
-    def transform(self, index, transform):
+    def transform(self, index, transform) -> None:
         """Performs a linear transform on a single shape located at index
 
         Parameters
@@ -1648,7 +1703,6 @@ class ShapeList:
         """
         self.shapes[index].transform(transform)
         self.update(index)
-        self._update_z_order()
         self._clear_cache()
 
     def outline(
@@ -1685,7 +1739,7 @@ class ShapeList:
     def outlines(
         self, indices: Sequence[int]
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Finds outlines of shapes listed in indices
+        """Finds outlines of shapes listed in indices, using chunked processing.
 
         Parameters
         ----------
@@ -1701,65 +1755,168 @@ class ShapeList:
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline
         """
-        shapes_list = [self.shapes[i] for i in indices]
-        offsets = np.vstack([s._edge_offsets for s in shapes_list])
-        centers = np.vstack([s._edge_vertices for s in shapes_list])
-        vert_count = np.cumsum(
-            [0] + [len(s._edge_vertices) for s in shapes_list]
-        )
-        triangles = np.vstack(
-            [
-                s._edge_triangles + c
-                for s, c in zip(shapes_list, vert_count, strict=False)
-            ]
+        # Based on benchmarking, a chunk_size of 500 provides a good balance
+        # of performance for a wide range of shape counts.
+        chunk_size = 500
+
+        if not indices:
+            return (
+                np.empty((0, self.ndisplay), dtype=CoordinateDtype),
+                np.empty((0, self.ndisplay), dtype=CoordinateDtype),
+                np.empty((0, 3), dtype=TriangleDtype),
+            )
+
+        centers_blocks = []
+        offsets_blocks = []
+        triangles_blocks = []
+        n_verts_cumsum = 0
+
+        for start in range(0, len(indices), chunk_size):
+            chunk_indices = indices[start : start + chunk_size]
+            chunk_shapes = [self.shapes[i] for i in chunk_indices]
+
+            chunk_centers = []
+            chunk_offsets = []
+            chunk_tris = []
+            n_verts_per_shape = []
+            n_tris_per_shape = []
+
+            for s in chunk_shapes:
+                verts = s._edge_vertices
+                chunk_centers.append(verts)
+                chunk_offsets.append(s._edge_offsets)
+                tris = s._edge_triangles
+                chunk_tris.append(tris)
+                n_verts_per_shape.append(verts.shape[0])
+                n_tris_per_shape.append(tris.shape[0])
+
+            centers = np.concatenate(chunk_centers)
+            offsets = np.concatenate(chunk_offsets)
+            triangles = np.concatenate(chunk_tris)
+
+            # Offset triangle indices within chunk and across blocks
+            if triangles.size > 0:
+                vert_offsets = np.zeros(
+                    len(n_verts_per_shape), dtype=triangles.dtype
+                )
+                if len(vert_offsets) > 1:
+                    np.cumsum(n_verts_per_shape[:-1], out=vert_offsets[1:])
+                tri_offsets = np.repeat(vert_offsets, n_tris_per_shape)
+                triangles = (
+                    triangles + tri_offsets[:, np.newaxis] + n_verts_cumsum
+                )
+
+            centers_blocks.append(centers)
+            offsets_blocks.append(offsets)
+            triangles_blocks.append(triangles)
+            n_verts_cumsum += centers.shape[0]
+
+        return (
+            np.concatenate(centers_blocks),
+            np.concatenate(offsets_blocks),
+            np.concatenate(triangles_blocks),
         )
 
-        return centers, offsets, triangles
-
-    def shapes_in_box(self, corners):
-        """Determines which shapes, if any, are inside an axis aligned box.
+    def shapes_in_box(
+        self, corners: np.ndarray[tuple[Literal[2], Literal[2]]]
+    ) -> list[int]:
+        """Determines which shapes, if any, are inside an axis-aligned box.
 
         Looks only at displayed shapes
 
         Parameters
         ----------
         corners : np.ndarray
-            2x2 array of two corners that will be used to create an axis
-            aligned box.
+            2x2 array of two corners that will be used to create an
+            axis-aligned box.
 
         Returns
         -------
-        shapes : list
+        shapes : list of ints
             List of shapes that are inside the box.
         """
+        shape_mins, shape_maxs = self._bounding_boxes
+        if shape_mins.shape[0] == 0:
+            return []
 
-        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        intersects = triangles_intersect_box(triangles, corners)
-        shapes = self._mesh.displayed_triangles_to_shape_index[intersects]
-        shapes = np.unique(shapes).tolist()
+        selection_min = np.min(corners, axis=0)
+        selection_max = np.max(corners, axis=0)
 
-        return shapes
+        # If the box encompasses all shapes, just get them directly
+        layer_min = np.min(shape_mins, axis=0)
+        layer_max = np.max(shape_maxs, axis=0)
+        if np.all(selection_min <= layer_min) and np.all(
+            selection_max >= layer_max
+        ):
+            return self._visible_shapes_indices.tolist()
+
+        # Get shapes with bounding boxes intersecting the selection box
+        intersects_mask = np.all(shape_maxs >= selection_min, axis=1) & np.all(
+            shape_mins <= selection_max, axis=1
+        )
+
+        intersecting_indices = self._visible_shapes_indices[intersects_mask]
+
+        if intersecting_indices.size == 0:
+            return []
+
+        shape_mins = shape_mins[intersects_mask]
+        shape_maxs = shape_maxs[intersects_mask]
+
+        shapes_full_in_mask = np.all(
+            shape_maxs <= selection_max, axis=1
+        ) & np.all(shape_mins >= selection_min, axis=1)
+
+        return [
+            num
+            for num, full_in in zip(
+                intersecting_indices, shapes_full_in_mask, strict=True
+            )
+            if full_in
+            or triangles_intersect_box(
+                self._mesh.vertices[
+                    self._mesh.triangles[self._mesh_triangles_slice(num)]
+                ],
+                corners,
+            ).any()
+        ]
 
     @cached_property
-    def _visible_shapes(self):
-        slice_key = self.slice_key
-        if len(slice_key):
-            return [
-                (i, s)
-                for i, s in enumerate(self.shapes)
-                if (
-                    np.all(s.slice_key[0] <= slice_key)
-                    and np.all(slice_key <= s.slice_key[1])
-                )
-            ]
-        return list(enumerate(self.shapes))
+    def _visible_shapes(self) -> list[tuple[int, Shape]]:
+        slice_key = np.asarray(self.slice_key)
+        if not len(slice_key) or not self.shapes:
+            return list(enumerate(self.shapes))
+        # This key is a real-valued data coordinate while a shape's is whole
+        # slices, so match `_update_displayed`'s half-slice tolerance where the
+        # shape does not span, and keep exact containment where it does.
+        lower, upper = self.slice_keys[:, 0], self.slice_keys[:, 1]
+        visible = np.all(
+            np.where(
+                lower == upper,
+                np.abs(slice_key - lower) < 0.5,
+                (lower <= slice_key) & (slice_key <= upper),
+            ),
+            axis=1,
+        )
+        return [(i, s) for i, s in enumerate(self.shapes) if visible[i]]
 
     @cached_property
-    def _bounding_boxes(self):
+    def _bounding_boxes(
+        self,
+    ) -> tuple[
+        np.ndarray[tuple[int, Literal[2, 3]]],
+        np.ndarray[tuple[int, Literal[2, 3]]],
+    ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:
-            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
+            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-return]
         return data[:, 0], data[:, 1]
+
+    @cached_property
+    def _visible_shapes_indices(
+        self,
+    ) -> np.ndarray[tuple[int], np.dtype[IndexDtype]]:
+        return np.array([s[0] for s in self._visible_shapes])
 
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
@@ -1860,7 +2017,7 @@ class ShapeList:
         triangle_indices: np.ndarray,
         ray_position: np.ndarray,
         ray_direction: np.ndarray,
-    ):
+    ) -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.floating]]:
         """Find the intersection of a ray with specified triangles.
 
         Parameters
@@ -1890,7 +2047,9 @@ class ShapeList:
         )
         return intersection_points
 
-    def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_masks(
+        self, mask_shape=None, zoom_factor=1, offset=(0, 0)
+    ) -> npt.NDArray[np.bool_]:
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
 
@@ -1915,16 +2074,17 @@ class ShapeList:
         if mask_shape is None:
             mask_shape = self.displayed_vertices.max(axis=0).astype('int')
 
-        masks = np.array(
-            [
-                s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
-                for s in self.shapes
-            ]
-        )
-
+        if not self.shapes:
+            # an empty list has always returned an empty 1D array
+            return np.array([])
+        masks = np.zeros((len(self.shapes), *mask_shape), dtype=bool)
+        for mask, shape in zip(masks, self.shapes, strict=True):
+            mask[shape._mask_index(mask_shape, zoom_factor, offset)] = True
         return masks
 
-    def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_labels(
+        self, labels_shape=None, zoom_factor=1, offset=(0, 0)
+    ) -> npt.NDArray[np.int_]:
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -1954,16 +2114,16 @@ class ShapeList:
         labels = np.zeros(labels_shape, dtype=int)
 
         for ind in self._z_order[::-1]:
-            mask = self.shapes[ind].to_mask(
-                labels_shape, zoom_factor=zoom_factor, offset=offset
+            index = self.shapes[ind]._mask_index(
+                labels_shape, zoom_factor, offset
             )
-            labels[mask] = ind + 1
+            labels[index] = ind + 1
 
         return labels
 
     def to_colors(
         self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
-    ):
+    ) -> npt.NDArray[np.float64]:
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the
@@ -1999,7 +2159,7 @@ class ShapeList:
         colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
-        z_order = self._z_order[::-1]
+        z_order = self._z_order
         shapes_in_view = np.argwhere(self._displayed)
         z_order_in_view_mask = np.isin(z_order, shapes_in_view)
         z_order_in_view = z_order[z_order_in_view_mask]
@@ -2007,20 +2167,21 @@ class ShapeList:
         # If there are too many shapes to render responsively, just render
         # the top max_shapes shapes
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
-            z_order_in_view = z_order_in_view[:max_shapes]
+            z_order_in_view = z_order_in_view[-max_shapes:]
 
         for ind in z_order_in_view:
-            mask = self.shapes[ind].to_mask(
-                colors_shape, zoom_factor=zoom_factor, offset=offset
+            index = self.shapes[ind]._mask_index(
+                colors_shape, zoom_factor, offset
             )
             if type(self.shapes[ind]) in [Path, Line]:
                 col = self._edge_color[ind]
             else:
                 col = self._face_color[ind]
-            colors[mask, :] = col
+            colors[index] = col
 
         return colors
 
-    def _clear_cache(self):
+    def _clear_cache(self) -> None:
         self.__dict__.pop('_bounding_boxes', None)
         self.__dict__.pop('_visible_shapes', None)
+        self.__dict__.pop('_visible_shapes_indices', None)

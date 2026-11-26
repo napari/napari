@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 from npe2 import DynamicPlugin
@@ -24,6 +25,24 @@ def test_save_layer_single_named_plugin(
 
         # Check file now exists
         assert os.path.isfile(path)
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_save_layer_single_pathlib(builtins, tmpdir, layer_data_and_types):
+    """Saving accepts pathlib.Path inputs, not only str (#8586)."""
+    layers, _, _, filenames = layer_data_and_types
+
+    for layer, fn in zip(layers, filenames, strict=False):
+        path = Path(tmpdir) / fn
+
+        # Check file does not exist
+        assert not path.is_file()
+
+        # Write data using a pathlib.Path
+        save_layers(path, [layer], plugin=builtins.name)
+
+        # Check file now exists
+        assert path.is_file()
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py

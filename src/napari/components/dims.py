@@ -1,17 +1,19 @@
-from collections.abc import Sequence
+import contextlib
+from collections.abc import Generator, Sequence
 from numbers import Integral
 from typing import (
     Any,
     Literal,
     NamedTuple,
+    Self,
 )
 
 import numpy as np
+import pint
+from pydantic import field_validator, model_validator
 
-from napari._pydantic_compat import root_validator, validator
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
-from napari.utils.translations import trans
 
 
 class RangeTuple(NamedTuple):
@@ -42,6 +44,9 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    units : tuple of pint.Unit, optional
+        Shared world units for each dimension.
+        If ``None``, no additional unit conversion is applied.
     last_used : int
         Dimension which was last interacted with.
 
@@ -64,6 +69,9 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    units : tuple of pint.Unit or None
+        Shared world units for each dimension.
+        If ``None``, no additional unit conversion is applied.
     last_used : int
         Dimension which was last used.
         Tuple the slider position for each dims slider, in world coordinates.
@@ -99,29 +107,30 @@ class Dims(EventedModel):
     margin_left: tuple[float, ...] = ()
     margin_right: tuple[float, ...] = ()
     point: tuple[float, ...] = ()
+    units: tuple[pint.Unit, ...] | None = None
 
     last_used: int = 0
 
     # private vars
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
+    _validating: bool = False
 
     # validators
     # check fields is false to allow private fields to work
-    @validator(
+    @field_validator(
         'order',
         'axis_labels',
         'rollable',
         'point',
         'margin_left',
         'margin_right',
-        pre=True,
-        allow_reuse=True,
+        mode='before',
     )
     def _as_tuple(v):
         return tuple(v)
 
-    @validator('range', pre=True)
+    @field_validator('range', mode='before')
     def _check_ranges(ranges):
         """
         Ensure the range values are sane.
@@ -129,30 +138,19 @@ class Dims(EventedModel):
         - start < stop
         - step > 0
         """
-        for axis, (start, stop, step) in enumerate(ranges):
+        for axis, (start, stop, step) in enumerate(ranges):  # pyrefly: ignore [bad-unpacking]
             if start > stop:
                 raise ValueError(
-                    trans._(
-                        'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}',
-                        deferred=True,
-                        start=start,
-                        stop=stop,
-                        axis=axis,
-                    )
+                    f'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}'
                 )
             if step <= 0:
                 raise ValueError(
-                    trans._(
-                        'step must be strictly positive, but got {step} for axis {axis}.',
-                        deferred=True,
-                        step=step,
-                        axis=axis,
-                    )
+                    f'step must be strictly positive, but got {step} for axis {axis}.'
                 )
         return ranges
 
-    @root_validator(skip_on_failure=True, allow_reuse=True)
-    def _check_dims(cls, values):
+    @model_validator(mode='after')
+    def _check_dims(self) -> Self:
         """Check the consistency of dimensionality for all attributes.
 
         Parameters
@@ -160,81 +158,76 @@ class Dims(EventedModel):
         values : dict
             Values dictionary to update dims model with.
         """
-        updated = {}
+        if self._validating:
+            return self
+        with self.events.blocker_all(), self._validating_ctx():
+            ndim = self.ndim
 
-        ndim = values['ndim']
+            range_ = ensure_len(self.range, ndim, pad_width=(0.0, 2.0, 1.0))
+            self.range = tuple(RangeTuple(*rng) for rng in range_)
 
-        range_ = ensure_len(values['range'], ndim, pad_width=(0.0, 2.0, 1.0))
-        updated['range'] = tuple(RangeTuple(*rng) for rng in range_)
-
-        point = ensure_len(values['point'], ndim, pad_width=0.0)
-        # ensure point is limited to range
-        updated['point'] = tuple(
-            np.clip(pt, rng.start, rng.stop)
-            for pt, rng in zip(point, updated['range'], strict=False)
-        )
-
-        updated['margin_left'] = ensure_len(
-            values['margin_left'], ndim, pad_width=0.0
-        )
-        updated['margin_right'] = ensure_len(
-            values['margin_right'], ndim, pad_width=0.0
-        )
-
-        # order and label default computation is too different to include in ensure_len()
-        # Check the order tuple has same number of elements as ndim
-        order = values['order']
-        if len(order) < ndim:
-            order_ndim = len(order)
-            # new dims are always prepended
-            prepended_dims = tuple(range(ndim - order_ndim))
-            # maintain existing order, but shift accordingly
-            existing_order = tuple(o + ndim - order_ndim for o in order)
-            order = prepended_dims + existing_order
-        elif len(order) > ndim:
-            order = reorder_after_dim_reduction(order[-ndim:])
-        updated['order'] = order
-
-        # Check the order is a permutation of 0, ..., ndim - 1
-        if set(updated['order']) != set(range(ndim)):
-            raise ValueError(
-                trans._(
-                    'Invalid ordering {order} for {ndim} dimensions',
-                    deferred=True,
-                    order=updated['order'],
-                    ndim=ndim,
-                )
+            point = ensure_len(self.point, ndim, pad_width=0.0)
+            # ensure point is limited to range
+            self.point = tuple(
+                np.clip(pt, rng.start, rng.stop)
+                for pt, rng in zip(point, self.range, strict=False)
             )
 
+            self.margin_left = ensure_len(
+                self.margin_left, ndim, pad_width=0.0
+            )
+            self.margin_right = ensure_len(
+                self.margin_right, ndim, pad_width=0.0
+            )
+
+            # order and label default computation is too different to include in ensure_len()
+            # Check the order tuple has same number of elements as ndim
+            order = self.order
+            if len(order) < ndim:
+                order_ndim = len(order)
+                # new dims are always prepended
+                prepended_dims = tuple(range(ndim - order_ndim))
+                # maintain existing order, but shift accordingly
+                existing_order = tuple(o + ndim - order_ndim for o in order)
+                order = prepended_dims + existing_order
+            elif len(order) > ndim:
+                order = reorder_after_dim_reduction(order[-ndim:])
+            self.order = order
+
+            # Check the order is a permutation of 0, ..., ndim - 1
+            if set(self.order) != set(range(ndim)):
+                raise ValueError(
+                    f'Invalid ordering {self.order} for {ndim} dimensions'
+                )
+
         # Check the axis labels tuple has same number of elements as ndim
-        axis_labels = values['axis_labels']
+        axis_labels = self.axis_labels
         labels_ndim = len(axis_labels)
         if labels_ndim < ndim:
             # Append new "default" labels to existing ones
-            if axis_labels == tuple(map(str, range(labels_ndim))):
-                updated['axis_labels'] = tuple(map(str, range(ndim)))
-            else:
-                updated['axis_labels'] = (
-                    tuple(map(str, range(ndim - labels_ndim))) + axis_labels
-                )
-        elif labels_ndim > ndim:
-            updated['axis_labels'] = axis_labels[-ndim:]
 
-        # Check the rollable axes tuple has same number of elements as ndim
-        updated['rollable'] = ensure_len(values['rollable'], ndim, True)
+            self.axis_labels = (
+                tuple(map(str, range(-ndim, -labels_ndim))) + axis_labels
+            )
+        elif labels_ndim > ndim:
+            self.axis_labels = axis_labels[-ndim:]
+
+        with self._validating_ctx():
+            # Check the rollable axes tuple has same number of elements as ndim
+            self.rollable = ensure_len(self.rollable, ndim, True)
 
         # If the last used slider is no longer visible, use the first.
-        last_used = values['last_used']
-        ndisplay = values['ndisplay']
-        dims_range = updated['range']
-        nsteps = cls._nsteps_from_range(dims_range)
+        last_used = self.last_used
+        ndisplay = self.ndisplay
+        dims_range = self.range
+        nsteps = self._nsteps_from_range(dims_range)
         not_displayed = [
             d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
         ]
         if len(not_displayed) > 0 and last_used not in not_displayed:
-            updated['last_used'] = not_displayed[0]
+            self.last_used = not_displayed[0]
 
-        return {**values, **updated}
+        return self
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -249,7 +242,7 @@ class Dims(EventedModel):
         return self._nsteps_from_range(self.range)
 
     @nsteps.setter
-    def nsteps(self, value):
+    def nsteps(self, value) -> None:
         self.range = tuple(
             RangeTuple(
                 rng.start, rng.stop, (rng.stop - rng.start) / (nsteps - 1)
@@ -258,14 +251,14 @@ class Dims(EventedModel):
         )
 
     @property
-    def current_step(self):
+    def current_step(self) -> tuple[int, ...]:
         return tuple(
             round((point - rng.start) / (rng.step or 1))
             for point, rng in zip(self.point, self.range, strict=False)
         )
 
     @current_step.setter
-    def current_step(self, value):
+    def current_step(self, value) -> None:
         self.point = tuple(
             rng.start + point * (rng.step or 1)
             for point, rng in zip(value, self.range, strict=False)
@@ -279,7 +272,7 @@ class Dims(EventedModel):
         )
 
     @margin_left_step.setter
-    def margin_left_step(self, value):
+    def margin_left_step(self, value) -> None:
         self.margin_left = tuple(
             mrg * (rng.step or 1)
             for mrg, rng in zip(value, self.range, strict=False)
@@ -293,7 +286,7 @@ class Dims(EventedModel):
         )
 
     @margin_right_step.setter
-    def margin_right_step(self, value):
+    def margin_right_step(self, value) -> None:
         self.margin_right = tuple(
             mrg * (rng.step or 1)
             for mrg, rng in zip(value, self.range, strict=False)
@@ -309,7 +302,7 @@ class Dims(EventedModel):
         )
 
     @thickness.setter
-    def thickness(self, value):
+    def thickness(self, value) -> None:
         self.margin_left = self.margin_right = tuple(val / 2 for val in value)
 
     @property
@@ -322,7 +315,7 @@ class Dims(EventedModel):
         )
 
     @thickness_step.setter
-    def thickness_step(self, value):
+    def thickness_step(self, value) -> None:
         self.margin_left_step = self.margin_right_step = tuple(
             val // 2 for val in value
         )
@@ -345,7 +338,7 @@ class Dims(EventedModel):
         self,
         axis: int | Sequence[int],
         _range: Sequence[int | float] | Sequence[Sequence[int | float]],
-    ):
+    ) -> None:
         """Sets ranges (min, max, step) for the given dimensions.
 
         Parameters
@@ -368,7 +361,7 @@ class Dims(EventedModel):
         self,
         axis: int | Sequence[int],
         value: float | Sequence[float],
-    ):
+    ) -> None:
         """Sets point to slice dimension in world coordinates.
 
         Parameters
@@ -390,7 +383,7 @@ class Dims(EventedModel):
         self,
         axis: int | Sequence[int],
         value: int | Sequence[int],
-    ):
+    ) -> None:
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
         )
@@ -405,7 +398,7 @@ class Dims(EventedModel):
         self,
         axis: int | Sequence[int],
         label: str | Sequence[str],
-    ):
+    ) -> None:
         """Sets new axis labels for the given axes.
 
         Parameters
@@ -423,19 +416,19 @@ class Dims(EventedModel):
             full_axis_labels[ax] = val
         self.axis_labels = tuple(full_axis_labels)
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset dims values to initial states."""
         # Don't reset axis labels
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
-        self.range = ((0, 2, 1),) * self.ndim
+        self.range = ((0, 2, 1),) * self.ndim  # pyrefly: ignore [bad-assignment]
         self.point = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
         self.margin_right = (0,) * self.ndim
         self.rollable = (True,) * self.ndim
 
-    def transpose(self):
+    def transpose(self) -> None:
         """Transpose displayed dimensions.
 
         This swaps the order of the last two displayed dimensions.
@@ -443,9 +436,9 @@ class Dims(EventedModel):
         """
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
-        self.order = order
+        self.order = order  # pyrefly: ignore [bad-assignment]
 
-    def _increment_dims_right(self, axis: int | None = None):
+    def _increment_dims_right(self, axis: int | None = None) -> None:
         """Increment dimensions to the right along given axis, or last used axis if None
 
         Parameters
@@ -457,7 +450,7 @@ class Dims(EventedModel):
             axis = self.last_used
         self.set_current_step(axis, self.current_step[axis] + 1)
 
-    def _increment_dims_left(self, axis: int | None = None):
+    def _increment_dims_left(self, axis: int | None = None) -> None:
         """Increment dimensions to the left along given axis, or last used axis if None
 
         Parameters
@@ -469,7 +462,7 @@ class Dims(EventedModel):
             axis = self.last_used
         self.set_current_step(axis, self.current_step[axis] - 1)
 
-    def _focus_up(self):
+    def _focus_up(self) -> None:
         """Shift focused dimension slider to be the next slider above."""
         sliders = [d for d in self.not_displayed if self.nsteps[d] > 1]
         if len(sliders) == 0:
@@ -478,7 +471,7 @@ class Dims(EventedModel):
         index = (sliders.index(self.last_used) + 1) % len(sliders)
         self.last_used = sliders[index]
 
-    def _focus_down(self):
+    def _focus_down(self) -> None:
         """Shift focused dimension slider to be the next slider bellow."""
         sliders = [d for d in self.not_displayed if self.nsteps[d] > 1]
         if len(sliders) == 0:
@@ -487,7 +480,7 @@ class Dims(EventedModel):
         index = (sliders.index(self.last_used) - 1) % len(sliders)
         self.last_used = sliders[index]
 
-    def roll(self):
+    def roll(self) -> None:
         """Roll order of dimensions for display."""
         order = np.array(self.order)
         # we combine "rollable" and "nsteps" into a mask for rolling
@@ -497,9 +490,9 @@ class Dims(EventedModel):
         # encodes axis by number
         valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
         order[valid] = np.roll(order[valid], shift=1)
-        self.order = order
+        self.order = order  # pyrefly: ignore [bad-assignment]
 
-    def _go_to_center_step(self):
+    def _go_to_center_step(self) -> None:
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
 
     def _sanitize_input(
@@ -515,9 +508,7 @@ class Dims(EventedModel):
                 and not isinstance(value, str)
                 and not value_is_sequence
             ):
-                raise ValueError(
-                    trans._('cannot set multiple values to a single axis')
-                )
+                raise ValueError('cannot set multiple values to a single axis')
             axis = [axis]
             value = [value]
         else:
@@ -525,16 +516,23 @@ class Dims(EventedModel):
             value = list(value)
 
         if len(axis) != len(value):
-            raise ValueError(
-                trans._('axis and value sequences must have equal length')
-            )
+            raise ValueError('axis and value sequences must have equal length')
 
         for ax in axis:
-            ensure_axis_in_bounds(ax, self.ndim)
-        return axis, value
+            ensure_axis_in_bounds(ax, self.ndim)  # pyrefly: ignore [bad-argument-type]
+        return axis, value  # pyrefly: ignore [bad-return]
+
+    @contextlib.contextmanager
+    def _validating_ctx(self) -> Generator[None, None, None]:
+        prev = self._validating
+        self._validating = True
+        try:
+            yield
+        finally:
+            self._validating = prev
 
 
-def ensure_len(value: tuple, length: int, pad_width: Any):
+def ensure_len(value: tuple, length: int, pad_width: Any) -> tuple:
     """
     Ensure that the value has the required number of elements.
 
@@ -544,9 +542,9 @@ def ensure_len(value: tuple, length: int, pad_width: Any):
     ----------
     value : Tuple
         A tuple of values to be resized.
-    ndim : int
+    length : int
         Number of desired values.
-    default : Tuple
+    pad_width : Any
         Default element for left-padding.
     """
     if len(value) < length:
@@ -574,13 +572,7 @@ def ensure_axis_in_bounds(axis: int, ndim: int) -> int:
         The given axis index is out of bounds.
     """
     if axis not in range(-ndim, ndim):
-        msg = trans._(
-            'Axis {axis} not defined for dimensionality {ndim}. Must be in [{ndim_lower}, {ndim}).',
-            deferred=True,
-            axis=axis,
-            ndim=ndim,
-            ndim_lower=-ndim,
-        )
+        msg = f'Axis {axis} not defined for dimensionality {ndim}. Must be in [{-ndim}, {ndim}).'
         raise ValueError(msg)
 
     return axis % ndim

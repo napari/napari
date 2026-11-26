@@ -1,25 +1,34 @@
-from typing import Any
+from enum import StrEnum
 
-from napari._pydantic_compat import Field
+from pydantic import AliasChoices, Field
+
 from napari.settings._base import EventedSettings
 from napari.utils.colormap_backend import (
     ColormapBackend,
     set_backend as set_colormap_backend,
 )
 from napari.utils.events import Event
-from napari.utils.translations import trans
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
     set_backend as set_triangulation_backend,
 )
 
 
-# this class inherits from EventedSettings instead of EventedModel because
-# it uses Field(env=...) for one of its attributes
-class ExperimentalSettings(EventedSettings):
-    def __init__(self, **data: dict[str, Any]):
-        super().__init__(**data)
+class PaletteFuzzySearch(StrEnum):
+    """
+    Enum for palette fuzzy search.
+    """
 
+    enabled_if_available = 'Enabled if available'
+    enabled = 'Enabled'
+    disabled = 'Disabled'
+
+
+# this class inherits from EventedSettings instead of EventedModel because
+# it uses Field(validation_alias=...) for some of its attributes
+class ExperimentalSettings(EventedSettings):
+    def _connect_events(self) -> None:
+        """Connects the events for the triangulation and colormap backends to their respective update functions."""
         self.events.triangulation_backend.connect(
             _update_triangulation_backend
         )
@@ -29,97 +38,116 @@ class ExperimentalSettings(EventedSettings):
 
     async_: bool = Field(
         False,
-        title=trans._('Render Images Asynchronously'),
-        description=trans._(
-            'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
+        title='Render Layers Asynchronously',
+        description=(
+            'When enabled, layers are loaded in a background thread, improving responsiveness,\n'
+            'especially for remote and multiscale data.'
         ),
-        env='napari_async',
-        requires_restart=False,
-    )
-    autoswap_buffers: bool = Field(
-        False,
-        title=trans._('Enable autoswapping rendering buffers.'),
-        description=trans._(
-            'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
-        ),
-        env='napari_autoswap',
-        requires_restart=True,
+        validation_alias=AliasChoices('async_', 'async', 'napari_async'),
+        json_schema_extra={'requires_restart': False},
     )
 
     rdp_epsilon: float = Field(
         0.5,
-        title=trans._('Shapes polygon lasso and path RDP epsilon'),
-        description=trans._(
-            'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
-            'a given polygon or path.'
-        ),
-        type=float,
+        title='Shapes polygon lasso and path RDP epsilon',
+        description='Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
+        'a given polygon or path.',
         ge=0,
     )
 
     lasso_vertex_distance: int = Field(
         10,
-        title=trans._(
-            'Minimum distance threshold of shapes lasso and path tool'
-        ),
-        description=trans._(
-            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
-            'or path.'
-        ),
-        type=int,
-        gt=0,
-        lt=50,
+        title='Minimum distance threshold of shapes lasso and path tool',
+        description='Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
+        ' or path.',
+        ge=1,
+        le=50,
     )
 
     completion_radius: int = Field(
         default=-1,
-        title=trans._(
-            'Double-click Labels polygon completion radius (-1 to always complete)'
-        ),
-        description=trans._(
-            'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
-        ),
+        title='Double-click Labels polygon completion radius (-1 to always complete)',
+        description='Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.',
     )
 
     triangulation_backend: TriangulationBackend = Field(
         TriangulationBackend.fastest_available,
-        title=trans._('Triangulation backend to use for Shapes layer'),
-        description=trans._(
-            'Triangulation backend to use for Shapes layer.\n'
-            "The 'bermuda' requires the optional 'bermuda' package.\n"
-            "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
-            "The 'triangle' requires the optional 'triangle' package.\n"
-            "The 'numba' backend requires the optional 'numba' package.\n"
-            "The 'pure python' backend uses the default Python triangulation from vispy.\n"
-            "The 'fastest available' backend will select the fastest available backend.\n"
+        title='Triangulation backend to use for Shapes layer',
+        description='Triangulation backend to use for Shapes layer.\n'
+        "The 'bermuda' requires the optional 'bermuda' package.\n"
+        "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+        "The 'triangle' requires the optional 'triangle' package.\n"
+        "The 'numba' backend requires the optional 'numba' package.\n"
+        "The 'pure python' backend uses the default Python triangulation from vispy.\n"
+        "The 'fastest available' backend will select the fastest available backend.\n",
+        validation_alias=AliasChoices(
+            'triangulation_backend', 'napari_triangulation_backend'
         ),
-        env='napari_triangulation_backend',
     )
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
-        title=trans._('Colormap backend to use for Labels layer'),
-        description=trans._(
-            'Color mapping backend to use for Labels layer.\n'
-            "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
-            "'numba' requires the optional 'numba' package.\n"
-            "'pure python' uses only NumPy and Python.\n"
-            "The 'fastest available' backend will select the fastest installed backend.\n"
+        title='Colormap backend to use for Labels layer',
+        description='Color mapping backend to use for Labels layer.\n'
+        "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+        "'numba' requires the optional 'numba' package.\n"
+        "'pure python' uses only NumPy and Python.\n"
+        "The 'fastest available' backend will select the fastest installed backend.\n",
+        validation_alias=AliasChoices(
+            'colormap_backend', 'napari_colormap_backend'
         ),
-        env='napari_colormap_backend',
     )
 
     compiled_triangulation: bool = Field(
         default=False,
-        title=trans._('Unused option. Use "triangulation backend" instead.'),
-        description=trans._(
-            'This option was removed in napari 0.6.0. Use \n'
-            '"triangulation backend" instead.'
+        title='Unused option. Use "triangulation backend" instead.',
+        description='This option was removed in napari 0.6.0. Use \n'
+        '"triangulation backend" instead.',
+    )
+
+    autoswap_buffers: bool = Field(
+        default=False,
+        title='Unused option. Use advanced.autoswap_buffers instead.',
+        description='This option was removed in napari 0.10.0. Use \n'
+        '"advanced.autoswap_buffers" instead.',
+    )
+
+    command_palette_fuzzy_search: PaletteFuzzySearch = Field(
+        default=PaletteFuzzySearch.enabled_if_available,
+        title='Enable fuzzy search in the command palette',
+        description=(
+            'When searching for commands via the command palette, use fuzzy finding\n'
+            'instead of matching exact words.'
+        ),
+    )
+
+    command_palette_fuzzy_search_threshold: int = Field(
+        default=60,
+        title='Similarity threshold (%) for fuzzy search in the command palette',
+        description=(
+            "When searching commands via the command palette, if a command's similarity\n"
+            "to the query is lower than this threshold, it won't be shown as a match."
+        ),
+        ge=0,
+        le=100,
+    )
+
+    dynamic_layer_controls: bool = Field(
+        default=False,
+        title='Generate GUI layer controls dynamically.',
+        description=(
+            'Based on the attributes of the currently selected layers, generate layer controls\n'
+            'dynamically (even when a single layer is selected).\n'
+            'Happens by default with multiple layers.'
         ),
     )
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version', 'compiled_triangulation')
+        preferences_exclude = (
+            'schema_version',
+            'compiled_triangulation',
+            'autoswap_buffers',
+        )
 
 
 def _update_triangulation_backend(event: Event) -> None:

@@ -1,153 +1,43 @@
-"""Methods to create a new viewer instance then add a particular layer type.
+"""Convenience function for creating a viewer and adding image data.
 
-All functions follow this pattern, (where <layer_type> is replaced with one
-of the layer types, like "image", "points", etc...):
-
-.. code-block:: python
-
-    def view_<layer_type>(*args, **kwargs):
-        # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
-        viewer = Viewer(**viewer_kwargs)
-        add_method = getattr(viewer, f"add_{<layer_type>}")
-        add_method(*args, **kwargs)
-        return viewer
+This module provides the `imshow` function.
 """
 
-import inspect
-import warnings
-from typing import Any
+from __future__ import annotations
 
-from numpydoc.docscrape import NumpyDocString as _NumpyDocString
+import inspect
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
 
-__all__ = [
-    'imshow',
-    'view_image',
-    'view_labels',
-    'view_path',
-    'view_points',
-    'view_shapes',
-    'view_surface',
-    'view_tracks',
-    'view_vectors',
-]
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
-_doc_template = """Create a viewer and add a{n} {layer_string} layer.
+    import numpy.typing as npt
 
-{params}
+    from napari.layers.image._image_constants import InterpolationStr
+    from napari.layers.utils.plane import ClippingPlane, SlicingPlane
+    from napari.types import ArrayLike
+    from napari.utils.colormaps.colormap_utils import ValidColormapArg
+    from napari.utils.transforms import Affine
+    from napari.utils.transforms._units import UnitsLike
 
-Returns
--------
-viewer : :class:`napari.Viewer`
-    The newly-created viewer.
-"""
+    # the clipping planes of one layer
+    ClippingPlanes: TypeAlias = dict | Sequence[dict | ClippingPlane]
 
-_VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = '    ' + '\n'.join(_VIEW_DOC._str_param_list('Parameters')[2:])
-
-
-def _merge_docstrings(add_method, layer_string):
-    # create combined docstring with parameters from add_* and Viewer methods
-    import textwrap
-
-    add_method_doc = _NumpyDocString(add_method.__doc__)
-
-    # this ugliness is because the indentation of the parsed numpydocstring
-    # is different for the first parameter :(
-    lines = add_method_doc._str_param_list('Parameters')
-    lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
-    params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
-    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
-    return _doc_template.format(n=n, layer_string=layer_string, params=params)
-
-
-def _merge_layer_viewer_sigs_docs(func):
-    """Make combined signature, docstrings, and annotations for `func`.
-
-    This is a decorator that combines information from `Viewer.__init__`,
-    and one of the `viewer.add_*` methods.  It updates the docstring,
-    signature, and type annotations of the decorated function with the merged
-    versions.
-
-    Parameters
-    ----------
-    func : callable
-        `view_<layer_type>` function to modify
-
-    Returns
-    -------
-    func : callable
-        The same function, with merged metadata.
-    """
-    from napari.utils.misc import _combine_signatures
-
-    # get the `Viewer.add_*` method
-    layer_string = func.__name__.replace('view_', '')
-    if layer_string == 'path':
-        add_method = Viewer.open
-    else:
-        add_method = getattr(Viewer, f'add_{layer_string}')
-
-    # merge the docstrings of Viewer and viewer.add_*
-    func.__doc__ = _merge_docstrings(add_method, layer_string)
-
-    # merge the signatures of Viewer and viewer.add_*
-    func.__signature__ = _combine_signatures(
-        add_method,
-        Viewer,
-        return_annotation=Viewer,
-        exclude=('self', 'axis_labels'),
-    )
-
-    # merge the __annotations__
-    func.__annotations__ = {
-        **add_method.__annotations__,
-        **Viewer.__init__.__annotations__,
-        'return': Viewer,
-    }
-
-    # _forwardrefns_ is used by stubgen.py to populate the globals
-    # when evaluate forward references with get_type_hints
-    func._forwardrefns_ = {**add_method.__globals__}
-    return func
-
+__all__ = ['imshow']
 
 _viewer_params = inspect.signature(Viewer).parameters
-_dims_params = Dims.__fields__
-
-
-def send_warning(
-    original_method: str, replaced_method: str, version: str = '0.7.0'
-):
-    """
-    Issue a future warning for a method that will be removed in a future version.
-
-    Parameters
-    ----------
-    original_method : str
-        The name of the deprecated method (e.g., 'view_image').
-    replaced_method : str
-        The name of the recommended replacement method (e.g., 'add_image').
-    version : str, optional
-        The version in which the method will be removed. Default is '0.7.0'.
-    """
-    warnings.warn(
-        f'`napari.{original_method}` is deprecated and will be removed in napari {version}.\n'
-        f'Use `viewer = napari.Viewer(); viewer.{replaced_method}(...)` instead.',
-        FutureWarning,
-        stacklevel=3,
-    )
 
 
 def _make_viewer_then(
     add_method: str,
     /,
-    *args,
+    *args: Any,
     viewer: Viewer | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
 
@@ -176,127 +66,162 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
-    vkwargs = {
+    viewer_kwargs = {
         k: kwargs.pop(k)
         for k in list(kwargs)
         if k in _viewer_params
+        # not passing `axis_labels` to viewer kwargs as it inherits from the layer
         if k != 'axis_labels'
     }
-    if 'axis_labels' in kwargs:
-        vkwargs['axis_labels'] = (
-            kwargs['axis_labels'] if kwargs['axis_labels'] is not None else ()
-        )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
+        k: viewer_kwargs.pop(k)
+        for k in list(viewer_kwargs)
+        if k in Dims.model_fields
     }
     if viewer is None:
-        viewer = Viewer(**vkwargs)
+        viewer = Viewer(**viewer_kwargs)
     kwargs.update(kwargs.pop('kwargs', {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)
     if isinstance(added, list):
         added = tuple(added)
     for arg_name, arg_val in dims_kwargs.items():
-        setattr(viewer.dims, arg_name, arg_val)
+        if arg_val is not None:
+            setattr(viewer.dims, arg_name, arg_val)
     return viewer, added
 
 
-# Each of the following functions will have this pattern:
-#
-# def view_image(*args, **kwargs):
-#     # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
-#     viewer = Viewer(**viewer_kwargs)
-#     viewer.add_image(*args, **kwargs)
-#     return viewer
+@overload
+def imshow(
+    data: ArrayLike | Sequence[ArrayLike],
+    *,
+    channel_axis: None = ...,
+    affine: npt.ArrayLike | Affine | None = ...,
+    attenuation: float = ...,
+    auto_contrast: bool = ...,
+    axis_labels: Sequence[str] | None = ...,
+    blending: str | None = ...,
+    cache: bool = ...,
+    colormap: ValidColormapArg | None = ...,
+    contrast_limits: Sequence[float] | None = ...,
+    custom_interpolation_kernel_2d: npt.ArrayLike | None = ...,
+    depiction: str = ...,
+    experimental_clipping_planes: ClippingPlanes | None = ...,
+    gamma: float = ...,
+    interpolation2d: InterpolationStr = ...,
+    interpolation3d: InterpolationStr = ...,
+    iso_threshold: float | None = ...,
+    locked_data_level: int | None = ...,
+    metadata: dict | None = ...,
+    multiscale: bool | None = ...,
+    name: str | None = ...,
+    opacity: float = ...,
+    plane: dict | SlicingPlane | None = ...,
+    projection_mode: str = ...,
+    rendering: str = ...,
+    rgb: bool | None = ...,
+    rotate: npt.ArrayLike | None = ...,
+    scale: npt.ArrayLike | None = ...,
+    shear: npt.ArrayLike | None = ...,
+    translate: npt.ArrayLike | None = ...,
+    units: UnitsLike = ...,
+    visible: bool = ...,
+    viewer: Viewer | None = ...,
+    title: str = ...,
+    ndisplay: int | None = ...,
+    order: Sequence[int] | None = ...,
+    show: bool = ...,
+) -> tuple[Viewer, Image]: ...
 
 
-@_merge_layer_viewer_sigs_docs
-def view_image(*args, **kwargs):
-    send_warning('view_image', 'add_image')
-    return _make_viewer_then('add_image', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_labels(*args, **kwargs):
-    send_warning('view_labels', 'add_labels')
-    return _make_viewer_then('add_labels', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_points(*args, **kwargs):
-    send_warning('view_points', 'add_points')
-    return _make_viewer_then('add_points', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_shapes(*args, **kwargs):
-    send_warning('view_shapes', 'add_shapes')
-    return _make_viewer_then('add_shapes', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_surface(*args, **kwargs):
-    send_warning('view_surface', 'add_surface')
-    return _make_viewer_then('add_surface', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_tracks(*args, **kwargs):
-    send_warning('view_tracks', 'add_tracks')
-    return _make_viewer_then('add_tracks', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_vectors(*args, **kwargs):
-    send_warning('view_vectors', 'add_vectors')
-    return _make_viewer_then('add_vectors', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_path(*args, **kwargs):
-    send_warning('view_path', 'open')
-    return _make_viewer_then('open', *args, **kwargs)[0]
+@overload
+def imshow(
+    data: ArrayLike | Sequence[ArrayLike],
+    *,
+    channel_axis: int,
+    affine: npt.ArrayLike | Affine | Sequence[Affine] | None = ...,
+    attenuation: float | Sequence[float] = ...,
+    auto_contrast: bool | Sequence[bool] = ...,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = ...,
+    blending: str | Sequence[str] | None = ...,
+    cache: bool | Sequence[bool] = ...,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = ...,
+    contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = ...,
+    custom_interpolation_kernel_2d: npt.ArrayLike | None = ...,
+    depiction: str | Sequence[str] = ...,
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = ...,
+    gamma: float | Sequence[float] = ...,
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = ...,
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = ...,
+    iso_threshold: float | Sequence[float] | None = ...,
+    locked_data_level: int | Sequence[int | None] | None = ...,
+    metadata: dict | Sequence[dict] | None = ...,
+    multiscale: bool | None = ...,
+    name: str | Sequence[str] | None = ...,
+    opacity: float | Sequence[float] = ...,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = ...,
+    projection_mode: str | Sequence[str] = ...,
+    rendering: str | Sequence[str] = ...,
+    rgb: bool | None = ...,
+    rotate: npt.ArrayLike | None = ...,
+    scale: npt.ArrayLike | None = ...,
+    shear: npt.ArrayLike | None = ...,
+    translate: npt.ArrayLike | None = ...,
+    units: UnitsLike | Sequence[UnitsLike] = ...,
+    visible: bool | Sequence[bool] = ...,
+    viewer: Viewer | None = ...,
+    title: str = ...,
+    ndisplay: int | None = ...,
+    order: Sequence[int] | None = ...,
+    show: bool = ...,
+) -> tuple[Viewer, tuple[Image, ...]]: ...
 
 
 def imshow(
-    data,
+    data: ArrayLike | Sequence[ArrayLike],
     *,
-    channel_axis=None,
-    affine=None,
-    axis_labels=None,
-    attenuation=0.05,
-    blending=None,
-    cache=True,
-    colormap=None,
-    contrast_limits=None,
-    custom_interpolation_kernel_2d=None,
-    depiction='volume',
-    experimental_clipping_planes=None,
-    gamma=1.0,
-    interpolation2d='nearest',
-    interpolation3d='linear',
-    iso_threshold=None,
-    metadata=None,
-    multiscale=None,
-    name=None,
-    opacity=1.0,
-    plane=None,
-    projection_mode='mean',
-    rendering='mip',
-    rgb=None,
-    rotate=None,
-    scale=None,
-    shear=None,
-    translate=None,
-    units=None,
-    visible=True,
-    viewer=None,
-    title='napari',
-    ndisplay=2,
-    order=(),
-    show=True,
-) -> tuple[Viewer, list['Image']]:
+    channel_axis: int | None = None,
+    affine: npt.ArrayLike | Affine | Sequence[Affine] | None = None,
+    attenuation: float | Sequence[float] = 0.05,
+    auto_contrast: bool | Sequence[bool] = False,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = None,
+    blending: str | Sequence[str] | None = None,
+    cache: bool | Sequence[bool] = True,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = None,
+    contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = None,
+    custom_interpolation_kernel_2d: npt.ArrayLike | None = None,
+    depiction: str | Sequence[str] = 'volume',
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = None,
+    gamma: float | Sequence[float] = 1.0,
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = 'nearest',
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = 'linear',
+    iso_threshold: float | Sequence[float] | None = None,
+    locked_data_level: int | Sequence[int | None] | None = None,
+    metadata: dict | Sequence[dict] | None = None,
+    multiscale: bool | None = None,
+    name: str | Sequence[str] | None = None,
+    opacity: float | Sequence[float] = 1.0,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = None,
+    projection_mode: str | Sequence[str] = 'mean',
+    rendering: str | Sequence[str] = 'mip',
+    rgb: bool | None = None,
+    rotate: npt.ArrayLike | None = None,
+    scale: npt.ArrayLike | None = None,
+    shear: npt.ArrayLike | None = None,
+    translate: npt.ArrayLike | None = None,
+    units: UnitsLike | Sequence[UnitsLike] = None,
+    visible: bool | Sequence[bool] = True,
+    viewer: Viewer | None = None,
+    title: str = 'napari',
+    ndisplay: int | None = None,
+    order: Sequence[int] | None = None,
+    show: bool = True,
+) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -325,6 +250,10 @@ def imshow(
         top of the provided scale, rotate, and shear values.
     attenuation : float or list of float
         Attenuation rate for attenuated maximum intensity projection.
+    auto_contrast : bool or list of bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     blending : str or list of str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -367,6 +296,11 @@ def imshow(
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float or list of float
         Threshold for isosurface.
+    locked_data_level : int or list of int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict or list of dict
         Layer metadata.
     multiscale : bool
@@ -381,11 +315,11 @@ def imshow(
         Name of the layer.
     opacity : float or list
         Opacity of the layer visual, between 0.0 and 1.0.
-    plane : dict or SlicingPlane
+    plane : dict or SlicingPlane, or list of these
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    projection_mode : str
+    projection_mode : str or list of str
         How data outside the viewed dimensions, but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass
     rendering : str or list of str
@@ -409,19 +343,22 @@ def imshow(
         A vector of shear values for an upper triangular n-D shear matrix.
     translate : tuple of float or list of tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
     visible : bool or list of bool
         Whether the layer visual is currently being displayed.
     viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. By default 2.
+        Number of displayed dimensions.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3. By default None
-    axis_labels : list of str, optional
-        Dimension names. By default they are labeled with sequential numbers
+    axis_labels : list of str or list of list of str, optional
+        Dimension names. With ``channel_axis``, one list per channel can be
+        given. By default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. By default True.
 
@@ -429,7 +366,7 @@ def imshow(
     -------
     viewer : napari.Viewer
         The created or passed viewer.
-    layer(s) : napari.layers.Image or List[napari.layers.Image]
+    layer(s) : napari.layers.Image or tuple of napari.layers.Image
         The added layer(s). (May be more than one if the ``channel_axis`` keyword
         argument is given.
     """
@@ -449,7 +386,9 @@ def imshow(
         rendering=rendering,
         depiction=depiction,
         iso_threshold=iso_threshold,
+        locked_data_level=locked_data_level,
         attenuation=attenuation,
+        auto_contrast=auto_contrast,
         name=name,
         metadata=metadata,
         scale=scale,

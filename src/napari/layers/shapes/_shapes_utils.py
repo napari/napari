@@ -6,8 +6,7 @@ import typing
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
-from skimage import measure
-from skimage.draw import line, polygon2mask
+from skimage import draw, measure
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
@@ -22,8 +21,8 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray3D,
     EdgeArray,
     TriangleArray,
+    TriangleDtype,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -64,12 +63,12 @@ def find_planar_axis(
     """
     ndim = points.shape[1]
     if ndim == 2:
-        return points, None, None  # type: ignore[return-value]
+        return points, None, None  # pyrefly: ignore [bad-return]
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
-            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
-    return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]  # pyrefly: ignore [bad-return]
+    return np.empty((0, 2), dtype=points.dtype), None, None
 
 
 @typing.overload
@@ -108,7 +107,7 @@ def _fan_triangulation(
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
-    return vertices, triangles  # type: ignore[return-value]
+    return vertices, triangles  # pyrefly: ignore [bad-return]
 
 
 def inside_boxes(boxes):
@@ -145,7 +144,9 @@ def inside_boxes(boxes):
     return inside
 
 
-def triangles_intersect_box(triangles, corners):
+def triangles_intersect_box(
+    triangles, corners
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Determines which triangles intersect an axis aligned box.
 
     Parameters
@@ -198,7 +199,9 @@ def triangle_vertices_inside_box(triangles, corners):
     return inside
 
 
-def triangle_edges_intersect_box(triangles, corners):
+def triangle_edges_intersect_box(
+    triangles: npt.NDArray, corners: npt.NDArray
+) -> npt.NDArray:
     """Determines which triangles have edges that intersect the edges of an
     axis aligned box.
 
@@ -217,7 +220,7 @@ def triangle_edges_intersect_box(triangles, corners):
     """
     box = create_box(corners)[[0, 2, 4, 6]]
 
-    intersects = np.zeros([len(triangles), 12], dtype=bool)
+    all_intersects = np.zeros(len(triangles), dtype=bool)
     for i in range(3):
         # check if each triangle edge
         p1 = triangles[:, i, :]
@@ -226,89 +229,94 @@ def triangle_edges_intersect_box(triangles, corners):
         for j in range(4):
             # Check the four edges of the box
             p2 = box[j]
-            q2 = box[(j + 1) % 3]
-            intersects[:, i * 3 + j] = [
-                lines_intersect(p1[k], q1[k], p2, q2) for k in range(len(p1))
-            ]
+            q2 = box[(j + 1) % 4]
 
-    return np.any(intersects, axis=1)
+            intersects = vectorized_lines_intersect(p1, q1, p2, q2)
+            all_intersects |= intersects
+
+    return all_intersects
 
 
-def lines_intersect(p1, q1, p2, q2):
-    """Determines if line segment p1q1 intersects line segment p2q2
+def vectorized_lines_intersect(
+    p1: npt.NDArray, q1: npt.NDArray, p2: npt.NDArray, q2: npt.NDArray
+) -> npt.NDArray:
+    """Determines if a set of N line segments intersects with a single line segment.
+
+    This implementation is vectorized to be fast for many segments. It uses
+    the 'orientation' method, which is a vectorized version of the algorithm
+    used elsewhere in this codebase, making it easier to review and maintain.
+
+    The algorithm is based on checking if the endpoints of each segment lie on
+    opposite sides of the other segment.
 
     Parameters
     ----------
-    p1 : (2,) array
-        Array of first point of first line segment
-    q1 : (2,) array
-        Array of second point of first line segment
+    p1 : (N, 2) array
+        Array of first points of N line segments.
+    q1 : (N, 2) array
+        Array of second points of N line segments.
     p2 : (2,) array
-        Array of first point of second line segment
+        First point of the single line segment.
     q2 : (2,) array
-        Array of second point of second line segment
+        Second point of the single line segment.
 
     Returns
     -------
-    intersects : bool
-        Bool indicating if line segment p1q1 intersects line segment p2q2
+    intersects : (N,) array of bool
+        Array with `True` values for line segments in the set that intersect
+        the single line segment.
     """
     # Determine four orientations
-    o1 = _triangulate_py.orientation(p1, q1, p2)
-    o2 = _triangulate_py.orientation(p1, q1, q2)
-    o3 = _triangulate_py.orientation(p2, q2, p1)
-    o4 = _triangulate_py.orientation(p2, q2, q1)
+    o1 = _triangulate_py.vectorized_orientation(p1, q1, p2)
+    o2 = _triangulate_py.vectorized_orientation(p1, q1, q2)
+    o3 = _triangulate_py.vectorized_orientation(p2, q2, p1)
+    o4 = _triangulate_py.vectorized_orientation(p2, q2, q1)
 
     # Test general case
-    if (o1 != o2) and (o3 != o4):
-        return True
+    intersects = (o1 != o2) & (o3 != o4)
 
     # Test special cases
     # p1, q1 and p2 are collinear and p2 lies on segment p1q1
-    if o1 == 0 and on_segment(p1, p2, q1):
-        return True
+    intersects |= (o1 == 0) & on_segment(p1, p2, q1)
 
     # p1, q1 and q2 are collinear and q2 lies on segment p1q1
-    if o2 == 0 and on_segment(p1, q2, q1):
-        return True
+    intersects |= (o2 == 0) & on_segment(p1, q2, q1)
 
     # p2, q2 and p1 are collinear and p1 lies on segment p2q2
-    if o3 == 0 and on_segment(p2, p1, q2):
-        return True
+    intersects |= (o3 == 0) & on_segment(p2, p1, q2)
 
     # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
-        return True
+    intersects |= (o4 == 0) & on_segment(p2, q1, q2)
 
-    # Doesn't fall into any special cases
-    return False
+    return intersects
 
 
-def on_segment(p, q, r):
-    """Checks if q is on the segment from p to r
+def on_segment(p: npt.NDArray, q: npt.NDArray, r: npt.NDArray) -> npt.NDArray:
+    """Check if point(s) q are on the segment(s) from p to r.
+
+    This function is vectorized and assumes that the points are already
+    known to be collinear.
 
     Parameters
     ----------
-    p : (2,) array
-        Array of first point of segment
-    q : (2,) array
-        Array of point to check if on segment
-    r : (2,) array
-        Array of second point of segment
+    p : (..., 2) array
+        Array of first points of segments.
+    q : (..., 2) array
+        Array of points to check.
+    r : (..., 2) array
+        Array of second points of segments.
 
     Returns
     -------
-    on : bool
-        Bool indicating if q is on segment from p to r
+    on : (...) array of bool
+        Array of booleans with `True` if q is on pr.
     """
-    if max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and max(p[1], r[1]) >= q[
-        1
-    ] >= min(p[1], r[1]):
-        on = True
-    else:
-        on = False
-
-    return on
+    return (
+        (q[..., 0] <= np.maximum(p[..., 0], r[..., 0]))
+        & (q[..., 0] >= np.minimum(p[..., 0], r[..., 0]))
+        & (q[..., 1] <= np.maximum(p[..., 1], r[..., 1]))
+        & (q[..., 1] >= np.minimum(p[..., 1], r[..., 1]))
+    )
 
 
 def is_collinear(points: npt.NDArray) -> bool:
@@ -429,7 +437,7 @@ def create_box(data: CoordinateArray2D) -> BoxArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box
+    return box  # pyrefly: ignore [bad-return]
 
 
 def rectangle_to_box(
@@ -453,10 +461,7 @@ def rectangle_to_box(
     """
     if data.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle'
         )
     box = np.array(
         [
@@ -563,10 +568,7 @@ def triangulate_ellipse(
     """
     if corners.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse'
         )
     assert corners.shape in {(4, 2), (4, 3)}
     center = corners.mean(axis=0)
@@ -604,7 +606,7 @@ def triangulate_ellipse(
     ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
-    return vertices, triangles
+    return vertices, triangles.astype(TriangleDtype)
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
@@ -696,7 +698,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         )
         edge_tri = triangulate_edge(polygon_vertices, closed=True)
-        return face_tri, edge_tri  # type: ignore[return-value]
+        return face_tri, edge_tri  # pyrefly: ignore [bad-return]
 
     if _triangulate_dispatch.is_convex(data2d):
         vertices, triangles = _fan_triangulation(data2d)
@@ -868,7 +870,7 @@ def triangulate_face_triangle(
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray, TriangleArray]:
-    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
+    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')  # pyrefly: ignore [not-callable]
     vertices = res['vertices']
     raw_triangles = res['triangles']
     # triangle's constrained Delaunay triangulation
@@ -1015,7 +1017,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         index_d = i * tube_points + jp
 
         indices.extend(
-            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[arg-type]
+            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # pyrefly: ignore [bad-argument-type]
         )
     triangles = np.array(indices, dtype=np.uint32)
 
@@ -1025,28 +1027,14 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_mask(
-    mask_shape: npt.NDArray, vertices: npt.NDArray
-) -> npt.NDArray[np.bool_]:
-    """Converts a path to a boolean mask with `True` for points lying along
-    each edge.
+def path_to_indices(
+    mask_shape: npt.ArrayLike, vertices: npt.NDArray
+) -> tuple[npt.NDArray[np.intp], ...]:
+    """Indices of the pixels along each edge of a 2D or nD path.
 
-    Parameters
-    ----------
-    mask_shape : array (2,)
-        Shape of mask to be generated.
-    vertices : array (N, 2)
-        Vertices of the path.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points along the path
-
+    Vertices outside the mask are clipped to its border.
     """
     mask_shape = np.asarray(mask_shape, dtype=int)
-    mask = np.zeros(mask_shape, dtype=bool)
-
     vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
 
     # remove identical, consecutive vertices
@@ -1054,64 +1042,35 @@ def path_to_mask(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    iis, jjs = [], []
-    for v1, v2 in itertools.pairwise(vertices):
-        ii, jj = line(*v1, *v2)
-        iis.extend(ii.tolist())
-        jjs.extend(jj.tolist())
-
-    mask[iis, jjs] = 1
-
-    return mask
-
-
-def poly_to_mask(
-    mask_shape: npt.ArrayLike, vertices: npt.ArrayLike
-) -> npt.NDArray[np.bool_]:
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Uses the bounding box of the vertices to reduce
-    computation time.
-
-    Parameters
-    ----------
-    mask_shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    return polygon2mask(mask_shape, vertices)
+    # draw.line_nd breaks ties differently than draw.line, so in 2D it picks
+    # other pixels for some lines, and it is several times slower.
+    if len(mask_shape) == 2:
+        lines = [
+            draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)
+        ]
+    else:
+        lines = [
+            draw.line_nd(v1, v2, endpoint=True)
+            for v1, v2 in itertools.pairwise(vertices)
+        ]
+    if not lines:
+        return tuple(np.empty(0, np.intp) for _ in mask_shape)
+    return tuple(np.concatenate(axis) for axis in zip(*lines, strict=True))
 
 
-def grid_points_in_poly(shape, vertices):
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Loops through all indices in the grid
-
-    Parameters
-    ----------
-    shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    points = np.array(
-        [(x, y) for x in range(shape[0]) for y in range(shape[1])], dtype=int
+def poly_to_indices(
+    mask_shape: typing.Sequence[int], vertices: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Row and column indices of the pixels inside a polygon."""
+    rows, cols = draw.polygon(
+        vertices[:, 0], vertices[:, 1], tuple(mask_shape)
     )
-    inside = points_in_poly(points, vertices)
-    mask = inside.reshape(shape)
-    return mask
+    return rows, cols
 
 
-def points_in_poly(points, vertices):
+def points_in_poly(
+    points, vertices
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Tests points for being inside a polygon using the ray casting algorithm
 
     Parameters
@@ -1239,7 +1198,7 @@ def get_shape_ndim(data):
     return ndim
 
 
-def number_of_shapes(data):
+def number_of_shapes(data) -> int:
     """Determine number of shapes in the data.
 
     Parameters
@@ -1267,7 +1226,7 @@ def number_of_shapes(data):
 
 def validate_num_vertices(
     data, shape_type, min_vertices=None, valid_vertices=None
-):
+) -> None:
     """Raises error if a shape in data has invalid number of vertices.
 
     Checks whether all shapes in data have a valid number of vertices
@@ -1308,13 +1267,7 @@ def validate_num_vertices(
             min_vertices and len(shape) < min_vertices
         ):
             raise ValueError(
-                trans._(
-                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
-                    deferred=True,
-                    shape_type=shape_type,
-                    shape=shape,
-                    shape_length=len(shape),
-                )
+                f'{shape_type} {shape} has invalid number of vertices: {len(shape)}.'
             )
 
 

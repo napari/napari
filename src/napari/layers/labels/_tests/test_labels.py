@@ -3,8 +3,9 @@ import itertools
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
+import dask.array as da
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -19,7 +20,10 @@ from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
-from napari.layers.labels._labels_utils import get_contours
+from napari.layers.labels._labels_utils import (
+    get_contours,
+    interpolate_coordinates,
+)
 from napari.layers.labels.labels import WrongSelectedLabelError
 from napari.utils import Colormap
 from napari.utils._test_utils import (
@@ -675,8 +679,18 @@ def test_contour_local_updates():
 
     layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
 
-    assert np.array_equiv(
-        (layer._slice.image.view > 0), get_contours(painting_mask, 1, 0)
+    _assert_contour_view_matches_data(layer)
+
+
+def _assert_contour_view_matches_data(layer: Labels) -> None:
+    npt.assert_array_equal(
+        layer._slice.image.view > 0,
+        get_contours(
+            np.asarray(layer.data),
+            layer.contour,
+            layer.colormap.background_value,
+        )
+        > 0,
     )
 
 
@@ -694,7 +708,7 @@ def test_data_setitem_multi_dim():
     )
 
 
-def test_data_setitiem_transposed_axes():
+def test_data_setitem_transposed_axes():
     data = np.zeros((10, 100), dtype=np.uint32)
     labels = Labels(data)
     dims = Dims(ndim=2, ndisplay=2, order=(1, 0))
@@ -722,6 +736,21 @@ def test_selecting_label_exception():
         labels.selected_label = 256
     with pytest.raises(WrongSelectedLabelError, match='The value -1'):
         labels.selected_label = -1
+
+
+@pytest.mark.parametrize('new_label', [256, -1])
+def test_painting_out_of_dtype_range_raises(new_label):
+    """paint/fill/paint_polygon reject labels the data dtype cannot hold."""
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    match = f'The value {new_label}'
+    with pytest.raises(WrongSelectedLabelError, match=match):
+        labels.paint((5, 5), new_label)
+    with pytest.raises(WrongSelectedLabelError, match=match):
+        labels.fill((5, 5), new_label)
+    with pytest.raises(WrongSelectedLabelError, match=match):
+        labels.paint_polygon([[0, 0], [0, 5], [5, 5], [5, 0]], new_label)
+    # data must be untouched after a rejected paint
+    npt.assert_array_equal(labels.data, np.zeros((10, 10), dtype=np.uint8))
 
 
 def test_label_color():
@@ -886,6 +915,33 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
+def test_brush_bbox_anisotropic_scale():
+    """Ensure that bbox is calculated correctly for anisotropic scales."""
+    data = np.zeros((20, 30), dtype=np.uint32)
+    layer = Labels(data, scale=(10, 1))
+    layer.brush_size = 10
+
+    shape, dims_to_paint = layer._get_shape_and_dims_to_paint()
+    coord = (10, 15)
+    brush_info = layer._get_brush_mask_and_bbox(
+        np.array([coord]), dims_to_paint, shape
+    )
+    assert brush_info is not None
+    _, min_vals, max_vals = brush_info
+
+    center = np.round(np.array(coord)).astype(int)
+    radius_pixels = center - min_vals
+    radius = np.floor(layer.brush_size / 2) + 0.5
+    paint_scale = np.array(
+        [layer.scale[i] for i in dims_to_paint], dtype=float
+    )
+    scale_normalized = np.abs(paint_scale) / np.min(np.abs(paint_scale))
+    expected = np.floor(radius / scale_normalized).astype(int)
+
+    npt.assert_array_equal(radius_pixels, expected)
+    npt.assert_array_equal(max_vals - min_vals, expected * 2 + 1)
+
+
 def test_paint_2d_xarray():
     """Test the memory usage of painting a xarray indirectly via timeout."""
     now = time.monotonic()
@@ -923,6 +979,42 @@ def test_paint_3d():
     assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == 137
     assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == 1189
     assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == 1103
+
+
+def test_paint_3d_batch_refresh():
+    """Test painting on different slices with refresh=False preserves all slices.
+
+    Regression test for bounding box merge bug where painting on different
+    Z-slices with refresh=False would only show the last painted slice.
+    The bug was in the bounding box merge logic which overwrote integer
+    indices instead of accumulating them into a slice range.
+    """
+    data = np.zeros((10, 20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    layer.brush_size = 8
+    layer.mode = 'paint'
+
+    layer.paint((2, 10, 10), 1, refresh=False)
+    layer.paint((5, 10, 10), 2, refresh=False)
+    layer.paint((7, 10, 10), 3, refresh=False)
+
+    assert layer.data[2, 10, 10] == 1
+    assert layer.data[5, 10, 10] == 2
+    assert layer.data[7, 10, 10] == 3
+
+    assert layer._updated_slice is not None
+    z_slice = layer._updated_slice[0]
+    assert isinstance(z_slice, slice)
+    assert z_slice.start == 2
+    assert z_slice.stop == 8
+
+    # Call refresh to ensure the fix works end-to-end
+    layer._partial_labels_refresh()
+
+    # Data should still be intact after refresh
+    assert layer.data[2, 10, 10] == 1
+    assert layer.data[5, 10, 10] == 2
+    assert layer.data[7, 10, 10] == 3
 
 
 def test_paint_polygon():
@@ -985,6 +1077,61 @@ def test_paint_polygon_2d_in_3d():
     assert np.array_equiv(data[[0, 2], :], 0)
 
 
+def test_paint_contour_local_updates():
+    data = np.array(
+        [
+            [1, 0, 1, 0, 0, 3, 3],
+            [0, 0, 2, 3, 1, 3, 1],
+            [0, 3, 3, 3, 3, 3, 1],
+            [0, 2, 0, 2, 3, 1, 1],
+            [1, 3, 1, 1, 2, 2, 1],
+            [1, 1, 1, 0, 1, 2, 0],
+            [1, 1, 0, 1, 0, 0, 1],
+        ],
+        dtype=np.int32,
+    )
+    layer = Labels(data)
+    layer.contour = 1
+    layer.brush_size = 1
+
+    layer.paint((5, 1), 2)
+
+    _assert_contour_view_matches_data(layer)
+
+
+def test_paint_contour_local_updates_thick():
+    data = np.zeros((40, 40), dtype=np.uint8)
+    data[10:30, 10:30] = 1
+    layer = Labels(data)
+    layer.contour = 5
+    layer.brush_size = 1
+
+    layer.paint((20, 30), 1)
+
+    _assert_contour_view_matches_data(layer)
+
+
+def test_paint_polygon_contour_local_updates():
+    data = np.array(
+        [
+            [0, 3, 0, 2, 2, 0, 1],
+            [0, 3, 2, 0, 3, 2, 0],
+            [1, 0, 2, 2, 0, 0, 1],
+            [0, 2, 3, 2, 3, 3, 1],
+            [1, 1, 0, 1, 2, 1, 3],
+            [2, 2, 2, 3, 1, 2, 2],
+            [3, 2, 2, 2, 0, 1, 1],
+        ],
+        dtype=np.int32,
+    )
+    layer = Labels(data)
+    layer.contour = 1
+
+    layer.paint_polygon([[4, 1], [4, 3], [1, 3], [1, 0]], 2)
+
+    _assert_contour_view_matches_data(layer)
+
+
 def test_fill():
     """Test filling labels with different brush sizes."""
     np.random.seed(0)
@@ -998,6 +1145,38 @@ def test_fill():
     layer.fill([0, 0], 3)
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[5:10, 5:10]) == 2
+
+
+def test_fill_contiguous_uses_face_connectivity():
+    data = np.array([[0, 1], [1, 0]], dtype=np.uint8)
+    layer = Labels(data)
+    layer.contiguous = True
+
+    layer.fill((0, 0), 2)
+
+    npt.assert_array_equal(layer.data, np.array([[2, 1], [1, 0]]))
+
+
+def test_fill_contour_local_updates():
+    data = np.array(
+        [
+            [3, 3, 3, 1, 2, 3, 2],
+            [3, 2, 2, 1, 3, 0, 2],
+            [2, 3, 2, 1, 1, 1, 1],
+            [2, 3, 0, 3, 2, 1, 2],
+            [2, 1, 1, 2, 2, 2, 1],
+            [3, 1, 1, 3, 1, 0, 2],
+            [2, 0, 0, 1, 3, 1, 3],
+        ],
+        dtype=np.int32,
+    )
+    layer = Labels(data)
+    layer.contour = 1
+    layer.contiguous = True
+
+    layer.fill((1, 1), 3)
+
+    _assert_contour_view_matches_data(layer)
 
 
 def test_fill_swap_with_preserve_labels():
@@ -1037,6 +1216,114 @@ def test_fill_swap_with_preserve_labels():
     assert np.unique(layer.data[0:3, 3:]) == 0
     # existing label should not be filled
     assert np.unique(layer.data[:3, :3]) == 1
+
+
+@pytest.mark.parametrize('tool', ['fill', 'paint', 'paint_polygon'])
+def test_preserve_labels_non_background_is_noop_after_swap(tool):
+    """All editing tools should share the same preserve_labels rule."""
+    data = np.zeros((8, 8), dtype=np.int32)
+    data[2:6, 2:6] = 2
+    layer = Labels(data.copy())
+    layer.preserve_labels = True
+    layer.selected_label = 2
+    layer.swap_selected_and_background_labels()
+
+    assert layer.selected_label == 0
+    assert layer._prev_selected_label == 2
+
+    if tool == 'fill':
+        layer.fill((3, 3), 3)
+    elif tool == 'paint':
+        layer.brush_size = 1
+        layer.paint((3, 3), 3)
+    else:
+        layer.paint_polygon([[2, 2], [2, 5], [5, 5], [5, 2]], 3)
+
+    npt.assert_array_equal(layer.data, data)
+
+
+def test_fill_3d_batch_refresh():
+    """Test batch fill operations with refresh=False on different slices.
+
+    Regression test ensuring the bounding box merge correctly handles
+    mixed int/slice dirty regions from bbox-based fill operations, and
+    that batch fill operations across different slices work correctly.
+    """
+    data = np.zeros((10, 20, 20), dtype=np.uint32)
+    # Create distinct regions on different Z slices
+    data[2, 5:10, 5:10] = 1
+    data[5, 5:10, 5:10] = 2
+    data[7, 5:10, 5:10] = 3
+
+    layer = Labels(data)
+    layer.contiguous = True  # Fill connected component only
+
+    layer.fill((2, 7, 7), 10, refresh=False)
+    layer.fill((5, 7, 7), 20, refresh=False)
+    layer.fill((7, 7, 7), 30, refresh=False)
+
+    assert np.all(data[2, 5:10, 5:10] == 10)
+    assert np.all(data[5, 5:10, 5:10] == 20)
+    assert np.all(data[7, 5:10, 5:10] == 30)
+
+    assert layer._updated_slice is not None
+    z_slice = layer._updated_slice[0]
+
+    # Should be a slice covering Z=2 through Z=7
+    assert isinstance(z_slice, slice)
+    assert z_slice.start == 2
+    assert z_slice.stop == 8
+
+    # Call refresh to ensure it works
+    layer._partial_labels_refresh()
+
+    # Data should still be intact
+    assert np.all(data[2, 5:10, 5:10] == 10)
+    assert np.all(data[5, 5:10, 5:10] == 20)
+    assert np.all(data[7, 5:10, 5:10] == 30)
+
+
+def test_data_setitem_after_paint_batch_refresh():
+    data = np.zeros((10, 20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    layer.brush_size = 5
+
+    layer.paint((5, 10, 10), 1, refresh=False)
+    layer.data_setitem(
+        (np.array([5]), np.array([10]), np.array([10])),
+        2,
+        refresh=False,
+    )
+
+    assert layer._updated_slice is not None
+    assert isinstance(layer._updated_slice[0], slice)
+
+    layer._partial_labels_refresh()
+    assert data[5, 10, 10] == 2
+
+
+def test_fill_entire_volume_with_more_edit_dims_than_displayed():
+    """Test full-volume fill with more edit dims than displayed.
+
+    Regression test for bug triggered when:
+    1. All pixels in the volume have the same label (creates entirely True mask)
+    2. contiguous=False (fill all pixels with that label, not just connected)
+    3. n_edit_dimensions > ndisplay (painting in more dims than displayed)
+    4. The painted region spans the full working volume
+    """
+    # Create 3D volume with ALL pixels set to same label
+    data = np.full((10, 10, 10), 1, dtype=np.uint32)
+    layer = Labels(data)
+    layer.contiguous = False
+
+    # Set up bug scenario:
+    # ndisplay=2 (viewing 2D slice) but n_edit_dimensions=3 (painting in 3D)
+    layer.n_edit_dimensions = 3
+    layer._slice_dims(Dims(ndim=3, ndisplay=2, point=(5, 0, 0)))
+
+    layer.fill((5, 5, 5), 2)
+
+    assert np.all(layer.data == 2)
 
 
 def test_value():
@@ -1082,11 +1369,24 @@ def test_message():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(30, 30))
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30, 30))
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+@pytest.mark.parametrize('ndim', [2, 3, 4])
+@pytest.mark.parametrize('ndisplay', [3])
+def test_thumbnail_non_visible(ndim, ndisplay):
+    """Test the image thumbnail is not updated when layer is not visible."""
+    dims = Dims(ndim=ndim, ndisplay=ndisplay)
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30,) * ndim)
+    layer = Labels(data, visible=False)
+    layer._slice_dims(dims, force=False)
+    layer._update_thumbnail()
+    npt.assert_array_equal(layer.thumbnail[..., :3], 0)
 
 
 @pytest.mark.parametrize('value', [1, 10, 50, -2, -10])
@@ -1223,14 +1523,22 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-if parse_version(version('zarr')) > parse_version('3.0.0a0'):
+try:
+    tensorstore_version = version('tensorstore')
+except PackageNotFoundError:
+    tensorstore_version = '0.0.0'
+
+
+if parse_version(tensorstore_version) > parse_version('0.1.42'):
     driver = [(2, 'zarr'), (3, 'zarr3')]
+    ZARR_V3 = True
 else:
     driver = [(2, 'zarr')]
+    ZARR_V3 = False
 
 
-@pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
-def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
+@pytest.mark.parametrize(('zarr_format', 'zarr_driver'), driver)
+def test_fill_tensorstore(tmp_path, zarr_format, zarr_driver):
     ts = pytest.importorskip('tensorstore')
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
@@ -1240,13 +1548,16 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
 
     file_path = str(tmp_path / 'labels.zarr')
 
+    kwargs = {} if ZARR_V3 else {'compressor': None}
+
     labels_temp = zarr.open(
         store=file_path,
         mode='w',
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
-        zarr_version=zarr_version,
+        zarr_format=zarr_format,
+        **kwargs,
     )
     labels_temp[:] = labels
     labels_ts_spec = {
@@ -1273,9 +1584,227 @@ def test_fill_with_xarray():
     np.testing.assert_array_equal(layer.data[1:, :, :], np.zeros((4, 4, 4)))
     # In the associated issue, using xarray.DataArray caused memory allocation
     # problems due to different read indexing rules, so check that the data
-    # saved for undo has the expected vectorized shape and values.
-    undo_data = layer._undo_history[0][0][1]
-    np.testing.assert_array_equal(undo_data, np.zeros((16,)))
+    # saved for undo has the expected shape and values (a snapshot of the
+    # filled bounding box: the whole (0, :, :) plane).
+    atom = layer._undo_history[0][0]
+    assert atom.mask is None
+    np.testing.assert_array_equal(atom.old_values, np.zeros((1, 4, 4)))
+
+
+def test_fill_scattered_history_stores_masked_atom():
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[(0, 0, 9, 9), (0, 9, 0, 9)] = 1
+    original = data.copy()
+    layer = Labels(data)
+    layer.contiguous = False
+
+    layer.fill((0, 0), 2)
+
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(0, 10), slice(0, 10))
+    assert atom.mask is not None
+    assert np.count_nonzero(atom.mask) == 4
+    npt.assert_array_equal(atom.old_values, np.ones((4,), dtype=np.uint8))
+    assert atom.new_value == 2
+
+    layer.undo()
+    npt.assert_array_equal(layer.data, original)
+    layer.redo()
+    assert np.count_nonzero(layer.data == 2) == 4
+
+
+def test_fill_full_bbox_history_drops_mask():
+    """When every pixel in the bbox changed, history stores a single bbox
+    snapshot (mask is None) and the scalar redo label."""
+    data = np.zeros((8, 8), dtype=np.uint32)
+    layer = Labels(data.copy())
+
+    layer.fill((0, 0), 7)
+
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(0, 8), slice(0, 8))
+    assert atom.mask is None
+    npt.assert_array_equal(atom.old_values, data)
+    assert atom.new_value == 7
+
+    layer.undo()
+    npt.assert_array_equal(layer.data, data)
+    layer.redo()
+    npt.assert_array_equal(
+        layer.data, np.full(data.shape, 7, dtype=data.dtype)
+    )
+
+
+def test_paint_partial_bbox_history_stores_masked_atom():
+    data = np.zeros((21, 21), dtype=np.uint8)
+    layer = Labels(data.copy())
+    layer.brush_size = 9
+
+    layer.paint((10, 10), 3)
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is not None
+    assert atom.mask.dtype == bool
+    assert atom.old_values.shape == (np.count_nonzero(atom.mask),)
+
+    layer.undo()
+    npt.assert_array_equal(layer.data, data)
+    layer.redo()
+    assert np.count_nonzero(layer.data == 3) > 0
+
+
+def test_paint_history_undo_redo_with_dask():
+    """Masked-atom replay only uses basic slicing on the backend, so
+    undo/redo must work on dask, which cannot replay multi-axis
+    advanced-index assignments."""
+    data = np.zeros((2, 21, 21), dtype=np.uint32)
+    data[1, 6:15, 6:15] = 3
+    data[1, 8, 10] = 0
+    data[1, 10, 8] = 0
+    data[1, 10, 12] = 0
+    data[1, 12, 10] = 0
+    original = data.copy()
+
+    layer = Labels(da.from_array(data, chunks=(1, 21, 21)))
+    layer.n_edit_dimensions = 2
+    layer.brush_size = 9
+
+    layer.paint((1, 10, 10), 3)
+    painted = np.asarray(layer.data).copy()
+
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(1, 2), slice(6, 15), slice(6, 15))
+    assert atom.mask is not None
+    assert atom.mask.shape == (1, 9, 9)
+    # only the four holes actually change value
+    npt.assert_array_equal(atom.old_values, np.zeros((4,), dtype=np.uint32))
+    assert atom.new_value == 3
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_fill_scattered_undo_redo_with_xarray():
+    """xarray applies outer (orthogonal) indexing to plain integer arrays,
+    so history replay must only use basic slicing on the backend (the
+    masked update is applied locally). Diagonal pixels are used because
+    their outer product covers 9 points, not 3, so an advanced-indexing
+    replay bug corrupts the data instead of passing.
+    """
+    data = np.zeros((100, 100), dtype=np.uint32)
+    data[(0, 50, 99), (0, 50, 99)] = 1
+    original = data.copy()
+
+    layer = Labels(xr.DataArray(data.copy()))
+    layer.contiguous = False
+
+    layer.fill((0, 0), 2)
+    painted = np.asarray(layer.data).copy()
+
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(0, 100), slice(0, 100))
+    assert atom.mask is not None
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_fill_full_bbox_undo_redo_with_dask():
+    """Round-trip the mask=None (whole-bbox) replay branch with dask."""
+    data = np.zeros((8, 8), dtype=np.uint32)
+    original = data.copy()
+    layer = Labels(da.from_array(data, chunks=(8, 8)))
+
+    layer.fill((0, 0), 7)
+    painted = np.asarray(layer.data).copy()
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is None
+    assert atom.slice_key == (slice(0, 8), slice(0, 8))
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_paint_undo_redo_with_zarr():
+    """End-to-end undo/redo on a zarr backend."""
+    z = zarr.zeros((20, 20), chunks=(10, 10), dtype=np.uint8)
+    original = np.asarray(z).copy()
+
+    layer = Labels(z)
+    layer.refresh()
+    layer.brush_size = 5
+
+    layer.paint((10, 10), 4)
+    painted = np.asarray(layer.data).copy()
+    assert np.count_nonzero(painted == 4) > 0
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is not None
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_paint_undo_redo_with_tensorstore(tmp_path):
+    """End-to-end undo/redo on a TensorStore backend."""
+    ts = pytest.importorskip('tensorstore')
+
+    data = np.zeros((20, 20), dtype=np.uint32)
+    file_path = str(tmp_path / 'labels.zarr')
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'metadata': {'shape': [20, 20], 'dtype': '<u4', 'chunks': [10, 10]},
+        'create': True,
+        'delete_existing': True,
+    }
+    ts_array = ts.open(spec).result()
+    ts_array[:, :] = data
+
+    layer = Labels(ts_array)
+    layer.refresh()
+    layer.brush_size = 5
+
+    layer.paint((10, 10), 4)
+    painted = ts_array.read().result().copy()
+    assert np.count_nonzero(painted == 4) > 0
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is not None
+
+    layer.undo()
+    npt.assert_array_equal(ts_array.read().result(), data)
+    layer.redo()
+    npt.assert_array_equal(ts_array.read().result(), painted)
+
+
+def test_paint_preserve_labels_undo_with_xarray():
+    """Touch-up painting with preserve_labels changes only a sparse set of
+    background pixels; undo must restore exactly those pixels on xarray data.
+    """
+    data = np.ones((50, 50), dtype=np.uint32)
+    holes = ((20, 20, 35), (20, 35, 25))
+    data[holes] = 0
+    original = data.copy()
+
+    layer = Labels(xr.DataArray(data.copy()))
+    layer.preserve_labels = True
+    layer.brush_size = 30
+
+    layer.paint((25, 25), 2)
+    assert np.all(np.asarray(layer.data)[holes] == 2)
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
 
 
 @pytest.mark.parametrize(
@@ -1704,6 +2233,49 @@ def test_color_mapping_with_show_selected_label():
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
 
 
+def test_show_selected_label_preserved_after_shuffle():
+    """Shuffling colors must not silently disable show_selected_label."""
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    seen = {}
+    layer.events.colormap.connect(
+        lambda e: seen.update(use_selection=layer.colormap.use_selection)
+    )
+    layer.new_colormap(seed=0)
+
+    # Selection state must be set before `events.colormap` fires, so the
+    # vispy shader is rebuilt with the right `use_selection`.
+    assert seen['use_selection'] is True
+    # And it must stick on the final colormap.
+    assert layer.colormap.use_selection is True
+    assert layer.colormap.selection == 2
+    label_mask = data == 2
+    npt.assert_allclose(layer.colormap.map(data)[~label_mask], 0)
+
+
+def test_shuffle_does_not_revive_stale_show_selected():
+    """Shuffling must reflect the layer's current show_selected_label state."""
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+
+    # Enable, shuffle (detaches `_original_random_colormap` from the layer's
+    # mutations), then disable. Without the fix, the next shuffle would seed
+    # from the now-stale original and revive `use_selection=True`.
+    layer.show_selected_label = True
+    layer.new_colormap(seed=0)
+    layer.show_selected_label = False
+    layer.new_colormap(seed=1)
+
+    assert layer.colormap.use_selection is False
+    mapped = layer.colormap.map(data)
+    for value in range(1, 5):
+        assert np.any(mapped[data == value] != 0)
+
+
 def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
@@ -1775,7 +2347,7 @@ def test_negative_label_doesnt_flicker():
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))
     layer.dims_point = (2, 0, 0)
-    layer._set_view_slice()
+    layer._slicing_state._set_view_slice()
 
     assert tuple(layer.get_color(-1)) == minus_one_color_original
 
@@ -1791,16 +2363,45 @@ def test_get_status_with_custom_index():
     )
     layer.properties = df
     assert (
-        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+        layer.get_status((0, 0))['coordinates'] == '[0, 0]: 0; [No Properties]'
     )
     assert (
         layer.get_status((3, 3))['coordinates']
-        == ' [3 3]: 1; text1: 1, text2: 7'
+        == '[3, 3]: 1; text1: 1, text2: 7'
     )
     assert (
         layer.get_status((6, 6))['coordinates']
-        == ' [6 6]: 2; text1: 3, text2: -2'
+        == '[6, 6]: 2; text1: 3, text2: -2'
     )
+
+
+def test_get_tooltip_text_with_same_features():
+    """
+    Test that tooltip text for different labels is different, even with
+    identical features.
+    """
+    data = np.array([[0, 1], [2, 0]])
+    features = {
+        'class': ['none', 'A', 'A'],
+        'value': ['none', 100, 100],
+    }
+    layer = Labels(data, features=features)
+
+    value1 = layer.get_value(position=(0, 1))
+    assert value1 == 1
+    tooltip1 = layer._get_tooltip_text(position=(0, 1))
+    features1 = layer._get_properties(position=(0, 1))
+
+    value2 = layer.get_value(position=(1, 0))
+    assert value2 == 2
+    tooltip2 = layer._get_tooltip_text(position=(1, 0))
+    features2 = layer._get_properties(position=(1, 0))
+
+    assert features1 == features2
+    assert tooltip1 != tooltip2
+
+    assert tooltip1 == f'{value1}\n' + '\n'.join(features1)
+    assert tooltip2 == f'{value2}\n' + '\n'.join(features2)
 
 
 def test_labels_features_event():
@@ -1855,6 +2456,202 @@ def test_draw(colormap, expected):
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
 
 
+def _make_labels_array(array_type, base):
+    """Return a copy of ``base`` backed by the requested array type."""
+    if array_type == 'numpy':
+        return base.copy()
+    if array_type == 'dask':
+        return da.from_array(base.copy(), chunks=(32, 32))
+    if array_type == 'zarr':
+        return zarr.array(base, chunks=(32, 32))
+    ts = pytest.importorskip('tensorstore')
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'memory'},
+        'metadata': {
+            'shape': base.shape,
+            'chunks': [32, 32],
+            'dtype': base.dtype.str,
+        },
+    }
+    array = ts.open(spec, create=True).result()
+    array[...] = base
+    return array
+
+
+@pytest.mark.parametrize(
+    'array_type', ['numpy', 'dask', 'zarr', 'tensorstore']
+)
+def test_draw_batches_stamps_across_backends(array_type):
+    """A drag matches per-stamp paint, with one undo atom per event."""
+    base = np.zeros((64, 64), dtype=np.uint32)
+    segments = [(10, 12), (52, 24), (28, 55)]
+    brush, label = 5, 3
+
+    # reference: paint every interpolated coordinate individually (numpy)
+    ref = Labels(base.copy())
+    ref.brush_size, ref.selected_label, ref.mode = brush, label, 'paint'
+    last = segments[0]
+    for point in segments:
+        for coord in interpolate_coordinates(
+            np.array(last, float), np.array(point, float), brush
+        ):
+            ref.paint(coord, label, refresh=False)
+        last = point
+    expected = np.asarray(ref.data)
+    assert (expected == label).any()  # the stroke painted something
+
+    # drag on the backend under test, as one undo item like a mouse drag
+    layer = Labels(_make_labels_array(array_type, base))
+    layer.brush_size, layer.selected_label, layer.mode = brush, label, 'paint'
+    last = segments[0]
+    with layer.block_history():
+        layer._draw(label, last, last)
+        for point in segments[1:]:
+            layer._draw(label, last, point)
+            last = point
+
+    npt.assert_array_equal(np.asarray(layer.data), expected)
+    npt.assert_array_equal(np.asarray(layer._slice.image.raw), expected)
+    assert len(layer._undo_history[-1]) == 3  # one history atom per _draw
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), base)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), expected)
+
+
+@pytest.mark.parametrize(
+    ('ndisplay', 'start', 'end'),
+    [
+        (2, (4, 5, 5), (4, 30, 35)),
+        (2, (3, 5, 5), (6, 30, 35)),
+        (3, (5, 15, 15), (25, 15, 15)),
+    ],
+    ids=['one-plane', 'slice-change', '3d-view-depth'],
+)
+def test_draw_matches_per_stamp_paint(ndisplay, start, end):
+    """A 2D brush drag on 3D data matches painting each stamp alone."""
+
+    def make():
+        # all foreground, so the 3D view's background check keeps every stamp
+        layer = Labels(np.ones((30, 40, 40), dtype=np.uint8))
+        layer._slice_dims(Dims(ndim=3, ndisplay=ndisplay))
+        layer.brush_size, layer.mode = 7, 'paint'
+        return layer
+
+    start, end = np.array(start, float), np.array(end, float)
+    ref = make()
+    for coord in interpolate_coordinates(start, end, 7):
+        ref.paint(coord, 2, refresh=False)
+
+    layer = make()
+    layer._draw(2, start, end)
+
+    npt.assert_array_equal(layer.data, ref.data)
+
+
+@pytest.mark.parametrize('label', [0, 2], ids=['erase', 'paint'])
+@pytest.mark.parametrize(
+    ('shape', 'scale', 'points'),
+    [
+        ((40, 40), (1, 1), [(-4, 5), (-4, 35)]),
+        ((40, 40), (1, 1), [(-30, -30), (20, 20)]),
+        ((40, 40), (1, 1), [(20, 20), (20, 70), (44, 70), (44, -5)]),
+        ((40, 40), (1, 3), [(5, -1), (35, -1)]),
+        ((6, 40, 40), (1, 1, 1), [(1, -3, 5), (1, -3, 35)]),
+    ],
+    ids=[
+        'center-outside',
+        'drag-in',
+        'drag-around-outside',
+        'anisotropic',
+        '3d-brush',
+    ],
+)
+def test_draw_outside_layer_paints_only_overlap(shape, scale, points, label):
+    """A brush centered outside the layer paints just its overlap, no wrap."""
+    pad, brush = 40, 10
+    base = np.random.default_rng(0).integers(1, 4, shape, dtype=np.uint8)
+
+    def make(data):
+        layer = Labels(data, scale=scale)
+        layer.n_edit_dimensions = len(shape)
+        layer.brush_size = brush
+        layer.mode = 'erase' if label == 0 else 'paint'
+        return layer
+
+    pts = [np.array(p, float) for p in points]
+    segments = [(pts[0], pts[0]), *itertools.pairwise(pts)]
+    layer = make(base.copy())
+    for start, end in segments:
+        layer._draw(label, start, end)
+
+    # reference: each stamp shifted onto a padded copy, where none is clipped
+    ref = make(np.pad(base, pad))
+    for start, end in segments:
+        for coord in np.round(interpolate_coordinates(start, end, brush)):
+            ref.paint(coord + pad, label, refresh=False)
+    inner = tuple(slice(pad, pad + s) for s in shape)
+
+    npt.assert_array_equal(layer.data, ref.data[inner])
+    assert (layer.data != base).any()
+
+
+def test_draw_just_outside_layer_does_not_wrap():
+    """A brush just past the left edge doesn't wrap to the right edge."""
+    layer = Labels(np.zeros((40, 40), dtype=np.uint8))
+    layer.brush_size, layer.mode = 10, 'paint'
+    start, end = np.array([10.0, -8.0]), np.array([30.0, -8.0])
+    layer._draw(1, start, start)
+    layer._draw(1, start, end)
+
+    assert not layer.data.any()
+
+
+@pytest.mark.parametrize('bad', [np.nan, np.inf])
+def test_paint_non_finite_coord_raises(bad):
+    layer = Labels(np.zeros((20, 20), dtype=np.uint8))
+    with pytest.raises(ValueError, match='finite'):
+        layer.paint((bad, 5), 1)
+    assert not layer.data.any()
+
+
+def _draw_3d_view(data, label, start, end):
+    """Drag a 3D brush from start to end in one event, in a 3D view."""
+    layer = Labels(data.copy())
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    layer.n_edit_dimensions = 3
+    layer.brush_size = 6
+    layer.mode = 'erase' if label == 0 else 'paint'
+    layer._draw(label, np.array(start, float), np.array(end, float))
+    return np.asarray(layer.data)
+
+
+def test_draw_3d_view_paint_does_not_bridge_gaps():
+    """In a 3D view, a stroke between two objects doesn't paint the gap."""
+    data = np.zeros((30, 30, 70), dtype=np.uint32)
+    data[5:25, 5:25, 5:25] = 1
+    data[5:25, 5:25, 45:65] = 3
+
+    painted = _draw_3d_view(data, 2, (15, 15, 20), (15, 15, 50)) == 2
+
+    assert painted[..., :25].any()
+    assert painted[..., 45:].any()
+    # only the brush overhanging each object reaches into the gap
+    assert not painted[..., 28:42].any()
+
+
+def test_draw_3d_view_erase_clears_full_swath():
+    """In a 3D view, an erase stroke clears every voxel its brush covers."""
+    data = np.ones((30, 30, 70), dtype=np.uint32)
+    start, end = (15, 15, 10), (15, 15, 60)
+
+    erased = _draw_3d_view(data, 0, start, end) == 0
+    swath = _draw_3d_view(data, 2, start, end) == 2
+
+    npt.assert_array_equal(erased, swath)
+
+
 class TestLabels:
     @staticmethod
     def get_objects():
@@ -1894,3 +2691,343 @@ def test_view_dtype(visible, dtype):
 def test_view_dtype_int16(visible, dtype):
     layer = Labels(np.arange(25, dtype=dtype).reshape(5, 5), visible=visible)
     assert layer._slice.image.view.dtype == np.uint16
+
+
+@pytest.mark.parametrize('preserve_labels', [False, True])
+def test_paint_polygon_undo_redo(preserve_labels):
+    """Test undo/redo with preserve_labels."""
+    data = np.zeros((20, 20), dtype=int)
+    data[5:15, 5:15] = 1
+    layer = Labels(data.copy())
+    layer.preserve_labels = preserve_labels
+    layer.selected_label = 2
+
+    points = [[10, 10], [10, 18], [18, 18], [18, 10]]
+    layer.paint_polygon(points, 2)
+
+    if preserve_labels:
+        assert layer.data[12, 12] == 1
+        assert layer.data[12, 17] == 2
+    else:
+        assert layer.data[12, 12] == 2
+
+    painted = layer.data.copy()
+    layer.undo()
+    np.testing.assert_array_equal(layer.data, data)
+    layer.redo()
+    np.testing.assert_array_equal(layer.data, painted)
+
+
+def test_paint_polygon_erase_with_preserve():
+    """Test erasing with preserve_labels only erases the previous label."""
+    data = np.zeros((20, 20), dtype=int)
+    data[5:10, 5:10] = 1
+    data[10:15, 10:15] = 2
+    layer = Labels(data)
+    layer.preserve_labels = True
+    layer.selected_label = 1
+    layer.swap_selected_and_background_labels()
+
+    points = [[2, 2], [2, 18], [18, 18], [18, 2]]
+    layer.paint_polygon(points, 0)
+
+    assert np.all(layer.data[5:10, 5:10] == 0)
+    assert np.all(layer.data[10:15, 10:15] == 2)
+
+
+def test_paint_polygon_non_contiguous():
+    """Test painting on non-contiguous dimensions."""
+    data = np.zeros((3, 10, 10), dtype=int)
+    layer = Labels(data)
+
+    layer._slice_dims(
+        Dims(ndim=3, ndisplay=2, order=(1, 0, 2), point=(0, 0, 0))
+    )
+
+    points = [[0, 0, 0], [0, 0, 3], [3, 0, 3], [3, 0, 0]]
+    layer.paint_polygon(points, 1)
+
+    assert np.all(layer.data[0:3, 0, 0:3] == 1)
+    assert np.all(layer.data[:, 1:, :] == 0)
+
+
+def test_paint_polygon_uint32_view_update():
+    """Test view cache is updated for uint32 arrays."""
+    data = np.zeros((20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    layer.refresh()
+    assert not np.shares_memory(layer.data, layer._slice.image.view)
+
+    points = [[5, 5], [5, 15], [15, 15], [15, 5]]
+    layer.paint_polygon(points, 1)
+
+    assert layer.data[10, 10] == 1
+    assert layer._slice.image.view[10, 10] == 1
+
+
+def test_paint_polygon_out_of_bounds():
+    """Test bounds clipping and event emission."""
+    data = np.zeros((20, 20), dtype=int)
+    layer = Labels(data)
+    layer.refresh()
+
+    updates = []
+    layer.events.labels_update.connect(lambda e: updates.append(e))
+
+    # fully outside
+    points = [[-10, -10], [-10, -5], [-5, -5], [-5, -10]]
+    layer.paint_polygon(points, 1)
+    assert np.all(layer.data == 0)
+    assert len(updates) == 0
+
+    # partially outside
+    points2 = [[-5, -5], [-5, 10], [10, 10], [10, -5]]
+    layer.paint_polygon(points2, 2)
+    assert layer.data[5, 5] == 2
+    assert layer.data[0, 0] == 2
+    assert len(updates) == 1
+
+
+def test_paint_polygon_tensorstore(tmp_path):
+    """Test paint_polygon works with TensorStore backend."""
+    ts = pytest.importorskip('tensorstore')
+
+    data = np.zeros((20, 20), dtype=np.uint32)
+    data[5:15, 5:15] = 1
+    file_path = str(tmp_path / 'labels.zarr')
+
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'metadata': {'shape': [20, 20], 'dtype': '<u4', 'chunks': [10, 10]},
+        'create': True,
+        'delete_existing': True,
+    }
+    ts_array = ts.open(spec).result()
+    ts_array[:, :] = data
+
+    layer = Labels(ts_array)
+    layer.refresh()
+    layer.preserve_labels = True
+    layer.selected_label = 2
+
+    # Paint a polygon that overlaps with existing label 1
+    points = [[10, 10], [10, 18], [18, 18], [18, 10]]
+    layer.paint_polygon(points, 2)
+
+    updated_data = ts_array.read().result()
+    assert np.all(updated_data[10:15, 10:15] == 1)
+    assert np.all(updated_data[15:18, 10:15] == 2)
+    assert np.all(updated_data[10:18, 15:18] == 2)
+
+
+def test_paint_polygon_zarr(tmp_path):
+    """Test paint_polygon across zarr chunks and cache updates."""
+    z = zarr.zeros((100, 100), chunks=(50, 50), dtype=np.uint8)
+
+    layer = Labels(z)
+    layer.refresh()
+
+    points = [[25, 25], [25, 75], [75, 75], [75, 25]]
+    layer.paint_polygon(points, 1)
+
+    assert z[30, 30] == 1
+    assert z[30, 60] == 1
+    assert z[60, 30] == 1
+    assert z[60, 60] == 1
+    assert z[10, 10] == 0
+    assert z[90, 90] == 0
+    assert layer._slice.image.raw[30, 30] == 1
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+@pytest.mark.parametrize('n_edit_dimensions', [2, 3])
+def test_paint_int64_view_update_3d_display(ndisplay, n_edit_dimensions):
+    """Test view cache is updated for int64 arrays in all display modes.
+
+    Regression test for bug where int64 arrays didn't update visuals when
+    painting with n_edit_dimension not matching display mode
+    e.g. ndisplay=2 with n_edit_dimensions=3
+    """
+    data = np.zeros((50, 50, 50), dtype=np.int64)
+    layer = Labels(data)
+    layer.brush_size = 5
+    layer.n_edit_dimensions = n_edit_dimensions
+
+    dims = Dims(ndim=3, ndisplay=ndisplay)
+    for i in range(3):
+        dims.set_range(i, (0, 49, 1))
+    if ndisplay == 2:
+        dims.set_current_step(0, 25)
+    layer._slice_dims(dims)
+    layer.refresh()
+
+    assert not np.shares_memory(layer.data, layer._slice.image.view)
+
+    view_before = layer._slice.image.view.copy()
+
+    layer.paint([25, 25, 25], 1)
+
+    # Verify data was painted
+    if n_edit_dimensions == 2:
+        painted_data = data[25, 20:30, 20:30]
+    else:
+        painted_data = data[20:30, 20:30, 20:30]
+
+    assert np.any(painted_data == 1)
+
+    if ndisplay == 2:
+        view_painted = layer._slice.image.view[23:28, 23:28]
+    else:
+        if n_edit_dimensions == 2:
+            view_painted = layer._slice.image.view[25, 23:28, 23:28]
+        else:
+            view_painted = layer._slice.image.view[23:28, 23:28, 23:28]
+
+    assert np.any(view_painted != 0)
+    assert not np.array_equal(view_before, layer._slice.image.view)
+
+
+def test_block_history_with_mask_painting():
+    """Test that block_history groups mask-based paint operations."""
+    data = np.zeros((20, 20), dtype=int)
+    layer = Labels(data)
+    layer.brush_size = 3
+
+    with layer.block_history():
+        layer.paint([5, 5], 1, refresh=False)
+        layer.paint([10, 10], 2, refresh=False)
+
+    assert len(layer._undo_history) == 1  # Should be single grouped item
+    layer.undo()
+    assert layer.data[5, 5] == 0
+    assert layer.data[10, 10] == 0
+
+
+def test_paint_brush_fully_outside_returns_early():
+    """Painting fully outside data bounds should not modify history."""
+    data = np.zeros((10, 10), dtype=int)
+    layer = Labels(data)
+    layer.brush_size = 1
+    initial_history_len = len(layer._undo_history)
+
+    layer.paint([-100, -100], 1)
+
+    assert len(layer._undo_history) == initial_history_len
+
+
+@pytest.mark.parametrize(
+    ('method', 'oob_args'),
+    [
+        ('paint', (3, 5, 5)),
+        ('fill', (3, 5, 5)),
+        ('paint_polygon', [[3, 1, 1], [3, 1, 8], [3, 8, 8]]),
+    ],
+)
+def test_fixed_axis_out_of_bounds_raises(method, oob_args):
+    """Out-of-bounds non-painted axis should raise, not crash.
+
+    Regression test: _build_slice_key created slice(coord, coord+1) for
+    non-painted dims without bounds checking, producing an empty slice
+    that caused a ValueError during mask/data broadcast.
+    """
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+
+    with pytest.raises(IndexError, match='out of bounds'):
+        getattr(layer, method)(oob_args, 1)
+
+
+@pytest.mark.parametrize(
+    ('method', 'good_args'),
+    [
+        ('paint', (1, 5, 5)),
+        ('fill', (1, 5, 5)),
+        ('paint_polygon', [[1, 1, 1], [1, 1, 8], [1, 8, 8]]),
+    ],
+)
+def test_fixed_axis_in_bounds_succeeds(method, good_args):
+    """In-bounds paint on non-painted axis should still work."""
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+    getattr(layer, method)(good_args, 1)
+    assert np.any(layer.data != 0)
+
+
+@pytest.mark.parametrize(
+    ('method', 'args'),
+    [
+        ('paint', (-1, 5, 5)),
+        ('fill', (-1, 5, 5)),
+        ('paint_polygon', [[-1, 1, 1], [-1, 1, 8], [-1, 8, 8]]),
+    ],
+)
+def test_fixed_axis_negative_one_means_last_slice(method, args):
+    """-1 on a non-painted axis should paint the last slice, not the first."""
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+    getattr(layer, method)(args, 1)
+    assert np.any(layer.data[-1])
+    assert not np.any(layer.data[0])
+
+
+@pytest.mark.parametrize(
+    ('method', 'args'),
+    [
+        ('paint', (-4, 5, 5)),
+        ('fill', (-4, 5, 5)),
+        ('paint_polygon', [[-4, 1, 1], [-4, 1, 8], [-4, 8, 8]]),
+    ],
+)
+def test_fixed_axis_negative_out_of_bounds_raises(method, args):
+    """A negative coord that resolves past the start raises, never wraps."""
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+    with pytest.raises(IndexError, match='out of bounds'):
+        getattr(layer, method)(args, 1)
+
+
+def test_paint_negative_painted_coord_clips_not_wraps():
+    """A brush off the negative edge clips to the near corner, never wraps.
+
+    Painted dims use a clipped bounding box, so a coordinate off the edge
+    (with a negative painted axis) should paint a partial brush rather than
+    warp Python-style to the opposite edge.
+    """
+    layer = Labels(np.zeros((10, 10), dtype=np.uint32))
+    layer.brush_size = 3
+    layer.paint((-1, -1), 1)
+    assert np.any(layer.data[:3, :3])
+    assert not np.any(layer.data[7:, 7:])
+
+
+def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
+    """The same -1 coordinate means different things per axis *role*.
+
+    ``n_edit_dimensions`` does not change the coordinate, it changes whether
+    axis 0 is the slice selector or part of the brush:
+
+    - n_edit=2: axis 0 is a non-painted slice selector, addressed like an
+      index, so -1 wraps Python-style to the last slice.
+    - n_edit=3: axis 0 joins the brush as a geometric center, so -1 sits one
+      pixel off the near edge and the bounding box clips to the first slices.
+
+    This asymmetry (index-style wrap vs. geometric clip) is intended; see
+    test_fixed_axis_negative_one_means_last_slice and
+    test_paint_negative_painted_coord_clips_not_wraps for each half.
+    """
+    coord = (-1, 10, 10)
+
+    selector = Labels(np.zeros((10, 20, 20), dtype=np.uint32))
+    selector.brush_size = 5
+    selector.n_edit_dimensions = 2
+    selector.paint(coord, 1)
+    assert np.any(selector.data[-1])  # -1 wrapped to the last slice
+    assert not np.any(selector.data[0])
+
+    brush = Labels(np.zeros((10, 20, 20), dtype=np.uint32))
+    brush.brush_size = 5
+    brush.n_edit_dimensions = 3
+    brush.paint(coord, 1)
+    assert np.any(brush.data[0])  # -1 clipped to the near edge
+    assert not np.any(brush.data[-1])

@@ -28,7 +28,7 @@ class LabelVisual(TextureMixin, ImageVisual):
 BaseLabel = create_visual_node(LabelVisual)
 
 
-class LabelNode(BaseLabel):  # type: ignore [valid-type,misc]
+class LabelNode(BaseLabel):
     def _compute_bounds(
         self, axis: int, view: 'VisualView'
     ) -> tuple[float, float] | None:

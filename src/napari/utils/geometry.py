@@ -1,9 +1,14 @@
+import warnings
+from typing import Literal, TypeAlias, overload
+
 import numpy as np
 import numpy.typing as npt
 
+FaceNormal: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.int_]]
+
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
-FACE_NORMALS = {
+FACE_NORMALS: dict[str, FaceNormal] = {
     'x_pos': np.array([0, 0, 1]),
     'x_neg': np.array([0, 0, -1]),
     'y_pos': np.array([0, 1, 0]),
@@ -70,6 +75,10 @@ def rotation_matrix_from_vectors_2d(
 ) -> np.ndarray:
     """Calculate the 2D rotation matrix to rotate vec_1 onto vec_2
 
+    .. deprecated:: 2026-Q4
+        This function may be removed as early as 2027-Q1.
+        There is no direct replacement in napari.
+
     Parameters
     ----------
     vec_1 : np.ndarray
@@ -82,13 +91,20 @@ def rotation_matrix_from_vectors_2d(
     rotation_matrix : np.ndarray
         The (2, 2) tranformation matrix that rotates vec_1 to vec_2.
     """
+    warnings.warn(
+        'napari.utils.geometry.rotation_matrix_from_vectors_2d is deprecated '
+        'and may be removed as early as 2027-Q1. '
+        'There is no direct replacement in napari.',
+        FutureWarning,
+        stacklevel=2,
+    )
     # ensure unit vectors
     vec_1 = vec_1 / np.linalg.norm(vec_1)
     vec_2 = vec_2 / np.linalg.norm(vec_2)
 
     # calculate the rotation matrix
     diagonal_1 = (vec_1[0] * vec_2[0]) + (vec_1[1] * vec_2[1])
-    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_2[0] * vec_1[0])
+    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_1[1] * vec_2[0])
     rotation_matrix = np.array(
         [[diagonal_1, -1 * diagonal_2], [diagonal_2, diagonal_1]]
     )
@@ -184,13 +200,35 @@ def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
     bounding_box : np.ndarray
         (2, n) array containing the min and max of the nD bounding box.
         As returned by `Layer._extent_data`.
+
+    Returns
+    -------
+    in_bounding_box : bool
+        True if the point is inside the bounding box.
     """
     return bool(
         np.all(point >= bounding_box[0]) and np.all(point <= bounding_box[1])
     )
 
 
-def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
+@overload
+def clamp_point_to_bounding_box(
+    point: np.ndarray[tuple[int], np.dtype[np.number]],
+    bounding_box: np.ndarray[tuple[int, int], np.dtype[np.number]],
+) -> np.ndarray[tuple[int], np.dtype[np.number]]: ...
+
+
+@overload
+def clamp_point_to_bounding_box(
+    point: np.ndarray[tuple[int, int], np.dtype[np.number]],
+    bounding_box: np.ndarray[tuple[int, int], np.dtype[np.number]],
+) -> np.ndarray[tuple[int, int], np.dtype[np.number]]: ...
+
+
+def clamp_point_to_bounding_box(
+    point: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.number]],
+    bounding_box: np.ndarray[tuple[int, int], np.dtype[np.number]],
+) -> np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.number]]:
     """Ensure that a point is inside of the bounding box. If the point has a
     coordinate outside of the bounding box, the value is clipped to the max
     extent of the bounding box.
@@ -235,7 +273,7 @@ def face_coordinate_from_bounding_box(
         The value where the bounding box face specified by face_normal intersects
         the axis its normal is aligned with.
     """
-    axis = np.argwhere(face_normal)
+    axis = np.argwhere(face_normal)[0, 0]
     if face_normal[axis] > 0:
         # face is pointing in the positive direction,
         # take the max extent
@@ -244,7 +282,7 @@ def face_coordinate_from_bounding_box(
         # face is pointing in the negative direction,
         # take the min extent
         face_coordinate = bounding_box[axis, 0]
-    return face_coordinate
+    return float(face_coordinate)
 
 
 def intersect_line_with_axis_aligned_plane(
@@ -360,7 +398,9 @@ def bounding_box_to_face_vertices(
     return face_coords
 
 
-def inside_triangles(triangles):
+def inside_triangles(
+    triangles: np.ndarray,
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Checks which triangles contain the origin
 
     Parameters
@@ -396,16 +436,18 @@ def intersect_line_with_plane_3d(
     The line is defined by a position and a direction vector.
     The plane is defined by a position and a normal vector.
     https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+
     Parameters
     ----------
-    line_position : np.ndarray
+    line_position : ArrayLike
         a position on a 3D line with shape (3,).
-    line_direction : np.ndarray
+    line_direction : ArrayLike
         direction of the 3D line with shape (3,).
-    plane_position : np.ndarray
+    plane_position : ArrayLike
         a position on a plane in 3D with shape (3,).
-    plane_normal : np.ndarray
+    plane_normal : ArrayLike
         a vector normal to the plane in 3D with shape (3,).
+
     Returns
     -------
     plane_intersection : np.ndarray
@@ -455,7 +497,8 @@ def intersect_line_with_multiple_planes_3d(
     Returns
     -------
     plane_intersection : np.ndarray
-        the intersection of the line with the plane, shape (3,)
+        the intersection of the line with each plane, shape (n, 3) for n
+        planes
     """
     # cast to arrays
     line_position = np.asarray(line_position, dtype=float)
@@ -550,13 +593,14 @@ def point_in_quadrilateral_2d(
 
     Returns
     -------
-
+    in_quadrilateral : bool
+        True if the point is inside the quadrilateral.
     """
     triangle_vertices = np.stack(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
     in_triangles = inside_triangles(triangle_vertices - point)
-    return in_triangles.sum() >= 1
+    return bool(in_triangles.any())
 
 
 def line_in_quadrilateral_3d(
@@ -612,7 +656,7 @@ def line_in_quadrilateral_3d(
 
 def line_in_triangles_3d(
     line_point: np.ndarray, line_direction: np.ndarray, triangles: np.ndarray
-):
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Determine if a line goes through any of a set of triangles.
 
     For example, this could be used to determine if a click was
@@ -657,7 +701,7 @@ def line_in_triangles_3d(
 
 def find_front_back_face(
     click_pos: np.ndarray, bounding_box: np.ndarray, view_dir: np.ndarray
-):
+) -> tuple[FaceNormal | None, FaceNormal | None]:
     """Find the faces of an axis aligned bounding box a
     click intersects with.
 
@@ -670,33 +714,30 @@ def find_front_back_face(
         the bounding box. The bounding box is take form the last
         three rows, which are assumed to be in order (z, y, x).
         This should be in the same coordinate system as click_pos.
-    view_dir
+    view_dir : np.ndarray
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as click_pos.
 
     Returns
     -------
-    front_face_normal : np.ndarray
+    front_face_normal : np.ndarray | None
         The (3,) normal vector of the face closest to the camera the click
-        intersects with.
-    back_face_normal : np.ndarray
+        intersects with. None if the click does not intersect a front face.
+    back_face_normal : np.ndarray | None
         The (3,) normal vector of the face farthest from the camera the click
-        intersects with.
+        intersects with. None if the click does not intersect a back face.
     """
     front_face_normal = None
     back_face_normal = None
 
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
-        if np.dot(view_dir, v) < -0.001:
-            if line_in_quadrilateral_3d(
-                click_pos, view_dir, bbox_face_coords[k]
-            ):
+        dot_prod = np.dot(view_dir, v)
+        if line_in_quadrilateral_3d(click_pos, view_dir, bbox_face_coords[k]):
+            if dot_prod < 0:
                 front_face_normal = v
-        elif line_in_quadrilateral_3d(
-            click_pos, view_dir, bbox_face_coords[k]
-        ):
-            back_face_normal = v
+            else:
+                back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
             break
@@ -709,7 +750,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
     line_direction: np.ndarray,
     bounding_box: np.ndarray,
     face_normal: np.ndarray,
-):
+) -> np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]:
     """Find the intersection of a ray with the specified face of an
     axis-aligned bounding box.
 
@@ -724,7 +765,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
         the bounding box. The bounding box is take form the last
         three rows, which are assumed to be in order (z, y, x).
         This should be in the same coordinate system as click_pos.
-    line_direction
+    line_direction : np.ndarray
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as click_pos.
 
@@ -737,13 +778,11 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
     front_face_coordinate = face_coordinate_from_bounding_box(
         bounding_box, face_normal
     )
-    intersection_point = np.squeeze(
-        intersect_line_with_axis_aligned_plane(
-            front_face_coordinate,
-            face_normal,
-            line_point,
-            -line_direction,
-        )
+    intersection_point = intersect_line_with_axis_aligned_plane(
+        front_face_coordinate,
+        face_normal,
+        line_point,
+        -line_direction,
     )
 
     return intersection_point
@@ -751,7 +790,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
 
 def distance_between_point_and_line_3d(
     point: np.ndarray, line_position: np.ndarray, line_direction: np.ndarray
-):
+) -> float:
     """Determine the minimum distance between a point and a line in 3D.
 
     Parameters
@@ -801,10 +840,12 @@ def find_nearest_triangle_intersection(
 
     Returns
     -------
-    closest_intersected_triangle_index : int
-        The index of the intersected triangle.
-    intersection : np.ndarray
-        The coordinate of where the ray intersects the triangle.
+    closest_intersected_triangle_index : int or None
+        The index of the intersected triangle. None if no triangle is
+        intersected.
+    intersection : np.ndarray or None
+        The coordinate of where the ray intersects the triangle. None if no
+        triangle is intersected.
     """
     inside = line_in_triangles_3d(
         line_point=ray_position,
@@ -829,15 +870,15 @@ def find_nearest_triangle_intersection(
     distances = np.linalg.norm(start_to_intersection, axis=1)
     closest_triangle_index = np.argmin(distances)
     intersected_triangle_indices = np.argwhere(inside)
-    closest_intersected_triangle_index = intersected_triangle_indices[
-        closest_triangle_index
-    ][0]
+    closest_intersected_triangle_index = int(
+        intersected_triangle_indices[closest_triangle_index][0]
+    )
     intersection = intersection_points[closest_triangle_index]
 
     return closest_intersected_triangle_index, intersection
 
 
-def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
+def get_center_bbox(roi: np.ndarray) -> tuple[list[float], float, float]:
     """Get the center coordinate, height, width of the roi.
 
     Parameters
@@ -849,9 +890,9 @@ def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
     -------
     center_coords: list[float, float]
         center y and x coordinates of the roi
-    height: int
+    height: float
         height of the roi in data pixels
-    width: int
+    width: float
         width of the roi in data pixels
 
     """
@@ -859,4 +900,4 @@ def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
     min_y, min_x = roi.min(axis=0)
     center_coords = [min_y + height / 2, min_x + width / 2]
 
-    return center_coords, height, width
+    return center_coords, float(height), float(width)

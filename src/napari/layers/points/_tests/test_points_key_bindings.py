@@ -4,7 +4,7 @@ from napari.layers.points import Points, _points_key_bindings as key_bindings
 
 
 @pytest.mark.key_bindings
-def test_modes(layer):
+def test_modes():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
 
@@ -17,7 +17,7 @@ def test_modes(layer):
 
 
 @pytest.mark.key_bindings
-def test_copy_paste(layer):
+def test_copy_paste():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
@@ -36,11 +36,11 @@ def test_copy_paste(layer):
 
 
 @pytest.mark.key_bindings
-def test_select_all_in_slice(layer):
+def test_select_all_in_slice():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -53,16 +53,21 @@ def test_select_all_in_slice(layer):
 
 
 @pytest.mark.key_bindings
-def test_select_all_in_slice_3d_data(layer):
+def test_select_all_in_slice_3d_data():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
 
+    # select a point on the other slice
+    layer.selected_data = {3}
+    assert len(layer.selected_data) == 1
+
     key_bindings.select_all_in_slice(layer)
+    # ensure only points on the current slice are selected
     assert len(layer.selected_data) == 3
 
     key_bindings.select_all_in_slice(layer)
@@ -70,11 +75,34 @@ def test_select_all_in_slice_3d_data(layer):
 
 
 @pytest.mark.key_bindings
-def test_select_all_data(layer):
+def test_select_append_all_in_slice_3d_data():
+    data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
+    layer = Points(data, size=1)
+    layer.mode = 'select'
+    layer._slicing_state._set_view_slice()
+
+    assert len(layer.data) == 4
+    assert len(layer.selected_data) == 0
+
+    # select a point on the other slice
+    layer.selected_data = {3}
+    assert len(layer.selected_data) == 1
+
+    key_bindings.select_append_all_in_slice(layer)
+    # ensure 3 points on the current slice are appended
+    assert len(layer.selected_data) == 4
+
+    key_bindings.select_append_all_in_slice(layer)
+    # ensure only points on the current slice are deselected
+    assert len(layer.selected_data) == 1
+
+
+@pytest.mark.key_bindings
+def test_select_all_data():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -87,11 +115,11 @@ def test_select_all_data(layer):
 
 
 @pytest.mark.key_bindings
-def test_select_all_data_3d_data(layer):
+def test_select_all_data_3d_data():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -103,11 +131,11 @@ def test_select_all_data_3d_data(layer):
     assert len(layer.selected_data) == 0
 
 
-def test_select_all_mixed(layer):
+def test_select_all_mixed():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -119,10 +147,11 @@ def test_select_all_mixed(layer):
     assert len(layer.selected_data) == 1
 
     key_bindings.select_all_in_slice(layer)
-    assert len(layer.selected_data) == 4
+    # only points in the current view slice
+    assert len(layer.selected_data) == 3
 
     key_bindings.select_all_in_slice(layer)
-    assert len(layer.selected_data) == 1
+    assert len(layer.selected_data) == 0
 
     key_bindings.select_all_data(layer)
     assert len(layer.selected_data) == 4
@@ -131,7 +160,7 @@ def test_select_all_mixed(layer):
     assert len(layer.selected_data) == 0
 
 
-def test_delete_selected_points(layer):
+def test_delete_selected_points():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
