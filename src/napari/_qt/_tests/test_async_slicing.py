@@ -343,6 +343,62 @@ def test_async_labels_edits_before_and_after_read(make_napari_viewer, qtbot):
     )
 
 
+
+@pytest.mark.parametrize('next_request', ['scroll', 'refresh'])
+@pytest.mark.usefixtures('_enable_async')
+def test_async_labels_stroke_on_plane_delivered_after_newer_request(
+    make_napari_viewer, qtbot, monkeypatch, next_request
+):
+    from napari.layers.labels._slice import _LabelsSliceRequest
+
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    data = zarr.zeros(shape=(5, 32, 32), chunks=(1, 32, 32), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = 3
+    qtbot.waitUntil(lambda: labels.loaded)
+
+    copied = threading.Event()
+    deliver = threading.Event()
+    read = _LabelsSliceRequest.__call__
+
+    def hold_first_response(request):
+        response = read(request)
+        if not copied.is_set():
+            copied.set()
+            deliver.wait(5)
+        return response
+
+    monkeypatch.setattr(_LabelsSliceRequest, '__call__', hold_first_response)
+    viewer.dims.set_current_step(0, 3)
+    assert copied.wait(5)
+    # Plane 3 was copied before this stroke, and a newer request follows
+    # before the copy is delivered.
+    labels.paint((3, 10, 10), 7)
+    if next_request == 'scroll':
+        viewer.dims.set_current_step(0, 4)
+    else:
+        labels.refresh()
+
+    shown = []
+    update = labels._slicing_state._update_slice_response
+
+    def record_plane_3(response):
+        update(response)
+        if response.slice_input.world_slice.point[0] == 3:
+            shown.append(int(labels._slice.image.raw[10, 10]))
+
+    monkeypatch.setattr(
+        labels._slicing_state, '_update_slice_response', record_plane_3
+    )
+    deliver.set()
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert data[3, 10, 10] == 7
+    # Without showing older reads, plane 3 is not delivered after scrolling.
+    assert shown or next_request == 'scroll'
+    assert all(value == 7 for value in shown)
+    assert not labels._slicing_state._pending_slices
+
 @pytest.mark.usefixtures('_enable_async')
 @pytest.mark.parametrize(('brush_size', 'strokes'), [(151, 1), (1, 33)])
 def test_async_labels_repair_limit(

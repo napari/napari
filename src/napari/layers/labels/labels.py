@@ -2431,7 +2431,14 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
     layer: Labels
     _slice_request_class = _LabelsSliceRequest
     _slice_id_before_edit: int | None = None
-    _pending_slice: _PendingLabelsSlice | None = None
+
+    def __init__(
+        self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
+    ) -> None:
+        # Outstanding requests by ID. A response can be shown even after a
+        # newer request, so each read keeps the edits made while it ran.
+        self._pending_slices: dict[int, _PendingLabelsSlice] = {}
+        super().__init__(layer, data, cache)
 
     def _make_slice_request(self, dims: Dims) -> _LabelsSliceRequest:
         request = super()._make_slice_request(dims)
@@ -2441,10 +2448,18 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
         try:
             source = weakref.ref(request.data)
         except TypeError:
-            self._pending_slice = None  # This backend requires a full reread.
+            pass  # This backend requires a full reread.
         else:
-            self._pending_slice = _PendingLabelsSlice(request, source)
+            self._pending_slices[request.id] = _PendingLabelsSlice(
+                request, source
+            )
         return request
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        super()._update_loaded_slice_id(slice_id)
+        # Older responses are delivered, discarded or can no longer be shown.
+        for request_id in [i for i in self._pending_slices if i <= slice_id]:
+            del self._pending_slices[request_id]
 
     def _defer_edit_refresh(
         self,
@@ -2454,36 +2469,44 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
         """Account for a completed write before updating any display caches."""
         if self.loaded:
             return False
-        pending = self._pending_slice
-        if (
-            pending is not None
-            and pending.request_id == self._last_slice_id
-            and pending.source() is self.layer.data
-        ):
-            if not pending.read_started.is_set():
-                return True  # The worker will read the updated data.
+        data = self.layer.data
+        for pending in self._pending_slices.values():
+            if (
+                not pending.read_started.is_set()
+                or pending.needs_reread
+                or pending.source() is not data
+            ):
+                continue  # A queued read will see the updated data.
+            pending.edited = True
             if not pending.record_region(key, region):
                 # A full reread now covers this edit and any earlier regions.
-                self._pending_slice = None
-        self._slice_id_before_edit = self._last_slice_id
+                pending.needs_reread = True
+        latest = self._pending_slices.get(self._last_slice_id)
+        if (
+            latest is None
+            or latest.source() is not data
+            or latest.read_started.is_set()
+        ):
+            self._slice_id_before_edit = self._last_slice_id
         return True
 
     def _update_slice_response(
         self, response: _ScalarFieldSliceResponse
     ) -> None:
-        pending = self._pending_slice
-        if pending is not None and pending.request_id == response.request_id:
-            # Edits from callbacks during conversion/delivery need a new read.
-            self._pending_slice = None
-            if (
-                response.request_id == self._slice_id_before_edit
-                and pending.source() is self.layer.data
-                and not response.empty
-                and response.image is response.thumbnail
-                and response.image.raw.flags.writeable
-            ):
-                for key, pixels in pending.regions:
-                    response.image.raw[key] = pixels
+        # Edits from callbacks during conversion/delivery need a new read.
+        pending = self._pending_slices.pop(response.request_id, None)
+        if (
+            pending is not None
+            and pending.edited
+            and not pending.needs_reread
+            and pending.source() is self.layer.data
+            and not response.empty
+            and response.image is response.thumbnail
+            and response.image.raw.flags.writeable
+        ):
+            for key, pixels in pending.regions:
+                response.image.raw[key] = pixels
+            if response.request_id == self._slice_id_before_edit:
                 self._slice_id_before_edit = None
         if (
             response.request_id == self._slice_id_before_edit

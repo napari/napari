@@ -50,6 +50,10 @@ class _PendingLabelsSlice:
         self._plane: int | None = None
         self.regions: list[tuple[tuple[slice, ...], np.ndarray]] = []
         self._nbytes = 0
+        # An edit landed after this read started, so its copy predates it.
+        self.edited = False
+        # The edits can't be applied in memory; only a new read shows them.
+        self.needs_reread = False
 
         # A single-scale ZYX Zarr slice is a private YX array. Use the
         # request's data coordinates, which already account for transforms.
