@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import types
 from abc import ABC, abstractmethod
-from contextlib import nullcontext
 from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 import numpy as np
@@ -32,7 +31,6 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
-from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
 from napari.utils._xarray_utils import _get_xr_metadata
 from napari.utils.events import Event
@@ -857,7 +855,9 @@ class ScalarFieldSlicingState(_LayerSlicingState):
     def _reset_thumbnail_plane_cache(self) -> None:
         """Drop the cached thumbnail plane. Call it when ``data`` changes."""
         self._thumbnail_plane_cache = _ThumbnailPlaneCache(
-            self.layer.data, self._slice_request_class._project_slice
+            self.layer.data,
+            self._slice_request_class._project_slice,
+            self._dask_cache,
         )
 
     def _set_view_slice(self) -> None:
@@ -878,7 +878,6 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
             data_slice=self.data_slice,
-            dask_indexer=nullcontext,
         )
         response = request()
         self._update_slice_response(response)
@@ -914,7 +913,6 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         return self._make_slice_request_internal(
             slice_input=slice_input,
             data_slice=data_slice,
-            dask_indexer=self.dask_optimized_slicing,
         )
 
     def _make_slice_request_internal(
@@ -922,7 +920,6 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         *,
         slice_input: _SliceInput,
         data_slice: _ThickNDSlice,
-        dask_indexer: DaskIndexer,
     ) -> _ScalarFieldSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
@@ -947,7 +944,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             data=data,
             thumbnail_plane_cache=self._thumbnail_plane_cache,
             dtype=self.layer.dtype,
-            dask_indexer=dask_indexer,
+            dask_cache=self._dask_cache,
             data_slice=data_slice,
             projection_mode=self.layer.projection_mode,
             multiscale=self.layer.multiscale,
@@ -970,8 +967,8 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # are outside the range of supported by vispy, then data view is
         # rescaled to fit within the range.
         self._slice_input = response.slice_input
-        # this is the temporary patch
-        self.layer._transforms[0] = response.tile_to_data
-        #
         self.transforms = response.tile_to_data
         self._slice = response
+        # Observers of this change can inspect the plane or deliver another
+        # response. Publish the transform after installing its matching data.
+        self.layer._transforms[0] = response.tile_to_data

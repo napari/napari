@@ -6,10 +6,15 @@ See the NAP for more details: https://napari.org/dev/naps/4-async-slicing.html
 from __future__ import annotations
 
 import logging
+import math
+import time
 import weakref
-from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
+from collections import deque
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from threading import RLock
+from dataclasses import dataclass, field
+from statistics import fmean, variance
+from threading import Condition
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,10 +24,11 @@ from typing import (
 
 from napari.layers import Layer
 from napari.settings import get_settings
+from napari.utils._dask_utils import _slice_pool_size
 from napari.utils.events.event import EmitterGroup, Event
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterable
+    from collections.abc import Callable, Generator, Iterable
 
     from napari.components import Dims
 
@@ -33,7 +39,7 @@ logger = logging.getLogger('napari.components._layer_slicer')
 # a slice request that can be called and will produce a slice
 # response. The request and response types are coupled but will
 # vary per layer type, which means that the values of the dictionary
-# result of ``_slice_layers`` cannot be fixed to a single type.
+# result of ``_slice_layer`` cannot be fixed to a single type.
 
 
 class _SliceRequest(Protocol):
@@ -77,6 +83,332 @@ class _AsyncSliceable(Protocol):
         """
 
 
+@dataclass
+class _SliceTask:
+    layer: weakref.ReferenceType[Layer]
+    request: _SliceRequest
+    future: Future[dict] = field(default_factory=Future)
+
+
+@dataclass
+class _Read:
+    """A read in flight, as the read limit saw it start."""
+
+    limit: int
+    started: float
+    turn: int
+    full: bool  # every slot was busy when the read started
+    layers: int  # layers reading from storage or waiting for a slot
+
+
+class _ReadLimit:
+    """Choose how many layers read at once, up to ``max_reads``.
+
+    Storage that serves one read at a time (a single file handle, a library
+    lock) gains nothing from parallel reads, and a read handed to a worker
+    before the storage is free reads an outdated plane. The limit moves to
+    where displayed slices stay freshest.
+
+    A displayed slice is about as old as its read took, plus half the time
+    until its layer's next read lands. With ``m`` layers taking turns and
+    ``n`` reads of mean duration ``d`` in flight, reads complete at ``n / d``
+    per second (Little's law), so that age is about ``d * (1 + m / (2 * n))``.
+    Parallel storage keeps ``d`` as ``n`` grows. Serial storage stretches it
+    in proportion, so an extra slot only adds waiting. Read durations show
+    that queueing even where the number of reads per second hardly changes.
+    Only reads from storage count: copies from memory come round more often
+    with more slots and would pull ``d`` down.
+
+    Starting from two reads, the limit is compared with double the number,
+    up to the layers that have work, and if that does not help, with half.
+    The larger of the two must predict an age shorter by ``MIN_GAIN``, since
+    every read in flight also costs the main thread. The two limits take
+    turns, so both see the same part of the workload, and only reads that
+    started with every slot busy and finished in their turn count.
+
+    When the smaller limit already keeps up, more reads only shorten the wait
+    within a step, by milliseconds nobody sees. Then the larger one must also
+    predict an age shorter by a frame. The smaller limit keeps up if the
+    reads in flight while the limit held, on average, fill its slots less
+    than ``KEEP``. That is measured outside comparisons, whose turns can
+    drain or fill the queue.
+
+    A round of comparisons that changed the limit, or the first one, is
+    followed by another after ``FIRST_PERIOD`` reads, so a choice made on
+    unrepresentative reads, such as the first ones from cold storage, is
+    soon revisited. Each round that keeps the limit doubles the wait, up to
+    ``PERIOD`` reads. Reads at the chosen limit that clearly slow down or
+    speed up start a round sooner.
+
+    .NET's thread pool chooses its number of threads similarly, by comparing
+    neighboring counts (PortableThreadPool.HillClimbing.cs in dotnet/runtime).
+
+    Callers hold the slicer's lock.
+    """
+
+    MIN_WINDOW = 12  # measured reads per limit before deciding
+    # Measured reads per limit at which the estimate decides even if the
+    # difference doesn't stand out from the spread of read durations.
+    MAX_WINDOW = 48
+    CONFIDENCE = 1.0  # standard errors between the estimate and the threshold
+    MIN_GAIN = 0.05  # relative age improvement more reads must bring
+    FRAME = 1 / 60  # least age improvement worth more reads if fewer keep up
+    KEEP = 0.75  # load per slot below which a limit keeps up with the reads
+    SHIFT = 1.5  # change in read duration at the chosen limit that re-compares
+    SHIFT_WINDOW = 32  # latest reads compared with all since the choice
+    FIRST_PERIOD = 48  # completed reads before a new choice is compared again
+    PERIOD = 384  # most completed reads at the chosen limit between rounds
+
+    def __init__(
+        self, max_reads: int, clock: Callable[[], float] = time.perf_counter
+    ) -> None:
+        self.max_reads = max_reads
+        self.limit = self._settled = min(2, max_reads)
+        self._clock = clock
+        self._candidate: int | None = None
+        self._active = 0
+        self._turn = 0
+        self._started = 0
+        self._reads = 0
+        # Durations of measured reads per limit, and the layers they saw.
+        self._durations: dict[int, list[float]] = {}
+        self._layers = 0
+        # Layers reading or waiting when the latest read started.
+        self._busy = max_reads
+        # Read durations at the chosen limit since it was chosen, and the
+        # latest of them.
+        self._total = 0.0
+        self._count = 0
+        self._recent: deque[float] = deque(maxlen=self.SHIFT_WINDOW)
+        self._period = self.FIRST_PERIOD
+        self._rounds_held = -1  # rounds that kept the limit, -1 before any
+        self._round_from = self._settled
+        # Reads in flight over time since the last decision, and their mean
+        # while the limit held before the current round.
+        self._in_flight = self._elapsed = 0.0
+        self._last = self._clock()
+        self._work: float | None = None
+        if max_reads > 1:
+            self._compare(1 if self._settled < max_reads else -1)
+
+    def start(self, layers: int) -> _Read:
+        """Record a read starting while ``layers`` layers read or wait."""
+        self._account()
+        self._active += 1
+        self._busy = layers
+        read = _Read(
+            self.limit,
+            self._clock(),
+            self._turn,
+            self._active == self.limit,
+            layers,
+        )
+        if self._candidate is not None:
+            self._started += 1
+            # A turn lasts long enough that most of its reads finish in it.
+            if self._started >= 3 * max(self._settled, self._candidate):
+                self.limit = (
+                    self._candidate
+                    if self.limit == self._settled
+                    else self._settled
+                )
+                self._turn += 1
+                self._started = 0
+        return read
+
+    def finish(self, read: _Read) -> None:
+        """Record a read finishing, and adjust the limit if it is time."""
+        self._account()
+        self._active -= 1
+        self._reads += 1
+        if self._candidate is None:
+            if self.max_reads == 1:
+                return
+            # Compare with more reads if more layers have work, else with
+            # fewer, if there are fewer.
+            down = -1 if self._settled > 1 else 0
+            up = 1 if self._settled < self._ceiling() else down
+            shift = self._shift(read)
+            if shift or self._reads >= self._period:
+                # Slower reads suggest the storage is busy: try fewer first.
+                step = down if shift > 0 and down else up
+                if step:
+                    self._round_from = self._settled
+                    self._compare(step)
+            return
+        if read.full and read.turn == self._turn:
+            self._durations.setdefault(read.limit, []).append(
+                self._clock() - read.started
+            )
+            self._layers += read.layers
+            wins = self._verdict()
+            if wins is not None:
+                self._decide(wins)
+        elif self._reads >= 4 * self.MAX_WINDOW:
+            # Too few reads with every slot busy: the slots outnumber the
+            # work, so there is nothing to learn about the storage.
+            self._decide(None)
+        if self._candidate is None:
+            self._end_round()
+
+    def _account(self) -> None:
+        """Add the reads in flight since the last start or finish."""
+        now = self._clock()
+        self._in_flight += self._active * (now - self._last)
+        self._elapsed += now - self._last
+        self._last = now
+
+    def _keeps_up(self, limit: int) -> bool:
+        """Whether ``limit`` slots serve the reads with time to spare."""
+        work = self._work
+        if work is None and self._elapsed > 0:
+            work = self._in_flight / self._elapsed
+        return work is not None and work < self.KEEP * limit
+
+    def _shift(self, read: _Read) -> int:
+        """1 or -1 if reads at the chosen limit got clearly slower or faster.
+
+        The latest reads are compared with all reads since the limit was
+        chosen, so a change of storage or data is noticed before the next
+        periodic comparison. Netflix's Gradient2Limit compares short- and
+        long-term latency in the same way.
+        """
+        if not read.full or not self._count:
+            return 0
+        duration = self._clock() - read.started
+        self._recent.append(duration)
+        self._total += duration
+        self._count += 1
+        if len(self._recent) < self.SHIFT_WINDOW:
+            return 0
+        ratio = fmean(self._recent) * self._count / max(self._total, 1e-9)
+        return 1 if ratio > self.SHIFT else -1 if ratio < 1 / self.SHIFT else 0
+
+    def _verdict(self) -> bool | None:
+        """Whether the candidate wins, or None while the reads can't tell.
+
+        Read durations vary a lot from plane to plane. A comparison continues
+        until the difference stands out from that spread, or until it has so
+        many reads that the remaining doubt costs little either way.
+        """
+        n, c = self._settled, self._candidate
+        a = self._durations.get(n, ())
+        b = self._durations.get(c, ())
+        if min(len(a), len(b)) < self.MIN_WINDOW:
+            return None
+        mean_a, mean_b = max(fmean(a), 1e-9), max(fmean(b), 1e-9)
+        m = self._layers / (len(a) + len(b))
+        age_a = mean_a * (1 + m / (2 * n))
+        age_b = mean_b * (1 + m / (2 * c))
+        # Log of the smaller limit's display age over the larger one's, less
+        # the gain the larger one must bring.
+        smaller, larger = (age_a, age_b) if n < c else (age_b, age_a)
+        gain = 1 + self.MIN_GAIN
+        if self._keeps_up(min(n, c)):
+            gain = max(gain, (larger + self.FRAME) / larger)
+        margin = math.log(smaller / larger) - math.log(gain)
+        # Standard error of the gain, from the relative spread of durations.
+        spread = (
+            variance(a) / mean_a**2 * (len(a) - 1)
+            + variance(b) / mean_b**2 * (len(b) - 1)
+        ) / (len(a) + len(b) - 2)
+        noise = math.sqrt(spread * (1 / len(a) + 1 / len(b)))
+        if (
+            abs(margin) < self.CONFIDENCE * noise
+            and min(len(a), len(b)) < self.MAX_WINDOW
+        ):
+            return None
+        return (margin > 0) == (c > n)
+
+    def _ceiling(self) -> int:
+        """The most reads that can be busy, given the layers with work.
+
+        Slots beyond those layers stay idle, so a comparison with them never
+        sees every slot busy and learns nothing.
+        """
+        return max(1, min(self.max_reads, self._busy))
+
+    def _neighbor(self, limit: int, step: int) -> int:
+        """Double the limit, or halve it to a power of two.
+
+        Like the multiplicative steps of TCP congestion control, this
+        reaches large limits in a few comparisons, and neighbouring limits
+        differ enough to tell apart quickly.
+        """
+        if step > 0:
+            return min(2 * limit, self._ceiling())
+        return 1 << ((limit - 1).bit_length() - 1)
+
+    def _end_round(self) -> None:
+        """Set the reads until the next round of comparisons."""
+        if self._settled != self._round_from or self._rounds_held < 0:
+            self._rounds_held = 0
+        else:
+            self._rounds_held += 1
+        self._period = min(self.FIRST_PERIOD << self._rounds_held, self.PERIOD)
+
+    def _compare(self, step: int) -> None:
+        if self._elapsed > 0:
+            self._work = self._in_flight / self._elapsed
+        self._in_flight = self._elapsed = 0.0
+        self._candidate = self._neighbor(self._settled, step)
+        self.limit = self._settled
+        self._durations = {}
+        self._layers = self._reads = self._started = 0
+        self._turn += 1
+
+    def _decide(self, wins: bool | None) -> None:
+        n, c = self._settled, self._candidate
+        logger.debug('Read limit %s against %s: %s', n, c, wins)
+        self._candidate = None
+        self._reads = 0
+        self._turn += 1
+        self.limit = n
+        self._recent.clear()
+        self._in_flight = self._elapsed = 0.0
+        if wins is None or c is None:
+            return
+        durations = self._durations.get(c if wins else n, ())
+        self._total, self._count = sum(durations), len(durations)
+        if c > n:
+            if wins:
+                self._settled = self.limit = c
+                if c < self._ceiling():
+                    self._compare(1)
+            elif n > 1:
+                self._compare(-1)
+        elif wins:
+            self._settled = self.limit = c
+            if c > 1:
+                self._compare(-1)
+
+
+def _chunk_count(request: _SliceRequest) -> int:
+    """Dask chunks a request reads, 0 for other data, 1 if counting fails."""
+    count = getattr(request, 'chunk_count', None)
+    if count is None:
+        return 0
+    try:
+        return max(0, count())
+    except Exception:  # noqa: BLE001 - the read itself reports errors
+        return 1
+
+
+def _reads_storage(request: _SliceRequest) -> bool:
+    """Whether a request reads from storage, not just from memory.
+
+    Requests that don't say, such as those of points or vectors, read from
+    memory. True if asking fails.
+    """
+    reads_storage = getattr(request, 'reads_storage', None)
+    if reads_storage is None:
+        return False
+    try:
+        return bool(reads_storage())
+    except Exception:  # noqa: BLE001 - the read itself reports errors
+        return True
+
+
 class _LayerSlicer:
     """
     High level class to control the creation of a slice (via a slice request),
@@ -86,40 +418,50 @@ class _LayerSlicer:
     Events
     ------
     ready
-        emitted after slicing is done with a dict value that maps from layer
-        to slice response. Note that this may be emitted on the main or
+        emitted after a layer is sliced with a dict value that maps from the
+        layer to its slice response. Note that this may be emitted on the main or
         a non-main thread. If usage of this event relies on something happening
         on the main thread, actions should be taken to ensure that the callback
         is also executed on the main thread (e.g. by emitting a Qt signal from
         the callback, as `QtViewer._emit_slice_ready` does).
+    failed
+        emitted with a weak layer reference and request ID when a slice ends
+        without a response. A GUI marks the event handled when it schedules
+        completion on the main thread. Otherwise the slicer completes it here.
     """
 
     def __init__(self) -> None:
-        """
-        Attributes
-        ----------
-        _executor : concurrent.futures.ThreadPoolExecutor
-            manager for the slicing threading
-        _force_sync: bool
-            if true, forces slicing to execute synchronously
-        _layers_to_task : dict of tuples of layer weakrefs to futures
-            task storage for cancellation logic
-        _task_to_requests : dict of futures to slice requests
-            maps completed tasks back to their layer and slice requests,
-        _lock_futures_dicts : threading.RLock
-            lock to guard against concurrent changes to `_layers_to_task`
-            and `_task_to_requests` when finding, adding, or removing tasks
-        """
-        self.events = EmitterGroup(source=self, ready=Event)
-        self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._force_sync = not get_settings().experimental.async_
-        self._layers_to_task: dict[
-            tuple[weakref.ReferenceType[Layer], ...], Future
-        ] = {}
-        self._task_to_requests: dict[
-            Future, dict[weakref.ReferenceType[Layer], _SliceRequest]
-        ] = {}
-        self._lock_futures_dicts = RLock()
+        self.events = EmitterGroup(source=self, ready=Event, failed=Event)
+        settings = get_settings().experimental
+        self._executor: Executor = ThreadPoolExecutor(
+            max_workers=settings.async_slicing_workers
+        )
+        self._force_sync = not settings.async_
+        self._shutdown = False
+        # The condition protects queued requests and unfinished tasks. Once a
+        # worker takes a task out of _pending, its request is immutable.
+        # A layer has at most one read in flight, so its slices are read and
+        # delivered in request order. Workers parallelize across layers, as
+        # many at once as the read limit and the shared Dask pool allow.
+        self._tasks_changed = Condition()
+        self._pending: dict[weakref.ReferenceType[Layer], _SliceTask] = {}
+        self._reading: set[weakref.ReferenceType[Layer]] = set()
+        self._tasks: dict[Future[dict], _SliceTask] = {}
+        # Layers with a waiting request and no read in flight, in turn order.
+        self._ready: deque[weakref.ReferenceType[Layer]] = deque()
+        self._read_limit = _ReadLimit(settings.async_slicing_workers)
+        # Dask chunks of each read in flight. Another read starts only while
+        # they leave threads of Dask's shared slicing pool idle.
+        self._reading_chunks: dict[weakref.ReferenceType[Layer], int] = {}
+        # Layers reading from storage, the reads the read limit measures.
+        self._reading_storage: set[weakref.ReferenceType[Layer]] = set()
+        self._chunk_budget = _slice_pool_size()
+        # Latest request presented per layer, used only on the main thread.
+        # The order of presented slices belongs to the slicer's view, while
+        # edits invalidate slices on the layer itself, for every view.
+        self._presented: weakref.WeakKeyDictionary[Layer, int] = (
+            weakref.WeakKeyDictionary()
+        )
 
     @contextmanager
     def force_sync(self) -> Generator[None, None, None]:
@@ -129,7 +471,7 @@ class _LayerSlicer:
 
         >>> layer_slicer = _LayerSlicer()
         >>> layer = Image(...)  # an async-ready layer
-        >>> with layer_slice.force_sync():
+        >>> with layer_slicer.force_sync():
         >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
         prev = self._force_sync
@@ -153,13 +495,13 @@ class _LayerSlicer:
         TimeoutError: when the timeout limit has been exceeded and the task is
             not yet complete
         """
-        futures = self._layers_to_task.values()
-        _, not_done_futures = wait(futures, timeout=timeout)
-
-        if len(not_done_futures) > 0:
-            raise TimeoutError(
-                f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
-            )
+        with self._tasks_changed:
+            if not self._tasks_changed.wait_for(
+                lambda: not self._tasks, timeout=timeout
+            ):
+                raise TimeoutError(
+                    f'Slicing {len(self._tasks)} tasks did not complete within timeout ({timeout}s).'
+                )
 
     def submit(
         self,
@@ -167,17 +509,14 @@ class _LayerSlicer:
         layers: Iterable[Layer],
         dims: Dims,
         force: bool = False,
-    ) -> Future[dict] | None:
+    ) -> list[Future[dict]]:
         """Slices the given layers with the given dims.
 
-        Submitting multiple layers at one generates multiple requests, but only ONE task.
-
-        This will attempt to cancel all pending slicing tasks that can be entirely
-        replaced the new ones. If multiple layers are sliced, any task that contains
-        only one of those layers can safely be cancelled. If a single layer is sliced,
-        it will wait for any existing tasks that include that layer AND another layer,
-        In other words, it will only cancel if the new task will replace the
-        slices of all the layers in the pending task.
+        Each layer is sliced in its own task. A layer has at most one read in
+        progress and one waiting request. A newer request replaces the waiting
+        one in place, keeping its turn, and is read once the layer's current
+        read finishes. A layer's responses therefore arrive in request order,
+        but a response can be superseded by the time it arrives.
 
         This should only be called from the main thread.
 
@@ -193,9 +532,11 @@ class _LayerSlicer:
 
         Returns
         -------
-        future of dict or none
-            A future with a result that maps from a layer to an async layer
-            slice response. Or none if no async slicing tasks were submitted.
+        list of futures
+            One future per async layer scheduled by this call. Requests that
+            replace a pending request share its future, whose result maps from
+            a weak reference to the layer to the response of the request the
+            worker claimed.
         """
         logger.debug(
             '_LayerSlicer.submit: layers=%s, dims=%s, force=%s',
@@ -203,15 +544,12 @@ class _LayerSlicer:
             dims,
             force,
         )
-        if existing_task := self._find_existing_task(layers):
-            logger.debug('Cancelling task %s', id(existing_task))
-            existing_task.cancel()
 
         # Not all layer types will initially be asynchronously sliceable.
         # The following logic gives us a way to handle those in the short
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
-        requests: dict[weakref.ref, _SliceRequest] = {}
+        tasks: dict[weakref.ReferenceType[Layer], Future[dict]] = {}
         sync_layers = []
         for layer in layers:
             # Slicing of non-visible layers is handled differently by sync
@@ -221,40 +559,85 @@ class _LayerSlicer:
             # to fetch data yet (only if/when it becomes visible in the future).
             # Further development should allow us to remove this special case
             # by making the sync and async slicing code paths almost identical.
+            slicing_state = layer._slicing_state
             if (
-                isinstance(layer._slicing_state, _AsyncSliceable)
+                isinstance(slicing_state, _AsyncSliceable)
                 and not self._force_sync
                 and layer.visible
             ):
-                logger.debug('Making async slice request for %s', layer)
-                request = layer._slicing_state._make_slice_request(dims)
                 weak_layer = weakref.ref(layer)
-                requests[weak_layer] = request
-                layer._slicing_state._set_unloaded_slice_id(request.id)
+                if weak_layer in tasks:
+                    continue
+                if self._shutdown:
+                    raise RuntimeError(
+                        'cannot schedule new slices after shutdown'
+                    )
+                logger.debug('Making async slice request for %s', layer)
+                request = slicing_state._make_slice_request(dims)
+                slicing_state._set_unloaded_slice_id(request.id)
+                # A loaded-state observer can submit again before we queue
+                # this request. Keep the newer request in that case.
+                if slicing_state._last_slice_id != request.id:
+                    continue
+                try:
+                    tasks[weak_layer] = self._queue_request(
+                        weak_layer, request
+                    )
+                except BaseException:
+                    self._finish_without_response(weak_layer, request.id)
+                    raise
             else:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
 
-        # First maybe submit an async slicing task to start it ASAP.
-        task = None
-        if len(requests) > 0:
-            logger.debug('Submitting task %s', id(task))
-            task = self._executor.submit(self._slice_layers, requests)
-            # Store task before adding done callback to ensure there is always
-            # a task to remove in the done callback.
-            with self._lock_futures_dicts:
-                self._layers_to_task[tuple(requests)] = task
-                self._task_to_requests[task] = requests
-            task.add_done_callback(self._on_slice_done)
-
-        # Then execute sync slicing tasks to run concurrent with async ones.
+        # Synchronous slicing can run concurrently with the async tasks.
         for layer in sync_layers:
             layer._slice_dims(
                 dims=dims,
                 force=force,
             )
 
-        return task
+        return list(tasks.values())
+
+    def _queue_request(
+        self,
+        weak_layer: weakref.ReferenceType[Layer],
+        request: _SliceRequest,
+    ) -> Future[dict]:
+        with self._tasks_changed:
+            if self._shutdown:
+                raise RuntimeError('cannot schedule new slices after shutdown')
+            task = self._pending.get(weak_layer)
+            if task is not None:
+                task.request = request
+                logger.debug('Replaced pending request with %s', request.id)
+                return task.future
+
+            task = _SliceTask(weak_layer, request)
+            self._pending[weak_layer] = task
+            self._tasks[task.future] = task
+            if weak_layer not in self._reading:
+                self._ready.append(weak_layer)
+                self._dispatch()
+        task.future.add_done_callback(self._on_slice_done)
+        return task.future
+
+    def _accept_slice_response(self, layer: Layer, response: Any) -> bool:
+        """Claim an async response before callbacks can deliver a newer one."""
+        if response.request_id <= max(
+            layer._slicing_state._discard_through_slice_id,
+            self._presented.get(layer, -1),
+        ):
+            return False
+        self._presented[layer] = response.request_id
+        return True
+
+    def _can_publish_slice(self, layer: Layer, request_id: int) -> bool:
+        """Check again after notifying listeners that may edit or reslice."""
+        return (
+            self._presented.get(layer) == request_id
+            and request_id > layer._slicing_state._discard_through_slice_id
+        )
 
     def shutdown(self) -> None:
         """Shuts this down, preventing any new slice tasks from being submitted.
@@ -264,55 +647,121 @@ class _LayerSlicer:
         This should only be called from the main thread.
         """
         logger.debug('_LayerSlicer.shutdown')
+        with self._tasks_changed:
+            if self._shutdown:
+                return
+            self._shutdown = True
+            queued = list(self._pending.values())
+        for task in queued:
+            task.future.cancel()
         self._executor.shutdown(wait=True, cancel_futures=True)
         self.events.disconnect()
         self.events.ready.disconnect()
+        self.events.failed.disconnect()
 
-    def _slice_layers(self, requests: dict) -> dict:
-        """
-        Iterates through a dictionary of request objects and call the slice
-        on each individual layer. Can be called from the main or slicing thread.
+    def _dispatch(self) -> None:
+        """Hand ready layers to workers while the read limit allows."""
+        index = 0
+        while (
+            index < len(self._ready)
+            and len(self._reading) < self._read_limit.limit
+            and not self._shutdown
+        ):
+            weak_layer = self._ready[index]
+            task = self._pending.get(weak_layer)
+            # A cancelled request can leave its layer queued twice.
+            if weak_layer in self._reading or task is None:
+                del self._ready[index]
+                continue
+            # A read of many chunks already fills the pool, and another read
+            # of Dask chunks would only queue behind it, older by the time it
+            # lands. Reads of other data don't use the pool and pass it.
+            chunks = _chunk_count(task.request)
+            if (
+                chunks
+                and sum(self._reading_chunks.values()) >= self._chunk_budget
+            ):
+                index += 1
+                continue
+            del self._ready[index]
+            self._reading.add(weak_layer)
+            self._reading_chunks[weak_layer] = chunks
+            self._executor.submit(self._slice_layer, weak_layer)
 
-        Attributes
-        ----------
-        requests: dict[Layer, SliceRequest]
-            Dictionary of request objects to be used for constructing the slice
+    def _slice_layer(self, weak_layer: weakref.ReferenceType[Layer]) -> None:
+        """Claim the layer's latest pending request and slice it."""
+        with self._tasks_changed:
+            task = self._pending.pop(weak_layer, None)
+            if task is None or not task.future.set_running_or_notify_cancel():
+                self._release(weak_layer, None)
+                return
+            request = task.request
+            # A copy from memory says nothing about the storage. Cheap reads
+            # also come round more often with more slots, which would make
+            # more slots look faster on storage that serves one read at once.
+            read = None
+            if _reads_storage(request):
+                self._reading_storage.add(weak_layer)
+                read = self._read_limit.start(self._storage_layers())
+            # A newer request can replace the admitted one before a worker
+            # claims it, so count the chunks of the request it reads.
+            chunks = _chunk_count(request)
+            if chunks != self._reading_chunks[weak_layer]:
+                self._reading_chunks[weak_layer] = chunks
+                self._dispatch()
+        try:
+            result = {}
+            if weak_layer() is not None:
+                result = {weak_layer: request()}
+                self.events.ready(value=result)
+        except BaseException as exc:  # noqa: BLE001 - delivered via the future
+            self._finish_reading(weak_layer, read)
+            task.future.set_exception(exc)
+        else:
+            self._finish_reading(weak_layer, read)
+            task.future.set_result(result)
 
-        Returns
-        -------
-        dict[Layer, SliceResponse]: which contains the results of the slice
-        """
-        logger.debug('_LayerSlicer._slice_layers: %s', requests)
-        result = {layer: request() for layer, request in requests.items()}
-        self.events.ready(value=result)
-        return result
+    def _storage_layers(self) -> int:
+        """Layers reading from storage or waiting for a slot to."""
+        waiting = sum(
+            1
+            for weak_layer in self._ready
+            if (task := self._pending.get(weak_layer)) is not None
+            and _reads_storage(task.request)
+        )
+        return len(self._reading_storage) + waiting
 
-    def _on_slice_done(self, task: Future[dict]) -> None:
-        """
-        This is the "done_callback" which is added to each task.
-        Can be called from the main or slicing thread.
-        """
-        logger.debug('_LayerSlicer._on_slice_done: %s', id(task))
-        with self._lock_futures_dicts:
-            requests = self._task_to_requests.pop(task, None)
+    def _finish_reading(
+        self, weak_layer: weakref.ReferenceType[Layer], read: _Read | None
+    ) -> None:
+        """Hand the layer's next request, if any, to a worker."""
+        with self._tasks_changed:
+            self._release(weak_layer, read)
 
-        if not self._try_to_remove_task(task):
-            logger.debug('Task not found: %s', id(task))
+    def _release(
+        self, weak_layer: weakref.ReferenceType[Layer], read: _Read | None
+    ) -> None:
+        self._reading.discard(weak_layer)
+        self._reading_chunks.pop(weak_layer, None)
+        self._reading_storage.discard(weak_layer)
+        if read is not None:
+            self._read_limit.finish(read)
+        if weak_layer in self._pending:
+            self._ready.append(weak_layer)
+        self._dispatch()
 
-        if task.cancelled():
-            logger.debug('Cancelled task: %s', id(task))
-            return
+    def _on_slice_done(self, future: Future[dict]) -> None:
+        with self._tasks_changed:
+            task = self._tasks.pop(future)
+            if self._pending.get(task.layer) is task:
+                del self._pending[task.layer]
+            self._tasks_changed.notify_all()
 
-        if exception := task.exception():
-            logger.debug('Task failed: %s', id(task))
-            if requests:
-                for weak_layer, request in requests.items():
-                    if layer := weak_layer():
-                        # Mark the failed request as complete so layers don't
-                        # remain forever "loading" after an exception.
-                        layer._slicing_state._update_loaded_slice_id(
-                            request.id
-                        )
+        if future.cancelled():
+            if not self._shutdown:
+                self._finish_without_response(task.layer, task.request.id)
+        elif (exception := future.exception()) is not None:
+            self._finish_without_response(task.layer, task.request.id)
 
             from napari.utils.notifications import notification_manager
 
@@ -320,36 +769,9 @@ class _LayerSlicer:
                 type(exception), exception, exception.__traceback__
             )
 
-    def _try_to_remove_task(self, task: Future[dict]) -> bool:
-        """
-        Attempt to remove task, return false if task not found, return true
-        if task is found and removed from layers_to_task dict.
-
-        This function provides a lock to ensure that the layers_to_task dict
-        is unmodified during this process.
-        """
-        with self._lock_futures_dicts:
-            for k_layers, v_task in self._layers_to_task.items():
-                if v_task == task:
-                    del self._layers_to_task[k_layers]
-                    return True
-        return False
-
-    def _find_existing_task(
-        self, layers: Iterable[Layer]
-    ) -> Future[dict] | None:
-        """Find the task associated with a list of layers. Returns the first
-        task found for which the layers of the task are a subset of the input
-        layers.
-
-        This function provides a lock to ensure that the layers_to_task dict
-        is unmodified during this process.
-        """
-        with self._lock_futures_dicts:
-            layer_set = set(layers)
-            for weak_task_layers, task in self._layers_to_task.items():
-                task_layers = {w() for w in weak_task_layers} - {None}
-                if task_layers.issubset(layer_set):
-                    logger.debug('Found existing task for %s', task_layers)
-                    return task
-        return None
+    def _finish_without_response(
+        self, weak_layer: weakref.ReferenceType[Layer], request_id: int
+    ) -> None:
+        event = self.events.failed(layer=weak_layer, request_id=request_id)
+        if not event.handled and (layer := weak_layer()) is not None:
+            layer._slicing_state._update_loaded_slice_id(request_id)

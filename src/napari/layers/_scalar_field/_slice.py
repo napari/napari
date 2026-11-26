@@ -11,7 +11,7 @@ from napari.layers.base._slice import _next_request_id
 from napari.layers.image._image_constants import ImageProjectionMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
-from napari.utils._dask_utils import DaskIndexer
+from napari.utils._dask_utils import _asarray_for_slicing, _dask_chunk_count
 from napari.utils._dtype import normalize_dtype
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -195,18 +195,22 @@ def _materialize_and_project(
     index: tuple[slice | int, ...],
     mode: Any,
     axis: tuple[int, ...],
+    dask_cache: bool | None = None,
 ) -> np.ndarray:
     """Materialize the data, index into it and project it."""
-    array = np.asarray(data[index])
+    array = _asarray_for_slicing(data[index], dask_cache)
     return array if mode == 'none' else project(array, axis, mode)
 
 
 class _ThumbnailPlaneCache:
     """The projected plane of the last-read thumbnail level from ``data``."""
 
-    def __init__(self, data: Any, project: _Projector) -> None:
+    def __init__(
+        self, data: Any, project: _Projector, dask_cache: bool | None = None
+    ) -> None:
         self._data = data
         self._project = project
+        self._dask_cache = dask_cache
         self._entry: tuple[tuple, np.ndarray] | None = None
 
     def __call__(
@@ -222,7 +226,12 @@ class _ThumbnailPlaneCache:
         if entry is not None and entry[0] == key:
             return entry[1]
         plane = _materialize_and_project(
-            self._data[level], self._project, index, mode, axis
+            self._data[level],
+            self._project,
+            index,
+            mode,
+            axis,
+            self._dask_cache,
         )
         self._entry = (key, plane)
         return plane
@@ -250,6 +259,9 @@ class _ScalarFieldSliceRequest:
         execution, not request construction.
     dtype : DTypeLike
         The dtype of the layer's data.
+    dask_cache : bool or None
+        Whether napari's cache keeps the Dask chunks the slice reads. None if
+        the data isn't Dask data, so it is computed as ``np.asarray`` would.
     data_slice : _ThickNDSlice
         The slicing coordinates and margins in data space.
     others
@@ -262,7 +274,7 @@ class _ScalarFieldSliceRequest:
     data: Any = field(repr=False)
     thumbnail_plane_cache: _ThumbnailPlaneCache = field(repr=False)
     dtype: DTypeLike = field(repr=False)
-    dask_indexer: DaskIndexer
+    dask_cache: bool | None = field(repr=False)
     data_slice: _ThickNDSlice
     projection_mode: Any
     multiscale: bool = field(repr=False)
@@ -282,12 +294,11 @@ class _ScalarFieldSliceRequest:
                 request_id=self.id,
                 dtype=self.dtype,
             )
-        with self.dask_indexer():
-            return (
-                self._call_multi_scale()
-                if self.multiscale
-                else self._call_single_scale()
-            )
+        return (
+            self._call_multi_scale()
+            if self.multiscale
+            else self._call_single_scale()
+        )
 
     def _thumbnail_plane(self) -> np.ndarray:
         """Return the thumbnail level at the dims point, projected but uncropped.
@@ -333,14 +344,8 @@ class _ScalarFieldSliceRequest:
             scale[d] = self.downsample_factors[self.data_level][d]
 
         translate = np.zeros(self.slice_input.ndim)
-        disp_slice = [slice(None)] * self.slice_input.ndim
+        disp_slice = self._tile_slice()
         if self.slice_input.ndisplay == 2:
-            for d in self.slice_input.displayed:
-                disp_slice[d] = slice(
-                    self.corner_pixels[0, d],
-                    self.corner_pixels[1, d] + 1,
-                    1,
-                )
             translate = self.corner_pixels[0] * scale
 
         # This only needs to be a ScaleTranslate but different types
@@ -386,6 +391,49 @@ class _ScalarFieldSliceRequest:
             slice_input=self.slice_input,
             request_id=self.id,
         )
+
+    def chunk_count(self) -> int:
+        """Number of Dask chunks the displayed data reads, 0 for other data.
+
+        The slicer starts no more reads of Dask data than the threads of
+        Dask's shared pool can serve at once.
+        """
+        if self._slice_out_of_bounds():
+            return 0
+        if not self.multiscale:
+            return _dask_chunk_count(self.data, self._indices(self.data_slice))
+        level = self.data_level
+        data_slice = self._thick_slice_at_level(level)
+        if level == self.thumbnail_level and self._thumbnail_level_is_plane():
+            return _dask_chunk_count(
+                self.data[level], self._indices(data_slice)
+            )
+        return _dask_chunk_count(
+            self.data[level], self._indices(data_slice, self._tile_slice())
+        )
+
+    def reads_storage(self) -> bool:
+        """Whether the displayed data isn't a NumPy array in memory.
+
+        The slicer's read limit adapts to the storage, so it measures only
+        such reads. A ``np.memmap`` reads from a file.
+        """
+        if self._slice_out_of_bounds():
+            return False
+        data = self.data[self.data_level] if self.multiscale else self.data
+        return not isinstance(data, np.ndarray) or isinstance(data, np.memmap)
+
+    def _tile_slice(self) -> list[slice]:
+        """Slices of the displayed tile; full extent outside 2D display."""
+        disp_slice = [slice(None)] * self.slice_input.ndim
+        if self.slice_input.ndisplay == 2:
+            for d in self.slice_input.displayed:
+                disp_slice[d] = slice(
+                    self.corner_pixels[0, d],
+                    self.corner_pixels[1, d] + 1,
+                    1,
+                )
+        return disp_slice
 
     def _thumbnail_level_is_plane(self) -> bool:
         """Whether the displayed extent of the thumbnail level is at most 2D.
@@ -438,6 +486,7 @@ class _ScalarFieldSliceRequest:
             self._indices(data_slice, disp_slice),
             self.projection_mode,
             tuple(self.slice_input.not_displayed),
+            self.dask_cache,
         )
 
     def _indices(

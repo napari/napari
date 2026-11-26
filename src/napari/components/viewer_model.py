@@ -218,6 +218,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
     # True while dims changes should not slice layers, see _defer_slicing
     _slicing_deferred: bool = PrivateAttr(default=False)
+    _last_slice_point: tuple[float, ...] | None = PrivateAttr(default=None)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -263,22 +264,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.events.add(reset_view=Event)
 
         # Connect events
-        self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self._on_slice_layout_changed)
         self.dims.events.ndisplay.connect(
             self._save_camera_state, position='first'
         )
         self.dims.events.ndisplay.connect(self._on_ndisplay_changed)
-        self.dims.events.order.connect(self._update_layers)
+        self.dims.events.order.connect(self._on_slice_layout_changed)
         self.dims.events.order.connect(self.fit_to_view)
-        self.dims.events.point.connect(self._update_layers)
-        # FIXME: the next line is a temporary workaround. With #5522 and #5751 Dims.point became
-        #        the source of truth, and is now defined in world space. This exposed an existing
-        #        bug where if a field in Dims is modified by the root_validator, events won't
-        #        be fired for it. This won't happen for properties because we have dependency
-        #        checks. To fix this, we need dep checks for fields (psygnal!) and then we
-        #        can remove the following line. Note that because of this we fire double events,
-        #        but this should be ok because we have early returns when slices are unchanged.
-        self.dims.events.current_step.connect(self._update_layers)
+        # A range validator can change the world point while emitting only a
+        # current_step event. A slider step normally emits both notifications.
+        self.dims.events.point.connect(self._on_slice_point_changed)
+        self.dims.events.current_step.connect(self._on_slice_point_changed)
 
         # Track previous ndisplay for per-mode camera state caching.
         self._previous_ndisplay: int = self.dims.ndisplay
@@ -797,6 +793,16 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         finally:
             self._slicing_deferred = previous
 
+    def _on_slice_point_changed(self) -> None:
+        if self.dims.point != self._last_slice_point:
+            self._update_layers()
+
+    def _on_slice_layout_changed(self) -> None:
+        # Older planes carry coordinates for the previous axes or view rank.
+        for layer in self.layers:
+            layer._slicing_state._invalidate_async_slices()
+        self._update_layers()
+
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
@@ -807,6 +813,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         if self._slicing_deferred:
             return
+        if layers is None:
+            self._last_slice_point = self.dims.point
         layers = layers or self.layers
         self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)

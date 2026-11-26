@@ -1,13 +1,16 @@
-from contextlib import nullcontext
+import time
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier, Event, Lock, current_thread
 
 import dask
 import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
+from dask.callbacks import Callback
 
 from napari import layers
-from napari.components import ViewerModel
+from napari.components import Dims, ViewerModel
 from napari.utils import _dask_utils, resize_dask_cache
 
 
@@ -40,22 +43,30 @@ def test_dask_not_greedy(dtype):
         assert tuple(layer.contrast_limits) == (0, 255)
 
 
+def _check_fusion_config(original):
+    """A block function asserting Dask's fusion setting while computing."""
+
+    def check(block):
+        assert dask.config.get('optimization.fuse.active', None) == original
+        return block
+
+    return check
+
+
 def test_dask_array_creates_cache():
-    """Test that dask arrays create cache but turns off fusion."""
+    """Test that dask arrays create cache, and slicing them leaves Dask's
+    global fusion setting alone."""
     resize_dask_cache(1)
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
     # by default we have no dask_cache and task fusion is active
     original = dask.config.get('optimization.fuse.active', None)
 
-    def mock_set_view_slice():
-        assert dask.config.get('optimization.fuse.active') is False
-
-    layer = layers.Image(da.ones((100, 100)))
-    layer._set_view_slice = mock_set_view_slice
+    data = da.ones((100, 100)).map_blocks(_check_fusion_config(original))
+    layer = layers.Image(data)
     layer.set_view_slice()
 
-    # adding a dask array will create cache and turn off task fusion,
-    # *but only* during slicing (see "mock_set_view_slice" above)
+    # adding a dask array creates the cache. Slices are optimized without
+    # task fusion, but other computations meanwhile keep the user's setting.
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
     assert dask.config.get('optimization.fuse.active', None) == original
@@ -65,12 +76,9 @@ def test_dask_array_creates_cache():
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 10000
 
     # This should only affect dask arrays, and not numpy data
-    def mock_set_view_slice2():
-        assert dask.config.get('optimization.fuse.active', None) == original
-
     layer2 = layers.Image(np.ones((100, 100)))
-    layer2._set_view_slice = mock_set_view_slice2
-    layer2.set_view_slice()
+    assert layer2._slicing_state._dask_cache is None
+    assert layer._slicing_state._dask_cache is True
 
 
 def test_list_of_dask_arrays_creates_cache():
@@ -95,17 +103,14 @@ def test_xarray_dataarray_backed_by_dask_creates_cache():
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
     original = dask.config.get('optimization.fuse.active', None)
 
-    da_arr = da.ones((100, 100))
+    da_arr = da.ones((100, 100)).map_blocks(_check_fusion_config(original))
     xr_arr = xr.DataArray(da_arr)
 
-    def mock_set_view_slice():
-        assert dask.config.get('optimization.fuse.active') is False
-
     layer = layers.Image(xr_arr)
-    layer._set_view_slice = mock_set_view_slice
     layer.set_view_slice()
 
-    # cache must have been allocated and task fusion must have been turned off
+    # the cache must have been allocated, and the global config left alone
+    assert layer._slicing_state._dask_cache is True
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
     assert dask.config.get('optimization.fuse.active', None) == original
@@ -166,6 +171,8 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
         assert cache.active
         # make sure the cache actually has been populated
         assert len(cache.cache.heap.heap) > 0
+        dask_stack[0, 0].compute()
+        assert delayed_dask_stack['calls'] == 2
 
     assert not cache.active  # only active inside of the context
 
@@ -190,6 +197,313 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     # again, visiting a new point will increment the counter
     v.dims.set_point(0, initial_t + 3)
     assert delayed_dask_stack['calls'] == 5
+
+
+@pytest.mark.parametrize(
+    ('second_cached', 'first_fails'),
+    [(True, False), (False, False), (True, True)],
+)
+@pytest.mark.parametrize('scheduler', ['threads', 'synchronous'])
+def test_dask_overlapping_slices(second_cached, first_fails, scheduler):
+    resize_dask_cache(100_000)
+    calls = [0, 0, 0]
+    started = [Event() for _ in calls]
+    release = [Event() for _ in calls]
+    release[0].set()
+
+    @dask.delayed
+    def read_plane(z):
+        calls[z] += 1
+        # napari never turns fusion off globally while slices compute.
+        assert dask.config.get('optimization.fuse.active') is not False
+        started[z].set()
+        assert release[z].wait(5)
+        assert dask.config.get('optimization.fuse.active') is not False
+        if z == 1 and first_fails:
+            raise ValueError('Dask read failed')
+        return np.full((4, 4), z, dtype=np.uint8)
+
+    reads = [read_plane(z) for z in range(3)]
+    data = da.stack(
+        [da.from_delayed(read, shape=(4, 4), dtype=np.uint8) for read in reads]
+    )
+    first_layer = layers.Image(data)
+    second_layer = layers.Image(data, cache=second_cached)
+    first = first_layer._slicing_state._make_slice_request(
+        Dims(ndim=3, point=(1, 0, 0))
+    )
+    second = second_layer._slicing_state._make_slice_request(
+        Dims(ndim=3, point=(2, 0, 0))
+    )
+    reported_tasks = []
+
+    def record_task(key, graph, state):
+        reported_tasks.append(key)
+
+    with (
+        dask.config.set(
+            {'optimization.fuse.active': True, 'scheduler': scheduler}
+        ),
+        Callback(pretask=record_task) as callback,
+        ThreadPoolExecutor(max_workers=2) as workers,
+    ):
+        try:
+            first_read = workers.submit(first)
+            assert started[1].wait(5)
+            second_read = workers.submit(second)
+            assert started[2].wait(5)
+            release[1].set()
+            if first_fails:
+                with pytest.raises(ValueError, match='Dask read failed'):
+                    first_read.result(timeout=5)
+            else:
+                assert np.all(first_read.result(timeout=5).image.raw == 1)
+            assert dask.config.get('optimization.fuse.active') is True
+            assert callback._callback in Callback.active
+            release[2].set()
+            assert np.all(second_read.result(timeout=5).image.raw == 2)
+            assert dask.config.get('optimization.fuse.active') is True
+            # Each slice's graph is optimized without fusion, so the plane
+            # reads run as tasks of their own, which the cache can keep.
+            assert {reads[1].key, reads[2].key} <= set(reported_tasks)
+        finally:
+            for event in release:
+                event.set()
+
+        assert np.all(second().image.raw == 2)
+        assert calls[2] == (1 if second_cached else 2)
+        if not first_fails:
+            assert np.all(first().image.raw == 1)
+            assert calls[1] == 1
+
+
+def test_dask_concurrent_reads_of_same_cache_key():
+    storage = resize_dask_cache(0).cache
+    resize_dask_cache(100_000)
+    same_read = Barrier(2, timeout=5)
+
+    @dask.delayed
+    def read():
+        same_read.wait()
+        return np.ones((1, 4, 4), dtype=np.uint8)
+
+    data = da.concatenate(
+        [
+            da.zeros((1, 4, 4), dtype=np.uint8),
+            da.from_delayed(read(), shape=(1, 4, 4), dtype=np.uint8),
+        ]
+    )
+    dims = Dims(ndim=3, point=(1, 0, 0))
+    first = layers.Image(data)._slicing_state._make_slice_request(dims)
+    second = layers.Image(
+        xr.DataArray(data)
+    )._slicing_state._make_slice_request(dims)
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        reads = [workers.submit(request) for request in (first, second)]
+        for result in reads:
+            assert np.all(result.result(timeout=5).image.raw == 1)
+
+    assert storage.total_bytes == sum(storage.nbytes.values())
+    assert np.all(first().image.raw == 1)
+    assert np.all(second().image.raw == 1)
+
+
+def test_dask_slice_leaves_out_globally_registered_caches():
+    """napari's cache registered globally, by a layer's optimized slicing
+    context or by the user, doesn't cache a layer that opts out."""
+    resize_dask_cache(100_000)
+    storage = _dask_utils._DASK_CACHE.cache
+    cached_layer = layers.Image(da.zeros((4, 4), dtype=np.uint8))
+    request = layers.Image(
+        da.ones((4, 4), dtype=np.uint8), cache=False
+    )._slicing_state._make_slice_request(Dims(ndim=2))
+
+    with cached_layer.dask_optimized_slicing(), _dask_utils._DASK_CACHE:
+        assert len(Callback.active) == 2
+        before = set(storage.data)
+        assert np.all(request().image.raw == 1)
+        assert set(storage.data) == before
+
+
+def test_dask_slicing_preserves_custom_scheduler():
+    calls = []
+
+    def scheduler(graph, keys):
+        calls.append(keys)
+        return dask.get(graph, keys)
+
+    data = da.ones((4, 4), dtype=np.uint8)
+    layer = layers.Image(data)
+    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+
+    with dask.config.set(scheduler=scheduler):
+        response = request()
+
+    assert len(calls) == 1
+    assert np.all(response.image.raw == 1)
+
+
+def _recording_blocks(shape, chunk):
+    """A Dask array whose chunk tasks record their threads and overlap."""
+    record = {'threads': set(), 'running': 0, 'peak': 0}
+    lock = Lock()
+
+    def block(x):
+        with lock:
+            record['threads'].add(current_thread())
+            record['running'] += 1
+            record['peak'] = max(record['peak'], record['running'])
+        time.sleep(0.002)
+        with lock:
+            record['running'] -= 1
+        return x
+
+    data = da.zeros(shape, chunks=chunk, dtype=np.uint8).map_blocks(
+        block, dtype=np.uint8
+    )
+    return data, record
+
+
+def _slice_requests(data, record, count):
+    requests = [
+        layers.Image(data, cache=False)._slicing_state._make_slice_request(
+            Dims(ndim=2)
+        )
+        for _ in range(count)
+    ]
+    # Creating a layer reads the data once; record only the requests.
+    record['threads'].clear()
+    record['peak'] = 0
+    return requests
+
+
+def test_dask_slices_share_one_pool():
+    """Slices read by several workers run their chunk tasks in one pool, each
+    with as many tasks in flight as Dask would give it alone."""
+    data, record = _recording_blocks((128, 128), (4, 4))
+    requests = _slice_requests(data, record, 3)
+
+    with ThreadPoolExecutor(max_workers=3) as workers:
+        for future in [workers.submit(request) for request in requests]:
+            assert np.all(future.result(timeout=30).image.raw == 0)
+
+    shared_threads = set(_dask_utils._SLICE_POOL._threads)
+    assert record['threads'] <= shared_threads
+    assert len(shared_threads) <= _dask_utils._slice_pool_size()
+
+    [request] = _slice_requests(data, record, 1)
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        workers.submit(request).result(timeout=30)
+    assert record['peak'] <= _dask_utils._threads_per_slice()
+
+
+@pytest.mark.parametrize(
+    'option', ['pool', 'num_workers'], ids=['pool', 'num_workers']
+)
+def test_dask_slicing_keeps_configured_threads(option):
+    """A pool or number of threads chosen for Dask replaces the shared pool."""
+    data, record = _recording_blocks((16, 16), (4, 4))
+    [request] = _slice_requests(data, record, 1)
+
+    with ThreadPoolExecutor(2, thread_name_prefix='user-pool') as pool:
+        value = pool if option == 'pool' else 2
+        with dask.config.set({option: value}):
+            ThreadPoolExecutor(1).submit(request).result(timeout=30)
+
+    shared = _dask_utils._SLICE_POOL
+    assert not record['threads'] & set(shared._threads if shared else ())
+    if option == 'pool':
+        assert all(t.name.startswith('user-pool') for t in record['threads'])
+
+
+def test_dask_slice_task_can_compute_dask():
+    """A chunk task that computes Dask itself gets its own threads, so it
+    can't wait on the shared pool it occupies."""
+    inner = da.ones((8, 8), chunks=(2, 2))
+
+    def block(x):
+        return x + inner.sum().compute().astype(x.dtype) * 0
+
+    data = da.zeros((256, 256), chunks=(4, 4), dtype=np.uint8).map_blocks(
+        block, dtype=np.uint8
+    )
+    request = layers.Image(
+        data, cache=False
+    )._slicing_state._make_slice_request(Dims(ndim=2))
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        response = workers.submit(request).result(timeout=60)
+    assert np.all(response.image.raw == 0)
+
+
+@pytest.mark.parametrize(
+    ('index', 'expected'),
+    [
+        ((4, slice(None), slice(None)), 16),
+        ((slice(4, 7), slice(None), slice(None)), 32),
+        ((4, slice(25, 35), slice(0, 10)), 2),
+        ((4, slice(None)), 16),
+        ((4, slice(50, 50), slice(None)), 0),
+    ],
+    ids=['plane', 'thick slice', 'tile', 'short index', 'empty'],
+)
+@pytest.mark.parametrize('wrap', [None, xr.DataArray], ids=['dask', 'xarray'])
+def test_dask_chunk_count(index, expected, wrap):
+    data = da.zeros((10, 100, 100), chunks=(3, 30, 30))
+    if wrap is not None:
+        data = wrap(data)
+    assert _dask_utils._dask_chunk_count(data, index) == expected
+
+
+def test_dask_chunk_count_of_other_data():
+    assert _dask_utils._dask_chunk_count(np.zeros((4, 4)), (0,)) == 0
+
+
+def test_slice_request_counts_dask_chunks():
+    data = da.zeros((10, 100, 100), chunks=(3, 30, 30))
+    request = layers.Image(data)._slicing_state._make_slice_request(
+        Dims(ndim=3, point=(4, 0, 0))
+    )
+    assert request.chunk_count() == 16
+
+    pyramid = [
+        da.zeros((8, 1024, 1024), chunks=(1, 256, 256)),
+        da.zeros((8, 512, 512), chunks=(1, 256, 256)),
+    ]
+    layer = layers.Image(pyramid, multiscale=True)
+    # The displayed tile, in pixels of the level.
+    for level, corner, chunks in ((0, 1023, 16), (0, 300, 4), (1, 511, 4)):
+        layer._data_level = level
+        layer.corner_pixels = np.array([[0, 0, 0], [0, corner, corner]])
+        request = layer._slicing_state._make_slice_request(Dims(ndim=3))
+        assert request.data_level == level
+        assert request.chunk_count() == chunks
+
+
+@pytest.mark.parametrize(
+    ('make', 'expected'),
+    [
+        (lambda path: np.zeros((2, 4, 4)), False),
+        (lambda path: da.zeros((2, 4, 4)), True),
+        (
+            lambda path: np.memmap(
+                path / 'data.raw', mode='w+', shape=(2, 4, 4)
+            ),
+            True,
+        ),
+        (lambda path: [np.zeros((2, 8, 8)), np.zeros((2, 4, 4))], False),
+        (lambda path: [da.zeros((2, 8, 8)), da.zeros((2, 4, 4))], True),
+    ],
+    ids=['numpy', 'dask', 'memmap', 'numpy pyramid', 'dask pyramid'],
+)
+def test_slice_request_says_if_it_reads_storage(make, expected, tmp_path):
+    """Only NumPy arrays in memory are read without the storage."""
+    data = make(tmp_path)
+    layer = layers.Image(data, multiscale=isinstance(data, list))
+    request = layer._slicing_state._make_slice_request(
+        Dims(ndim=3, point=(1, 0, 0))
+    )
+    assert request.reads_storage() is expected
 
 
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
@@ -239,9 +553,7 @@ def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     resize_dask_cache(0)
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 0
 
-    monkeypatch.setattr(
-        layers.base.base, 'configure_dask', lambda *_: nullcontext
-    )
+    monkeypatch.setattr(layers.base.base, '_dask_slice_cache', lambda *_: None)
 
     # add dask stack to viewer.
     v = ViewerModel()
