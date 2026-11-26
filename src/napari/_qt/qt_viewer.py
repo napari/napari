@@ -154,6 +154,7 @@ class QtViewer(QSplitter):
     _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
     # Slice responses, passed from the slicing thread to the main thread.
     _slice_ready = Signal(object)
+    _slice_failed = Signal(object, object, arguments=['layer', 'request_id'])
 
     # emitted from any thread when a future is done, handled on the main thread
     _future_ready = Signal(Future)
@@ -229,6 +230,10 @@ class QtViewer(QSplitter):
 
         self._slice_ready.connect(self._on_slice_ready)
         self.viewer._layer_slicer.events.ready.connect(self._emit_slice_ready)
+        self._slice_failed.connect(self._on_slice_failed)
+        self.viewer._layer_slicer.events.failed.connect(
+            self._emit_slice_failed
+        )
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -631,26 +636,37 @@ class QtViewer(QSplitter):
         logging.getLogger('napari').debug(
             'QtViewer._on_slice_ready: %s', responses
         )
+        slicer = self.viewer._layer_slicer
         for weak_layer, response in responses.items():
-            if layer := weak_layer():
-                # Update the layer slice state to temporarily support behavior
-                # that depends on it.
-                layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
-                # Update the layer's loaded state before everything else,
-                # because they may rely on its updated value.
-                layer._slicing_state._update_loaded_slice_id(
-                    response.request_id
-                )
-                # The rest of `Layer.refresh` after `set_view_slice`, where
-                # `set_data` notifies the corresponding vispy layer of the new
-                # slice.
-                layer.events.set_data()
-                layer._refresh_sync(
-                    data_displayed=False,
-                    thumbnail=True,
-                    highlight=True,
-                    extent=False,  # already updated via Layer.refresh()
-                )
+            layer = weak_layer()
+            if layer is None:
+                continue
+            state = layer._slicing_state
+            if (
+                layer not in self.layer_to_visual
+                or not slicer._accept_slice_response(layer, response)
+            ):
+                # Even a discarded request may be the last one for a hidden
+                # or removed layer.
+                state._update_loaded_slice_id(response.request_id)
+                continue
+
+            state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
+            state._update_loaded_slice_id(response.request_id)
+            if not slicer._can_publish_slice(layer, response.request_id):
+                continue
+            layer.events.set_data()
+            layer._refresh_sync(thumbnail=True, highlight=True)
+
+    def _emit_slice_failed(self, event: Event) -> None:
+        self._slice_failed.emit(event.layer, event.request_id)
+        event.handled = True
+
+    def _on_slice_failed(
+        self, weak_layer: weakref.ReferenceType[Layer], request_id: int
+    ) -> None:
+        if (layer := weak_layer()) is not None:
+            layer._slicing_state._update_loaded_slice_id(request_id)
 
     def _on_active_change(self) -> None:
         """When active layer changes change keymap handler."""

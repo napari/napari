@@ -40,11 +40,28 @@ class ExperimentalSettings(EventedSettings):
         False,
         title='Render Layers Asynchronously',
         description=(
-            'When enabled, layers are loaded in a background thread, improving responsiveness,\n'
+            'When enabled, layers are loaded in background threads, improving responsiveness,\n'
             'especially for remote and multiscale data.'
         ),
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
+    )
+
+    async_slicing_workers: int = Field(
+        1,
+        ge=1,
+        title='Asynchronous slicing workers',
+        description=(
+            'Maximum simultaneous slice reads per viewer. Each layer reads '
+            'one slice at a time, so extra workers load different layers '
+            'in parallel. This helps with data sources that serve reads in '
+            'parallel, such as object stores, and makes slices older on '
+            'sources that serve one read at a time, such as HDF5 files. '
+            'Slices of Dask data with many chunks are read one at a time, '
+            "because one of them already keeps all of Dask's slicing "
+            'threads busy. '
+            'Applies to newly opened viewers.'
+        ),
     )
 
     rdp_epsilon: float = Field(

@@ -46,7 +46,7 @@ from napari.layers.utils.layer_utils import (
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
 from napari.types import LayerDataType
-from napari.utils._dask_utils import configure_dask
+from napari.utils._dask_utils import _dask_slice_cache, configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
     add_layers_to_viewer,
@@ -128,7 +128,8 @@ class _LayerSlicingState(ABC):
 
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool) -> None:
         self.layer = layer
-        self.dask_optimized_slicing = configure_dask(data, cache)
+        # How slices compute the data, see _asarray_for_slicing.
+        self._dask_cache = _dask_slice_cache(data, cache)
         self._slice_input = _SliceInput(
             ndisplay=2,
             world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
@@ -136,11 +137,12 @@ class _LayerSlicingState(ABC):
         )
         self._loaded: bool = True
         self._last_slice_id: int = -1
-        self._units: tuple[pint.Unit, ...] | None = None
+        # An edit invalidates the outstanding slices of every view, even a
+        # response during its own delivery.
+        self._discard_through_slice_id = -1
 
     def set_view_slice(self) -> None:
-        with self.dask_optimized_slicing():
-            self._set_view_slice()
+        self._set_view_slice()
 
     def _slice_indices(
         self, slice_input: _SliceInput, dims: Dims
@@ -159,7 +161,9 @@ class _LayerSlicingState(ABC):
             return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
 
         world_to_data = self.layer._data_to_world.inverse
-        world_to_data = apply_units_to_transform(world_to_data, self._units)
+        world_to_data = apply_units_to_transform(
+            world_to_data, self._slice_input.world_units
+        )
 
         return self._slice_input.data_slice(world_to_data=world_to_data)
 
@@ -168,7 +172,6 @@ class _LayerSlicingState(ABC):
 
     def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
         slice_input = self.make_slice_input(dims)
-        self._units = dims.units
         return self.set_slice_input(slice_input, force)
 
     def set_slice_input(self, slice_input: _SliceInput, force: bool) -> bool:
@@ -205,6 +208,7 @@ class _LayerSlicingState(ABC):
             ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
             order=order[-self.ndim :],
+            world_units=dims.units,
         )
 
     def _world_to_layer_dims(
@@ -329,6 +333,10 @@ class _LayerSlicingState(ABC):
         """
         if self._last_slice_id == slice_id:
             self._set_loaded(True)
+
+    def _invalidate_async_slices(self) -> None:
+        """Discard outstanding responses after an edit or synchronous slice."""
+        self._discard_through_slice_id = self._last_slice_id
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -1142,8 +1150,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self._ndim = ndim
         self._slicing_state.update_dims()
+        self._slicing_state._invalidate_async_slices()
 
         self.refresh()
+
+    def _refresh_indexed_data(self, *, rebuild_indices: bool = True) -> None:
+        """Refresh a Points or Vectors edit that preserves layer dimensionality."""
+        self._slicing_state._invalidate_async_slices()
+        if not get_settings().experimental.async_:
+            self.refresh()
+            return
+
+        # Redraws and hit tests index the live arrays. Repair the displayed
+        # plane before notifying observers or submitting more work.
+        if rebuild_indices:
+            self.set_view_slice()
+        if self._refresh_blocked:
+            return
+        if self.loaded:
+            self._clear_extent()
+            self._refresh_sync(
+                data_displayed=True, thumbnail=True, highlight=True
+            )
+        else:
+            # Pending navigation may target a different plane. Request it
+            # again with the new data, keeping the displayed plane usable.
+            self._refresh_sync(data_displayed=True, highlight=True)
+            self.refresh()
 
     @property
     @abstractmethod
@@ -1208,6 +1241,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
 
     @cached_property
+    def _cached_extent_data(self) -> npt.NDArray:
+        """Data bounds shared by the thumbnail and the viewer until refresh."""
+        return self._extent_data
+
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates.
 
@@ -1218,7 +1256,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         in `Layer.data`.
         Lower and upper bounds are inclusive.
         """
-        extent_data = self._extent_data
+        extent_data = self._cached_extent_data.copy()
         data_to_world = self._data_to_world
         extent_world = get_extent_world(extent_data, data_to_world)
         return Extent(
@@ -1253,6 +1291,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def _clear_extent(self) -> None:
         """Clear extent cache and emit extent event."""
+        self.__dict__.pop('_cached_extent_data', None)
         if 'extent' in self.__dict__:
             del self.extent
         if '_extent_augmented' in self.__dict__:
@@ -1470,7 +1509,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             dims,
             force,
         )
-        changed = self._slicing_state.set_slice_input_from_dims(dims, force)
+        state = self._slicing_state
+        previous_request = state._last_slice_id
+        state._invalidate_async_slices()
+        changed = state.set_slice_input_from_dims(dims, force)
+        state._update_loaded_slice_id(previous_request)
         if force or changed:
             self._refresh_sync(
                 data_displayed=True,
@@ -1721,6 +1764,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     extent=extent,
                     force=force,
                 )
+            elif extent:
+                # Showing the layer refreshes the view with extent=False.
+                self._clear_extent()
 
     def _refresh_sync(
         self,

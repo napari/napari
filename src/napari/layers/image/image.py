@@ -728,6 +728,8 @@ class _ImageSlicingState(ScalarFieldSlicingState):
         Will be removed as we want to go into multi canvas mode.
         """
         super()._update_slice_response(response)
+        if self._slice.request_id != response.request_id:
+            return  # A transform listener installed a newer plane.
         if self.layer.auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.layer.multiscale else data

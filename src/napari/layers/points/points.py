@@ -637,7 +637,10 @@ class Points(Layer):
             self._face.events.blocker_all(),
         ):
             self._feature_table.resize(len(data))
-            self.text.apply(self.features)
+            # Text callbacks can redraw or run the Qt event loop. Publish
+            # the change after the point arrays and their view agree.
+            with self.text.events.values.blocker():
+                self.text.apply(self.features)
             if len(data) < cur_npoints:
                 # If there are now fewer points, remove the size and colors of the
                 # extra ones
@@ -684,7 +687,8 @@ class Points(Layer):
                 )
                 self.symbol = np.concatenate((self._symbol, symbol), axis=0)
 
-        self._update_dims()
+        self._refresh_indexed_data()
+        self.text.events.values()
         self._reset_editable()
 
     def _on_selection(self, selected: bool) -> None:
@@ -1950,7 +1954,7 @@ class Points(Layer):
         view_data = self._view_data
         if len(view_data) > 0:
             # Get the zoom factor required to fit all data in the thumbnail.
-            de = self._extent_data
+            de = self._cached_extent_data
             min_vals = [de[0, i] for i in self._slice_input.displayed]
             shape = np.ceil(
                 [de[1, i] - de[0, i] + 1 for i in self._slice_input.displayed]
@@ -2041,7 +2045,8 @@ class Points(Layer):
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=indices)
             self._feature_table.remove(indices)
-            self.text.remove(indices)
+            with self.text.events.values.blocker():
+                self.text.remove(indices)
             if self._value in indices:
                 self._value = None
             else:
@@ -2165,7 +2170,8 @@ class Points(Layer):
             self.data[np.ix_(selection_indices, disp)] = (
                 self.data[np.ix_(selection_indices, disp)] + shift
             )
-            self.refresh()
+            # Movement along displayed axes preserves slice membership.
+            self._refresh_indexed_data(rebuild_indices=False)
             self.events.data(
                 value=self.data,
                 action=ActionType.CHANGED,
@@ -2251,7 +2257,7 @@ class Points(Layer):
             self._selected_data.update(
                 set(range(totpoints, totpoints + len(self._clipboard['data'])))
             )
-            self.refresh()
+            self._refresh_indexed_data()
 
     def _copy_data(self) -> None:
         """Copy selected points to clipboard."""
