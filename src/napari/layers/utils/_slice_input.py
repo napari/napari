@@ -241,7 +241,9 @@ class _SliceInput:
         return _ThickNDSlice.from_array(full_data_slice)
 
     def is_orthogonal(self, world_to_data: Affine) -> bool:
-        """Returns True if this slice represents an orthogonal (axis-aligned) slice through a layer's data, False otherwise."""
+        """Returns True if this slice (in world-space) is axis-aligned in data-space,
+        False otherwise.
+        """
         # Column k of the linear matrix is by definition the displacement in data space
         # after a unit displacement along axis k in world coordinate.
         # Here, we look at the displacements for all displayed axis.
@@ -253,6 +255,24 @@ class _SliceInput:
         # The criterion for orthogonality is that moving within the world-space slice should not
         # create displacements along any data axis that is not displayed.
         return bool(np.all(np.abs(hidden_changes) < 1e-8))
+
+    def is_static_during_slicing(self, world_to_data: Affine) -> bool:
+        """Returns True if the slice stays at a fixed position in the viewing plane
+        as slicing progresses. It returns False if it appears to drift within the
+        viewing plane.
+        """
+        # Column k of the linear matrix is by definition the displacement in data space
+        # after a unit displacement along axis k in world coordinates.
+        # Here, we look at the displacements for all axis not displayed, along which the
+        # slicing happens.
+        data_steps = world_to_data.linear_matrix[:, self.not_displayed]
+
+        # We extract the data coordinates of those along the axes that are displayed.
+        displayed_changes = data_steps[self.displayed, :]
+
+        # The criterion for being static is that moving in the slicing direction should not
+        # create displacements along any displayed data axis.
+        return bool(np.all(np.abs(displayed_changes) < 1e-8))
 
 
 def apply_units_to_transform(
