@@ -1088,3 +1088,55 @@ def test_read_limit_prefers_fewer_reads_on_a_close_call():
     assert reads.read_limit._settled == 4
     reads.run(tie, 1000)
     assert reads.read_limit._settled == 2
+
+
+class SteppedReads:
+    """Layers that all get a new request every ``step`` s, as while scrubbing.
+
+    A newer request replaces a waiting one, a layer reads one slice at a
+    time, and every read takes ``duration`` s, on a fake clock.
+    """
+
+    def __init__(self, layers: int, duration: float, step: float = 0.05):
+        self.now = 0.0
+        self.read_limit = _ReadLimit(8, clock=lambda: self.now)
+        self.layers, self.duration, self.step = layers, duration, step
+
+    def run(self, seconds: float) -> None:
+        waiting: list[int] = []
+        reading: set[int] = set()
+        finishes: list = []
+        next_step = 0.0
+        while next_step < seconds:
+            if finishes and finishes[0][0] <= next_step:
+                self.now, layer, read = heapq.heappop(finishes)
+                reading.discard(layer)
+                self.read_limit.finish(read)
+            else:
+                self.now = next_step
+                next_step += self.step
+                waiting += [i for i in range(self.layers) if i not in waiting]
+            while waiting and len(reading) < self.read_limit.limit:
+                layer = next(i for i in waiting if i not in reading)
+                waiting.remove(layer)
+                reading.add(layer)
+                read = self.read_limit.start(len(reading) + len(waiting))
+                heapq.heappush(
+                    finishes, (self.now + self.duration, layer, read)
+                )
+
+
+def test_read_limit_stays_at_one_read_when_reads_keep_up():
+    """Reads faster than the slider could only save milliseconds per step,
+    which no one sees, so more reads aren't worth their main-thread cost."""
+    reads = SteppedReads(layers=4, duration=0.005)
+    reads.run(30)
+    assert reads.read_limit._settled == 1
+
+
+def test_read_limit_rises_when_layers_miss_steps():
+    """With two reads, eight layers of 15 ms reads take 60 ms, longer than a
+    step, so each layer misses every other step. Four reads keep up."""
+    reads = SteppedReads(layers=8, duration=0.015)
+    reads.run(30)
+    assert reads.read_limit._settled >= 4

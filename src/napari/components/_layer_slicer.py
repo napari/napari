@@ -126,6 +126,13 @@ class _ReadLimit:
     turns, so both see the same part of the workload, and only reads that
     started with every slot busy and finished in their turn count.
 
+    When the smaller limit already keeps up, more reads only shorten the wait
+    within a step, by milliseconds nobody sees. Then the larger one must also
+    predict an age shorter by a frame. The smaller limit keeps up if the
+    reads in flight while the limit held, on average, fill its slots less
+    than ``KEEP``. That is measured outside comparisons, whose turns can
+    drain or fill the queue.
+
     A round of comparisons that changed the limit, or the first one, is
     followed by another after ``FIRST_PERIOD`` reads, so a choice made on
     unrepresentative reads, such as the first ones from cold storage, is
@@ -145,6 +152,8 @@ class _ReadLimit:
     MAX_WINDOW = 48
     CONFIDENCE = 1.0  # standard errors between the estimate and the threshold
     MIN_GAIN = 0.05  # relative age improvement more reads must bring
+    FRAME = 1 / 60  # least age improvement worth more reads if fewer keep up
+    KEEP = 0.75  # load per slot below which a limit keeps up with the reads
     SHIFT = 1.5  # change in read duration at the chosen limit that re-compares
     SHIFT_WINDOW = 32  # latest reads compared with all since the choice
     FIRST_PERIOD = 48  # completed reads before a new choice is compared again
@@ -174,11 +183,17 @@ class _ReadLimit:
         self._period = self.FIRST_PERIOD
         self._rounds_held = -1  # rounds that kept the limit, -1 before any
         self._round_from = self._settled
+        # Reads in flight over time since the last decision, and their mean
+        # while the limit held before the current round.
+        self._in_flight = self._elapsed = 0.0
+        self._last = self._clock()
+        self._work: float | None = None
         if max_reads > 1:
             self._compare(1 if self._settled < max_reads else -1)
 
     def start(self, layers: int) -> _Read:
         """Record a read starting while ``layers`` layers read or wait."""
+        self._account()
         self._active += 1
         self._busy = layers
         read = _Read(
@@ -203,6 +218,7 @@ class _ReadLimit:
 
     def finish(self, read: _Read) -> None:
         """Record a read finishing, and adjust the limit if it is time."""
+        self._account()
         self._active -= 1
         self._reads += 1
         if self._candidate is None:
@@ -234,6 +250,20 @@ class _ReadLimit:
             self._decide(None)
         if self._candidate is None:
             self._end_round()
+
+    def _account(self) -> None:
+        """Add the reads in flight since the last start or finish."""
+        now = self._clock()
+        self._in_flight += self._active * (now - self._last)
+        self._elapsed += now - self._last
+        self._last = now
+
+    def _keeps_up(self, limit: int) -> bool:
+        """Whether ``limit`` slots serve the reads with time to spare."""
+        work = self._work
+        if work is None and self._elapsed > 0:
+            work = self._in_flight / self._elapsed
+        return work is not None and work < self.KEEP * limit
 
     def _shift(self, read: _Read) -> int:
         """1 or -1 if reads at the chosen limit got clearly slower or faster.
@@ -273,7 +303,10 @@ class _ReadLimit:
         # Log of the smaller limit's display age over the larger one's, less
         # the gain the larger one must bring.
         smaller, larger = (age_a, age_b) if n < c else (age_b, age_a)
-        margin = math.log(smaller / larger) - math.log(1 + self.MIN_GAIN)
+        gain = 1 + self.MIN_GAIN
+        if self._keeps_up(min(n, c)):
+            gain = max(gain, (larger + self.FRAME) / larger)
+        margin = math.log(smaller / larger) - math.log(gain)
         # Standard error of the gain, from the relative spread of durations.
         spread = (
             variance(a) / mean_a**2 * (len(a) - 1)
@@ -315,6 +348,9 @@ class _ReadLimit:
         self._period = min(self.FIRST_PERIOD << self._rounds_held, self.PERIOD)
 
     def _compare(self, step: int) -> None:
+        if self._elapsed > 0:
+            self._work = self._in_flight / self._elapsed
+        self._in_flight = self._elapsed = 0.0
         self._candidate = self._neighbor(self._settled, step)
         self.limit = self._settled
         self._durations = {}
@@ -329,6 +365,7 @@ class _ReadLimit:
         self._turn += 1
         self.limit = n
         self._recent.clear()
+        self._in_flight = self._elapsed = 0.0
         if wins is None or c is None:
             return
         durations = self._durations.get(c if wins else n, ())
