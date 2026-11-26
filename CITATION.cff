@@ -522,6 +522,11 @@ authors:
   family-names: Park
   affiliation: Nexon Korea
   alias: jaesungkr
+- given-names: Kilian
+  family-names: Paul
+  affiliation: Max Planck Institute of Molecular Cell Biology and Genetics (MPI-CBG)
+  orcid: https://orcid.org/0009-0001-8067-6769
+  alias: Darlokt
 - given-names: Yann
   family-names: Pellegrini
   alias: Yann-P

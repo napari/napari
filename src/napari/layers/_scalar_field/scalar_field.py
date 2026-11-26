@@ -970,8 +970,8 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # are outside the range of supported by vispy, then data view is
         # rescaled to fit within the range.
         self._slice_input = response.slice_input
-        # this is the temporary patch
-        self.layer._transforms[0] = response.tile_to_data
-        #
         self.transforms = response.tile_to_data
         self._slice = response
+        # Observers of this change can inspect the plane or deliver another
+        # response. Publish the transform after installing its matching data.
+        self.layer._transforms[0] = response.tile_to_data

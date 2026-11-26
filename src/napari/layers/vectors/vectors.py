@@ -362,7 +362,7 @@ class Vectors(Layer):
                 )
                 self._edge._add(n_colors=adding)
 
-        self._update_dims()
+        self._refresh_indexed_data()
         self.events.data(value=self.data)
         self._reset_editable()
 
@@ -733,7 +733,7 @@ class Vectors(Layer):
             # calculate min vals for the vertices and pad with 0.5
             # the offset is needed to ensure that the top left corner of the
             # vectors corresponds to the top left corner of the thumbnail
-            de = self._extent_data
+            de = self._cached_extent_data
             offset = (
                 np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
             )[-2:]
