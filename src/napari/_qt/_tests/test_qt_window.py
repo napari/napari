@@ -7,6 +7,8 @@ from magicgui.widgets import Container
 from qtpy.QtCore import QEvent, QPoint
 from qtpy.QtGui import QHelpEvent, QImage
 from qtpy.QtWidgets import QToolTip, QWidget
+from superqt import QDoubleRangeSlider, QRangeSlider
+from superqt.sliders._range_style import MONTEREY_SLIDER_STYLES_FIX
 
 from napari._qt.qt_main_window import (
     Window,
@@ -287,3 +289,17 @@ def test_resolve_dock_area(
 def test_resolve_tabify(requested_tabify, default_tabify, expected_tabify):
     tabify = Window._resolve_tabify(requested_tabify, default_tabify)
     assert tabify is expected_tabify
+
+
+@pytest.mark.parametrize('SliderClass', [QRangeSlider, QDoubleRangeSlider])
+def test_dock_widget_range_slider_style(make_napari_viewer, SliderClass):
+    """Range sliders created before docking should inherit napari's QSS."""
+    viewer = make_napari_viewer()
+    slider = SliderClass()
+    slider._style._macpatch = True
+    slider.setStyleSheet(MONTEREY_SLIDER_STYLES_FIX)
+
+    viewer.window.add_dock_widget(slider, name='range-slider')
+
+    assert MONTEREY_SLIDER_STYLES_FIX not in slider.styleSheet()
+    assert not slider._style._macpatch

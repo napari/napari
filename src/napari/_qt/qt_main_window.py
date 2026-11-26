@@ -44,6 +44,8 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from superqt import QRangeSlider
+from superqt.sliders._range_style import MONTEREY_SLIDER_STYLES_FIX
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import create_context, get_context
@@ -1255,6 +1257,17 @@ class Window:
             )
 
         self._add_viewer_dock_widget(dock_widget, tabify=tabify, menu=menu)
+
+        # Standalone range sliders created before being docked receive
+        # superqt's macOS Monterey fallback stylesheet because QApplication has
+        # no stylesheet. Clear that patch once docked so napari's QSS applies.
+        for slider in dock_widget.findChildren(QRangeSlider):
+            qss = slider.styleSheet()
+            if MONTEREY_SLIDER_STYLES_FIX in qss:
+                slider._style._macpatch = False
+                slider.setStyleSheet(
+                    qss.replace(MONTEREY_SLIDER_STYLES_FIX, '')
+                )
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
