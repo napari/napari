@@ -322,4 +322,4 @@ def current_viewer() -> Viewer | None:
     except ImportError:
         return None
     else:
-        return _QtMainWindow.current_viewer()  # pyrefly: ignore[bad-return]
+        return _QtMainWindow.current_viewer()

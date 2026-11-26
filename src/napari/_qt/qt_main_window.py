@@ -134,6 +134,8 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
+        # `QtViewer.viewer` is a `ViewerModel`, keep the `Viewer` type here
+        self._viewer = viewer
         self._plugin_manager_dialog = None
         self._qt_viewer: QtViewer = QtViewer(
             viewer, show_welcome_screen=show_welcome_screen
@@ -274,9 +276,9 @@ class _QtMainWindow(QMainWindow):
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
-    def current_viewer(cls):
+    def current_viewer(cls) -> Viewer | None:
         window = cls.current()
-        return window._qt_viewer.viewer if window else None
+        return window._viewer if window else None
 
     def event(self, e: QEvent) -> bool:
         if (
