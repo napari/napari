@@ -44,6 +44,19 @@ def test_single_scale_request_keeps_data_after_replacement():
     assert response.thumbnail is response.image
 
 
+def test_pending_labels_edits_release_replaced_data():
+    layer = Labels(np.zeros((3, 20, 20), dtype=np.int32), visible=False)
+    old_data = weakref.ref(layer.data)
+    state = layer._slicing_state
+    request = state._make_slice_request(Dims(ndim=3))
+    state._set_unloaded_slice_id(request.id)
+    # A viewer can discard the response without installing it on a hidden layer.
+    del request
+    layer.data = np.ones((3, 20, 20), dtype=np.int32)
+    gc.collect()
+    assert old_data() is None
+
+
 class _RecordingArray:
     """Eager store that records indices and the threads of all reads.
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+import weakref
 from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
@@ -46,7 +47,10 @@ from napari.layers.labels._labels_utils import (
     get_dtype,
     interpolate_coordinates,
 )
-from napari.layers.labels._slice import _LabelsSliceRequest
+from napari.layers.labels._slice import (
+    _LabelsSliceRequest,
+    _PendingLabelsSlice,
+)
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
     _resize_to_thumbnail,
@@ -77,6 +81,8 @@ from napari.utils.status_messages import format_feature_value
 if TYPE_CHECKING:
     import pandas as pd
 
+    from napari.components.dims import Dims
+    from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
     from napari.types import Vector1D
 
 __all__ = ('Labels',)
@@ -364,6 +370,7 @@ class Labels(ScalarFieldBase):
     }
 
     _history_limit = 100
+    _slicing_state: _LabelsSlicingState
 
     def __init__(
         self,
@@ -1926,6 +1933,9 @@ class Labels(ScalarFieldBase):
         # this is the actual write-back.
         self.data[slice_key] = region_data  # pyrefly: ignore [unsupported-operation]
 
+        if self._slicing_state._defer_edit_refresh(slice_key, region_data):
+            return
+
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice
         self._refresh_caches_from_region(
@@ -2047,10 +2057,7 @@ class Labels(ScalarFieldBase):
         new_label : int
             The new label value that was painted. Used to optimize texture updates.
         """
-        # If the slice has not loaded yet (e.g. async slicing), the caches
-        # are placeholders; the pending slice load will pick up the painted
-        # data directly, so there is nothing to patch here.
-        if not self._slicing_state.loaded or self._slice.empty:
+        if self._slice.empty:
             return
 
         # Invariant: for numpy-backed data, both raw and view caches are
@@ -2223,6 +2230,9 @@ class Labels(ScalarFieldBase):
 
         # update the labels image
         self.data[indices] = value  # pyrefly: ignore [unsupported-operation]
+
+        if self._slicing_state._defer_edit_refresh():
+            return
 
         pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(
@@ -2418,6 +2428,100 @@ class Labels(ScalarFieldBase):
 class _LabelsSlicingState(ScalarFieldSlicingState):
     layer: Labels
     _slice_request_class = _LabelsSliceRequest
+    _slice_id_before_edit: int | None = None
+
+    def __init__(
+        self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
+    ) -> None:
+        # Outstanding requests by ID. A response can be shown even after a
+        # newer request, so each read keeps the edits made while it ran.
+        self._pending_slices: dict[int, _PendingLabelsSlice] = {}
+        super().__init__(layer, data, cache)
+
+    def _make_slice_request(self, dims: Dims) -> _LabelsSliceRequest:
+        request = super()._make_slice_request(dims)
+        assert isinstance(request, _LabelsSliceRequest)
+        # A discarded response may never reach this layer. Avoid keeping its
+        # backing array alive just to track a pending read.
+        try:
+            source = weakref.ref(request.data)
+        except TypeError:
+            pass  # This backend requires a full reread.
+        else:
+            self._pending_slices[request.id] = _PendingLabelsSlice(
+                request, source
+            )
+        return request
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        super()._update_loaded_slice_id(slice_id)
+        # Older responses are delivered, discarded or can no longer be shown.
+        for request_id in [i for i in self._pending_slices if i <= slice_id]:
+            del self._pending_slices[request_id]
+
+    def _defer_edit_refresh(
+        self,
+        key: tuple[slice, ...] | None = None,
+        region: np.ndarray | None = None,
+    ) -> bool:
+        """Account for a completed write before updating any display caches."""
+        if self.loaded:
+            return False
+        data = self.layer.data
+        for pending in self._pending_slices.values():
+            if (
+                not pending.read_started.is_set()
+                or pending.needs_reread
+                or pending.source() is not data
+            ):
+                continue  # A queued read will see the updated data.
+            pending.edited = True
+            if not pending.record_region(key, region):
+                # A full reread now covers this edit and any earlier regions.
+                pending.needs_reread = True
+        latest = self._pending_slices.get(self._last_slice_id)
+        if (
+            latest is None
+            or latest.source() is not data
+            or latest.read_started.is_set()
+        ):
+            self._slice_id_before_edit = self._last_slice_id
+        return True
+
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
+        # Edits from callbacks during conversion/delivery need a new read.
+        pending = self._pending_slices.pop(response.request_id, None)
+        if (
+            pending is not None
+            and pending.edited
+            and not pending.needs_reread
+            and pending.source() is self.layer.data
+            and not response.empty
+            and response.image is response.thumbnail
+            and response.image.raw.flags.writeable
+        ):
+            for key, pixels in pending.regions:
+                response.image.raw[key] = pixels
+            if response.request_id == self._slice_id_before_edit:
+                self._slice_id_before_edit = None
+        if (
+            response.request_id == self._slice_id_before_edit
+            and isinstance(self.layer.data, np.ndarray)
+            and np.shares_memory(response.image.raw, self.layer.data)
+        ):
+            # A shared plane includes all edits up to the conversion below.
+            self._slice_id_before_edit = None
+        super()._update_slice_response(response)
+        if (
+            response.empty
+            or response.request_id != self._slice_id_before_edit
+            or response.request_id != self._last_slice_id
+        ):
+            return
+        # The latest slice may have been copied before one or more edits.
+        self.layer.refresh(extent=False)
 
 
 class WrongSelectedLabelError(ValueError):

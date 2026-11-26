@@ -268,6 +268,234 @@ def test_async_slice_vectors_on_current_step_change(make_napari_viewer, qtbot):
 
 
 @pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('backend', ['zarr', 'numpy'])
+def test_async_labels_edits_after_slice_read(
+    make_napari_viewer, qtbot, backend
+):
+    viewer = make_napari_viewer()
+    shape = (5, 40, 40)
+    if backend == 'zarr':
+        zarr = pytest.importorskip('zarr')
+        data = zarr.zeros(shape=shape, chunks=(1, 40, 40), dtype='int32')
+    else:
+        data = np.zeros(shape, dtype=np.int32)
+    labels = viewer.add_labels(data)
+    labels.brush_size = 1
+    qtbot.waitUntil(lambda: labels.loaded)
+
+    # Let the worker finish reading the new plane before painting. Qt
+    # delivers its response once we return control to the event loop.
+    viewer.dims.set_current_step(0, 3)
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    assert not labels.loaded
+    reloads = []
+    labels.events.reload.connect(reloads.append)
+    labels.paint((3, 8, 8), 1)
+    labels.paint((3, 16, 16), 2, refresh=False)
+    labels.data_setitem(tuple(np.array([i]) for i in (3, 24, 24)), 3)
+
+    qtbot.waitUntil(lambda: labels.loaded)
+    np.testing.assert_array_equal(labels._slice.image.raw, data[3])
+    node = viewer.window._qt_viewer.canvas.layer_to_visual[labels].node
+    for i, value in [(8, 1), (16, 2), (24, 3)]:
+        assert data[3, i, i] == value
+        assert node._data[i, i] != node._data[0, 0]
+    assert len(reloads) == (1 if backend == 'zarr' else 0)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_labels_edits_before_and_after_read(make_napari_viewer, qtbot):
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    shape = (5, 32, 32)
+    slow_data = LockableData(np.zeros(shape))
+    image = viewer.add_image(slow_data, multiscale=False)
+    data = zarr.zeros(shape=shape, chunks=(1, 32, 32), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = 3
+    qtbot.waitUntil(lambda: labels.loaded and image.loaded)
+
+    reloads = []
+    # Keep the worker on the image until the indexed edit has been written.
+    with slow_data.lock:
+        image.refresh()
+        viewer.dims.set_current_step(0, 3)
+        labels.events.reload.connect(reloads.append)
+        labels.data_setitem(tuple(np.array([i]) for i in (3, 2, 2)), 1)
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    assert not labels.loaded
+
+    # Qt now holds a copy that predates these overlapping strokes. A stroke
+    # on another plane must not leak into the incoming plane.
+    labels.paint((3, 10, 10), 2)
+    labels.paint((3, 10, 11), 3)
+    labels.paint((2, 16, 16), 4)
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert not reloads
+    expected = data[3]
+    assert expected[2, 2] == 1
+    assert expected[10, 11] == 3
+    assert expected[16, 16] == 0
+    np.testing.assert_array_equal(labels._slice.image.raw, expected)
+    node = viewer.window._qt_viewer.canvas.layer_to_visual[labels].node
+    np.testing.assert_array_equal(
+        node._data, labels._raw_to_displayed(expected)
+    )
+
+
+@pytest.mark.parametrize('next_request', ['scroll', 'refresh'])
+@pytest.mark.usefixtures('_enable_async')
+def test_async_labels_stroke_on_plane_delivered_after_newer_request(
+    make_napari_viewer, qtbot, monkeypatch, next_request
+):
+    from napari.layers.labels._slice import _LabelsSliceRequest
+
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    data = zarr.zeros(shape=(5, 32, 32), chunks=(1, 32, 32), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = 3
+    qtbot.waitUntil(lambda: labels.loaded)
+
+    copied = threading.Event()
+    deliver = threading.Event()
+    read = _LabelsSliceRequest.__call__
+
+    def hold_first_response(request):
+        response = read(request)
+        if not copied.is_set():
+            copied.set()
+            deliver.wait(5)
+        return response
+
+    monkeypatch.setattr(_LabelsSliceRequest, '__call__', hold_first_response)
+    viewer.dims.set_current_step(0, 3)
+    assert copied.wait(5)
+    # Plane 3 was copied before this stroke, and a newer request follows
+    # before the copy is delivered.
+    labels.paint((3, 10, 10), 7)
+    if next_request == 'scroll':
+        viewer.dims.set_current_step(0, 4)
+    else:
+        labels.refresh()
+
+    shown = []
+    update = labels._slicing_state._update_slice_response
+
+    def record_plane_3(response):
+        update(response)
+        if response.slice_input.world_slice.point[0] == 3:
+            shown.append(int(labels._slice.image.raw[10, 10]))
+
+    monkeypatch.setattr(
+        labels._slicing_state, '_update_slice_response', record_plane_3
+    )
+    deliver.set()
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert data[3, 10, 10] == 7
+    # Without showing older reads, plane 3 is not delivered after scrolling.
+    assert shown or next_request == 'scroll'
+    assert all(value == 7 for value in shown)
+    assert not labels._slicing_state._pending_slices
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize(('brush_size', 'strokes'), [(151, 1), (1, 33)])
+def test_async_labels_repair_limit(
+    make_napari_viewer, qtbot, brush_size, strokes
+):
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    data = zarr.zeros(shape=(3, 192, 192), chunks=(1, 64, 64), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = brush_size
+    qtbot.waitUntil(lambda: labels.loaded)
+    labels.refresh()
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+
+    reloads = []
+    labels.events.reload.connect(reloads.append)
+    for i in range(strokes):
+        labels.paint((1, 96, 96 + i), 1)
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert len(reloads) == 1
+    assert data[1, 96, 96] == 1
+    np.testing.assert_array_equal(labels._slice.image.raw, data[1])
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize('backend', ['numpy', 'zarr'])
+def test_async_labels_paint_during_slice_delivery(
+    make_napari_viewer, qtbot, backend
+):
+    viewer = make_napari_viewer()
+    if backend == 'zarr':
+        data = pytest.importorskip('zarr').zeros(
+            shape=(3, 20, 20), dtype='int32'
+        )
+    else:
+        data = np.zeros((3, 20, 20), dtype=np.int32)
+    labels = viewer.add_labels(data)
+    qtbot.waitUntil(lambda: labels.loaded)
+    labels.brush_size = 1
+
+    def paint_once(event):
+        labels._transforms.events.changed.disconnect(paint_once)
+        labels.paint((1, 5, 5), 1)
+
+    # A transform callback can paint after the incoming raw plane has been
+    # converted into a separate texture array but before the layer is loaded.
+    labels._transforms.events.changed.connect(paint_once)
+    labels.refresh()
+    qtbot.waitUntil(lambda: labels.loaded)
+    node = viewer.window._qt_viewer.canvas.layer_to_visual[labels].node
+    assert labels.data[1, 5, 5] == 1
+    assert node._data[5, 5] != node._data[0, 0]
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_labels_batch_spans_slice_delivery(make_napari_viewer, qtbot):
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    data = zarr.zeros(shape=(20, 20), dtype='int32')
+    labels = viewer.add_labels(data)
+    labels.brush_size = 1
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    assert not labels.loaded
+
+    # The first slice is still waiting for Qt. Indexing the placeholder
+    # here would raise, and updating only the second pixel would lose the first.
+    labels.data_setitem((np.array([3]), np.array([3])), 1, refresh=False)
+    qtbot.waitUntil(lambda: labels.loaded)
+    labels.paint((10, 10), 2)
+    np.testing.assert_array_equal(labels._slice.image.raw, data[:])
+    node = viewer.window._qt_viewer.canvas.layer_to_visual[labels].node
+    assert node._data[3, 3] != node._data[0, 0]
+    assert node._data[10, 10] != node._data[0, 0]
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_async_labels_edit_then_scroll(make_napari_viewer, qtbot):
+    zarr = pytest.importorskip('zarr')
+    viewer = make_napari_viewer()
+    data = zarr.zeros(shape=(5, 20, 20), chunks=(1, 20, 20), dtype='int32')
+    labels = viewer.add_labels(data)
+    qtbot.waitUntil(lambda: labels.loaded)
+    labels.refresh()
+    viewer._layer_slicer.wait_until_idle(timeout=5)
+    reloads = []
+    labels.events.reload.connect(reloads.append)
+    labels.paint((2, 10, 10), 1)
+    viewer.dims.set_current_step(0, 3)
+    qtbot.waitUntil(lambda: labels.loaded)
+    np.testing.assert_array_equal(labels._slice.image.raw, data[3])
+    viewer.dims.set_current_step(0, 2)
+    qtbot.waitUntil(lambda: labels.loaded)
+    assert labels._slice.image.raw[10, 10] == 1
+    assert not reloads
+
+
+@pytest.mark.usefixtures('_enable_async')
 def test_async_slice_two_layers_shutdown(make_napari_viewer):
     """See https://github.com/napari/napari/issues/6685"""
     viewer = make_napari_viewer()
