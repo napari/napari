@@ -134,7 +134,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
-        # `QtViewer.viewer` is a `ViewerModel`, keep the `Viewer` type here
+        # used by `current_viewer` to return a `Viewer`
         self._viewer = viewer
         self._plugin_manager_dialog = None
         self._qt_viewer: QtViewer = QtViewer(
