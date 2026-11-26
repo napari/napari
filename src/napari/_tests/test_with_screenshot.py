@@ -306,7 +306,9 @@ def test_changing_image_attenuation(make_napari_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     mip_value = screenshot[center][0]
 
-    # zero attenuation (still attenuated!)
+    # Note that zero attenuation still looks attenuated because of sampling: MIP refines
+    # its search for the max, AMIP does not, so we see some 'attenuation' at
+    # 'zero attenuation' because of the sampling artifact
     viewer.layers[0].rendering = 'attenuated_mip'
     viewer.layers[0].attenuation = 0.0
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -316,8 +318,44 @@ def test_changing_image_attenuation(make_napari_viewer):
     viewer.layers[0].attenuation = 0.5
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     more_att_value = screenshot[center][0]
-    # Check that rendering has been attenuated
-    assert zero_att_value < more_att_value < mip_value
+
+    # Check that attenuated values are below mip values, note that the future test will be that
+    # more attenuation will result in a dimmer value than zero attenuation, but that is not true
+    # previously because of a quirk in the attenuation formula
+    assert more_att_value < mip_value
+    assert zero_att_value <= mip_value
+    # TODO: comment back in when future implementation is in place
+    # assert more_att_value < zero_att_value
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_image_attenuation_with_depth(make_napari_viewer):
+    """Test a bright slab gets dimmer the more dim voxels are in front of it."""
+    viewer = make_napari_viewer(show=True)
+    viewer.dims.ndisplay = 3
+
+    values = []
+
+    # loop creating 3 visualizations of a bright slab with dim voxels in front and
+    # in back of it, the more dim voxels in front, the more the bright slab is
+    # attenuated, so the peak value of the amip should be lower
+    for dim_depth in (5, 10, 15):
+        # bright slab 3 voxels thick, dim voxels on both sides of it
+        data = np.full((2 * dim_depth + 3, 10, 10), 50.0)
+        data[dim_depth : dim_depth + 3] = 255
+        viewer.layers.clear()
+        viewer.add_image(
+            data,
+            contrast_limits=[0, 255],
+            rendering='attenuated_mip',
+            attenuation=0.1,
+        )
+        screenshot = viewer.screenshot(canvas_only=True, flash=False)
+        height, width = screenshot.shape[:2]
+        values.append(screenshot[height // 2, width // 2, 0])
+
+    assert values[0] > values[1] > values[2]
 
 
 @skip_on_win_ci

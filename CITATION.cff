@@ -494,6 +494,10 @@ authors:
   family-names: Nikam
   alias: adityaanikam
   affiliation: Pune University
+- given-names: Brian
+  family-names: Northan
+  affiliation: True North Intelligent Algorithms
+  alias: bnorthan
 - given-names: Horst A.
   family-names: Obenhaus
   affiliation: Kavli Institute for Systems Neuroscience at NTNU, Trondheim, Norway
