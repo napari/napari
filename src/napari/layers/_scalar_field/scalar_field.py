@@ -952,18 +952,18 @@ class ScalarFieldSlicingState(_LayerSlicingState):
     ) -> _ThickNDSlice | _ThickNDAffineSlice:
         # Multiscale affine slicing is not yet implemented
         #
-        # The orthogonal (axis-aligned, so simple indexing can be used) 
-        # slicing path only renders the slice correctly if the 
+        # The orthogonal (axis-aligned, so simple indexing can be used)
+        # slicing path only renders the slice correctly if the
         # off-diagonal coefficients of the world_to_data linear matrix associated
         # to displayed and not-displayed axis are zero.
-        # - world_to_data.linear_matrix[not_displayed, displayed] == 0 (the `is_orthogonal` function): 
+        # - world_to_data.linear_matrix[not_displayed, displayed] == 0 (the `is_orthogonal` function):
         #   the world-space slicing planes are axis-aligned in data space -> simple indexing can be used
         # - world_to_data.linear_matrix[displayed, not_displayed] == 0 (the `is_static_during_slicing` function):
         #   the world position of those planes does not shift along the displayed world axes as slicing progresses.
-        # 
+        #
         # Sending slices that don't verify both these conditions in the non-orthogonal slicing
         # path is a temporary hack: if the first condition is satisfied but not the second,
-        # the orthogonal path should still be used but `tile_to_data` should carry the correct plane offset, 
+        # the orthogonal path should still be used but `tile_to_data` should carry the correct plane offset,
         # which would allow axis-aligned simple indexing and avoid the resampling done in the non-orthogonal path.
         if (
             self.layer.multiscale
