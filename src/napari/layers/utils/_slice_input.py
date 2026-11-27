@@ -132,6 +132,29 @@ class _ThickNDSlice(Generic[_T]):
 
 
 @dataclass(frozen=True)
+class _ThickNDAffineSlice:
+    """Sampling plan for a non-axis-aligned 2D slice through nD data."""
+
+    tile_to_data: Affine
+    # This is the shape of the rectangular array that contains the queried values from the raw data
+    # using the affine-transformed slice, which will be displayed in the canvas.
+    # Because it is a rectangular array, it has to contain NaNs values for the pixels linked to a query
+    # outside the data bounds.
+    shape: tuple[int, int]
+    # This is the pair of axis indices displayed in "world coordinates" i.e what the user
+    # sees on the 2D canvas. There might be a naming inaccuracy in the previous sentence (to be discussed).
+    plane_axes: tuple[int, int]
+    # Thickness margins in world coordinates for non-displayed dimensions.
+    # They are converted to data coordinates by tile_to_data during sampling.
+    margin_left: tuple[float, ...]
+    margin_right: tuple[float, ...]
+
+    @property
+    def ndim(self) -> int:
+        return self.tile_to_data.ndim
+
+
+@dataclass(frozen=True)
 class _SliceInput:
     """Encapsulates the input needed for slicing a layer.
 
@@ -218,24 +241,38 @@ class _SliceInput:
         return _ThickNDSlice.from_array(full_data_slice)
 
     def is_orthogonal(self, world_to_data: Affine) -> bool:
-        """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""
-        # Subspace spanned by non displayed dimensions
-        non_displayed_subspace = np.zeros(self.ndim)
-        for d in self.not_displayed:
-            non_displayed_subspace[d] = 1
-        # Map subspace through inverse transform, ignoring translation
-        world_to_data = Affine(
-            ndim=self.ndim,
-            linear_matrix=world_to_data.linear_matrix,
-            translate=None,
-        )
-        mapped_nd_subspace = world_to_data(non_displayed_subspace)
-        # Look at displayed subspace
-        displayed_mapped_subspace = (
-            mapped_nd_subspace[d] for d in self.displayed
-        )
-        # Check that displayed subspace is null
-        return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
+        """Returns True if this slice (in world-space) is axis-aligned in data-space,
+        False otherwise.
+        """
+        # Column k of the linear matrix is by definition the displacement in data space
+        # after a unit displacement along axis k in world coordinate.
+        # Here, we look at the displacements for all displayed axis.
+        data_steps = world_to_data.linear_matrix[:, self.displayed]
+
+        # We extract the data coordinates of those along the axis that are not displayed.
+        hidden_changes = data_steps[self.not_displayed, :]
+
+        # The criterion for orthogonality is that moving within the world-space slice should not
+        # create displacements along any data axis that is not displayed.
+        return bool(np.all(np.abs(hidden_changes) < 1e-8))
+
+    def is_static_during_slicing(self, world_to_data: Affine) -> bool:
+        """Returns True if the slice stays at a fixed position in the viewing plane
+        as slicing progresses. It returns False if it appears to drift within the
+        viewing plane.
+        """
+        # Column k of the linear matrix is by definition the displacement in data space
+        # after a unit displacement along axis k in world coordinates.
+        # Here, we look at the displacements for all axis not displayed, along which the
+        # slicing happens.
+        data_steps = world_to_data.linear_matrix[:, self.not_displayed]
+
+        # We extract the data coordinates of those along the axes that are displayed.
+        displayed_changes = data_steps[self.displayed, :]
+
+        # The criterion for being static is that moving in the slicing direction should not
+        # create displacements along any displayed data axis.
+        return bool(np.all(np.abs(displayed_changes) < 1e-8))
 
 
 def apply_units_to_transform(
@@ -276,3 +313,26 @@ def apply_units_to_transform(
         linear_matrix=new_linear,
         translate=data_to_world.translate,
     )
+
+
+def units_conversion_factors(
+    layer_units: Sequence[pint.Unit],
+    world_units: Sequence[pint.Unit] | None,
+) -> npt.NDArray:
+    """Return per-axis factors converting lengths from layer to world units,
+    e.g if the later is in um and the former in mm.
+    """
+    if world_units is None:
+        # World units can be None if layers have disagreeing units.
+        # Return 1s for now...
+        return np.ones(len(layer_units))
+
+    reg = pint.get_application_registry()
+
+    factors = [
+        reg.get_base_units(layer_unit)[0] / reg.get_base_units(world_unit)[0]
+        for world_unit, layer_unit in zip(
+            world_units[-len(layer_units) :], layer_units, strict=True
+        )
+    ]
+    return np.array(factors)
