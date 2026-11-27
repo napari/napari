@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import current_thread, main_thread
 
 import numpy as np
+import pint
 import pytest
 import xarray as xr
 
@@ -11,6 +12,7 @@ from napari.components import Dims
 from napari.layers import Image, Labels
 from napari.layers._scalar_field._slice import _ThumbnailPlaneCache
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers.utils._slice_input import units_conversion_factors
 from napari.settings import get_settings
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
@@ -881,3 +883,146 @@ class TestXarrayMetadataInit:
         np.testing.assert_allclose(layer.scale, [1.0, 1.0, 1.0])
         np.testing.assert_allclose(layer.translate, [15706.0, 100.0, 200.0])
         assert str(layer.units[0]) == 'day'
+
+
+def _dims_range(layer):
+    """Dims range covering the layer extent in world coordinates."""
+    return tuple(
+        (float(lo), float(hi), 1.0)
+        for lo, hi in layer._extent_world_augmented.T
+    )
+
+
+@pytest.mark.parametrize(
+    'kwargs, is_affine',
+    [
+        ({}, False),
+        ({'rotate': (0, 0, 30)}, False),
+        ({'rotate': (30, 0, 0)}, True),
+        ({'shear': (2, 0, 0)}, True),
+        # ths shear below creates a situation in which the slices are 
+        # axis-aligned but whose offset should appear to shift as slicing
+        # through z happens
+        ({'affine': np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.5, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )}, True),
+    ],
+    ids=[
+        'identity',
+        'in-plane-rotate',
+        'out-of-plane-rotate',
+        'shear-tilted-planes',
+        'shear-world-shift',
+    ],
+)
+def test_slice_response_is_affine_flag(kwargs, is_affine):
+    """Only tilted planes and planes whose world position shifts with the
+    slice point are resampled through the affine path; the orthogonal path
+    handles axis-aligned planes at a slider-independent world position."""
+    layer = Image(np.zeros((16, 32, 32)), **kwargs)
+    dims = Dims(ndim=3, ndisplay=2, range=_dims_range(layer))
+    response = layer._slicing_state._make_slice_request(dims)()
+    assert response.is_affine_slice is is_affine
+
+
+def _marker_data_position(response):
+    """Recover the data coordinates of the single bright voxel from a
+    slice response by (i) extracting it subpixel position as the centroid of
+    the bright pixels, and (ii) mapping the centroid back through the 
+    response's tile_to_data transform.
+    """
+    view = np.asarray(response.image.view)
+    view_finite = np.where(np.isfinite(view), view, 0)
+    mask = view_finite > 0
+    rows, cols = np.nonzero(mask)
+    weights = view_finite[mask]
+    position = np.array(
+        [np.average(rows, weights=weights), np.average(cols, weights=weights)]
+    )
+    full = np.zeros(response.slice_input.ndim)
+    full[response.slice_input.displayed] = position
+    recovered = response.tile_to_data(full)
+    return np.array([recovered[d] for d in response.slice_input.displayed])
+
+
+@pytest.mark.parametrize(
+    'projection_mode, margins',
+    [('none', 0.0), ('max', 2.5), ('mean', 2.5)],
+)
+def test_affine_slice_resolves_marker_data_position(projection_mode, margins):
+    """A single bright voxel is sampled at its own data position: the
+    intensity centroid of its blob in the slice, mapped back through
+    tile_to_data, recovers the voxel coordinates."""
+    data = np.zeros((16, 64, 64), dtype=np.float32)
+    marker = (8, 32, 32)
+    data[marker] = 1
+    layer = Image(
+        data,
+        rotate=(30, 0, 0),
+        projection_mode=projection_mode,
+        interpolation2d='linear',
+    )
+    dims = Dims(ndim=3, ndisplay=2, range=_dims_range(layer))
+    dims.set_point(0, layer._data_to_world(marker)[0])
+    if margins:
+        dims.margin_left = (margins,) * layer.ndim
+        dims.margin_right = (margins,) * layer.ndim
+
+    response = layer._slicing_state._make_slice_request(dims)()
+
+    assert response.is_affine_slice
+    displayed = response.slice_input.displayed
+    np.testing.assert_allclose(
+        _marker_data_position(response),
+        [marker[d] for d in displayed],
+        atol=0.1, #within a tenth of a pixel
+        rtol=0
+    )
+
+
+def test_affine_slice_units_invariance():
+    """The same physical scene slices identically regardless of the units it
+    is expressed in."""
+    # "weird" shape to make test slightly more general
+    data = np.zeros((31, 41, 59), dtype=np.float32)
+    marker_position_in_data = (15, 30, 30)
+    data[marker_position_in_data] = 1
+    layer = Image(data, rotate=(10, 20, 30), interpolation2d='linear')
+    layer.units = ('micrometer',) * 3
+    marker_position_in_world = layer._data_to_world(
+        np.array(marker_position_in_data, dtype=np.float32)
+    )
+    reg = pint.get_application_registry()
+    responses = []
+    for dims_units in ((reg.micrometer,) * 3, (reg.millimeter,) * 3):
+        # mimics what is done in _make_sampling_plane
+        factors = units_conversion_factors(layer.units, dims_units)
+        dims = Dims(
+            ndim=3,
+            ndisplay=2,
+            range=tuple(
+                (float(lo * f), float(hi * f), 1.0)
+                for (lo, hi), f in zip(layer._extent_world_augmented.T, factors)
+            ),
+            units=dims_units,
+            point=tuple(marker_position_in_world * factors),
+        )
+        response = layer._slicing_state._make_slice_request(dims)()
+        assert response.is_affine_slice
+        responses.append(response)
+
+    # testing for this condition using the "weird" shape suggested 
+    # introducting the epsilon in the ceil operation in _make_sampling_plane
+    assert responses[0].image.view.shape == responses[1].image.view.shape
+
+    np.testing.assert_allclose(
+        responses[0].image.view,
+        responses[1].image.view,
+        atol=1e-6,
+        rtol=0
+    )
