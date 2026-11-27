@@ -19,9 +19,9 @@ def _slice_input(ndim=3, ndisplay=2):
 
 
 def _rotation_matrix(angle_deg, axis0, axis1):
-    angle = angle_deg/180*np.pi
+    angle = angle_deg / 180 * np.pi
     cos, sin = np.cos(angle), np.sin(angle)
-    matrix = np.zeros((3,3))
+    matrix = np.zeros((3, 3))
     matrix[axis0, axis0] = cos
     matrix[axis0, axis1] = -sin
     matrix[axis1, axis0] = sin

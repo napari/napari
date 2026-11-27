@@ -900,17 +900,22 @@ def _dims_range(layer):
         ({'rotate': (0, 0, 30)}, False),
         ({'rotate': (30, 0, 0)}, True),
         ({'shear': (2, 0, 0)}, True),
-        # ths shear below creates a situation in which the slices are 
+        # ths shear below creates a situation in which the slices are
         # axis-aligned but whose offset should appear to shift as slicing
         # through z happens
-        ({'affine': np.array(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.5, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        )}, True),
+        (
+            {
+                'affine': np.array(
+                    [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.5, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0],
+                    ]
+                )
+            },
+            True,
+        ),
     ],
     ids=[
         'identity',
@@ -933,7 +938,7 @@ def test_slice_response_is_affine_flag(kwargs, is_affine):
 def _marker_data_position(response):
     """Recover the data coordinates of the single bright voxel from a
     slice response by (i) extracting it subpixel position as the centroid of
-    the bright pixels, and (ii) mapping the centroid back through the 
+    the bright pixels, and (ii) mapping the centroid back through the
     response's tile_to_data transform.
     """
     view = np.asarray(response.image.view)
@@ -980,8 +985,8 @@ def test_affine_slice_resolves_marker_data_position(projection_mode, margins):
     np.testing.assert_allclose(
         _marker_data_position(response),
         [marker[d] for d in displayed],
-        atol=0.1, #within a tenth of a pixel
-        rtol=0
+        atol=0.1,  # within a tenth of a pixel
+        rtol=0,
     )
 
 
@@ -1007,7 +1012,9 @@ def test_affine_slice_units_invariance():
             ndisplay=2,
             range=tuple(
                 (float(lo * f), float(hi * f), 1.0)
-                for (lo, hi), f in zip(layer._extent_world_augmented.T, factors)
+                for (lo, hi), f in zip(
+                    layer._extent_world_augmented.T, factors
+                )
             ),
             units=dims_units,
             point=tuple(marker_position_in_world * factors),
@@ -1016,13 +1023,10 @@ def test_affine_slice_units_invariance():
         assert response.is_affine_slice
         responses.append(response)
 
-    # testing for this condition using the "weird" shape suggested 
+    # testing for this condition using the "weird" shape suggested
     # introducting the epsilon in the ceil operation in _make_sampling_plane
     assert responses[0].image.view.shape == responses[1].image.view.shape
 
     np.testing.assert_allclose(
-        responses[0].image.view,
-        responses[1].image.view,
-        atol=1e-6,
-        rtol=0
+        responses[0].image.view, responses[1].image.view, atol=1e-6, rtol=0
     )

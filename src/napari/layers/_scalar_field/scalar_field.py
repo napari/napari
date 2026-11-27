@@ -1004,7 +1004,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         displayed_density = 1.0 / displayed_step_world
 
         # epsilon helps in preventing floating point noise from making the ceil
-        # operation unstable: a span that is an exact integer number of steps in 
+        # operation unstable: a span that is an exact integer number of steps in
         # one set of units can compute as slightly above the integer in another
         # (e.g. um vs mm), which would add an extra sample column.
         epsilon = 1e-8
