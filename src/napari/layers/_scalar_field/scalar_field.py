@@ -1004,14 +1004,16 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         displayed_density = 1.0 / displayed_step_world
 
         # the robust ceil helps in preventing floating point noise from making the ceil
-        # operation unstable: a span that is an exact integer number of steps in 
+        # operation unstable: a span that is an exact integer number of steps in
         # one set of units can compute as slightly above/below the integer in another
         # (e.g. um vs mm), which would add an extra sample column.
         def robust_ceil(x: np.ndarray, rtol: float = 1e-9) -> np.ndarray:
-            """If x is within float noise of an integer, return that integer, 
+            """If x is within float noise of an integer, return that integer,
             otherwise return ceil(x)."""
             nearest = np.round(x)
-            close = np.abs(x - nearest) <= rtol * np.maximum(1.0, np.abs(nearest))
+            close = np.abs(x - nearest) <= rtol * np.maximum(
+                1.0, np.abs(nearest)
+            )
             return np.where(close, nearest, np.ceil(x)).astype(int)
 
         span_in_samples = robust_ceil(span_world * displayed_density) + 1
