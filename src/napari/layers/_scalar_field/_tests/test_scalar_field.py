@@ -990,9 +990,9 @@ def test_affine_slice_units_invariance():
     is expressed in."""
     # "weird" shape to make test slightly more general
     data = np.zeros((31, 41, 59), dtype=np.float32)
-    marker_position_in_data = (15, 30, 30)
+    marker_position_in_data = (16, 32, 32)
     data[marker_position_in_data] = 1
-    layer = Image(data, rotate=(10, 20, 30), interpolation2d='linear')
+    layer = Image(data, rotate=(30, 0, 0), interpolation2d='linear')
     layer.units = ('micrometer',) * 3
     marker_position_in_world = layer._data_to_world(
         np.array(marker_position_in_data, dtype=np.float32)
