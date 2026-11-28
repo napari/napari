@@ -36,7 +36,7 @@ General rendering flow:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import (
@@ -96,7 +96,7 @@ def _layer_list_model(model: QAbstractItemModel | None) -> QtLayerListModel:
     return model
 
 
-def _guess_theme(option: QStyleOptionViewItem) -> str:
+def _guess_theme(option: QStyleOptionViewItem) -> Literal['dark', 'light']:
     """Guess the theme (``'dark'`` or ``'light'``) from the palette."""
     palette: QPalette = option.palette  # pyrefly: ignore[bad-assignment]
     bg = palette.color(QPalette.ColorRole.Window).red()
@@ -178,8 +178,8 @@ class LayerDelegate(QStyledItemDelegate):
             return
         option.icon = icon.colored(theme=_guess_theme(option))  # pyrefly: ignore[bad-assignment]
         option.decorationSize = QSize(18, 18)  # pyrefly: ignore[bad-assignment]
-        option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore[bad-assignment]
         # put icon on the right
+        option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore[bad-assignment]
         option.features |= QStyleOptionViewItem.ViewItemFeature.HasDecoration  # pyrefly: ignore[bad-assignment, unsupported-operation]
 
     def _paint_loading(
@@ -247,7 +247,6 @@ class LayerDelegate(QStyledItemDelegate):
 
     def _lock_icon_rect(self, option: QStyleOptionViewItem) -> QRect:
         """Return the QRect for the lock icon."""
-
         rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
         icon_size = 16
         type_icon_reserved = 28
@@ -401,7 +400,8 @@ class LayerDelegate(QStyledItemDelegate):
         parent: QWidget | None,
     ) -> None:
         """Show the layerlist context menu.
-        To add a new item to the menu, update the _LAYER_ACTIONS dict.
+        To add a new item to the menu, update the LAYERLIST_CONTEXT_ACTIONS
+        list (or Q_LAYERLIST_CONTEXT_ACTIONS for actions that need Qt).
         """
         menu = self._context_menu
         if menu is None:
