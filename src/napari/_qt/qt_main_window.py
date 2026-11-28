@@ -100,6 +100,7 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
     from napari._qt.widgets.qt_viewer_tour import GuidedTour
+    from napari.types import ScreenshotArray
     from napari.viewer import Viewer
 
 _sentinel = object()
@@ -134,7 +135,6 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
-        # used by `current_viewer` to return a `Viewer`
         self._viewer = viewer
         self._plugin_manager_dialog = None
         self._qt_viewer: QtViewer = QtViewer(
@@ -1758,7 +1758,7 @@ class Window:
         path: str | None = None,
         scale: float = 1,
         flash=True,
-    ) -> np.ndarray:
+    ) -> ScreenshotArray:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
@@ -1791,7 +1791,7 @@ class Window:
         rois: list[np.ndarray],
         paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
-    ):
+    ) -> list[ScreenshotArray]:
         """Export the given rectangular rois to specified file paths.
 
         For each shape, moves the camera to the center of the shape
@@ -1802,7 +1802,7 @@ class Window:
 
         Parameters
         ----------
-        rois: list[np.ndarray]
+        rois: list of np.ndarray
             A list of arrays  with each being of shape (4, 2) representing
             a rectangular roi.
         paths: str, Path, sequence of str or Path, optional

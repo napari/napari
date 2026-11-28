@@ -39,6 +39,9 @@ class Viewer(ViewerModel):
         Dimension names. By default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. By default True.
+    show_welcome_screen : bool, optional
+        Whether to show the welcome screen when no layers are present. By
+        default True.
     """
 
     _window: Window

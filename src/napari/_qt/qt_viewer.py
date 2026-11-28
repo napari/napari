@@ -80,6 +80,7 @@ if TYPE_CHECKING:
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari._vispy.layers.base import VispyBaseLayer
     from napari.components import ViewerModel
+    from napari.types import ScreenshotArray
     from napari.utils.events import Event
 
 _LayerTypeName = Literal[
@@ -1435,7 +1436,7 @@ class QtViewer(QSplitter):
         rois: list[np.ndarray],
         paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
-    ) -> list[np.ndarray]:
+    ) -> list[ScreenshotArray]:
         """Export the given rectangular rois to specified file paths.
 
         For each shape, moves the camera to the center of the shape
@@ -1446,7 +1447,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        rois: list[np.ndarray]
+        rois: list of np.ndarray
             A list of arrays  with each being of shape (4, 2) representing
             a rectangular roi.
         paths: str, Path, sequence of str or Path, optional
@@ -1524,7 +1525,7 @@ class QtViewer(QSplitter):
         path: str | None = None,
         scale: float = 1,
         flash: bool = True,
-    ) -> np.ndarray:
+    ) -> ScreenshotArray:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
