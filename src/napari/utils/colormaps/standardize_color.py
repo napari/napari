@@ -377,7 +377,7 @@ def get_color_namelist() -> list[str]:
 
     Returns
     -------
-    list[str]
+    list of str
         All the color names supported by napari.
     """
     return get_color_names()

@@ -216,7 +216,7 @@ def _all_rgb() -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.uint8]]:
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)
     r, g, b = np.meshgrid(base, base, base, indexing='ij')
-    return np.stack((r, g, b), axis=-1).reshape((-1, 3))  # pyrefly: ignore[bad-return]
+    return np.reshape(np.stack((r, g, b), axis=-1), (-1, 3))
 
 
 # The following values were precomputed and stored as constants
@@ -372,7 +372,9 @@ def low_discrepancy_image(
 
 
 def _low_discrepancy(
-    dim: int, n: int, seed: float | npt.NDArray[np.floating] = 0.5
+    dim: Literal[1, 2, 3],
+    n: int,
+    seed: float | npt.NDArray[np.floating] = 0.5,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """Generate a 1d, 2d, or 3d low discrepancy sequence of coordinates.
 
@@ -481,6 +483,9 @@ def label_colormap(
     seed : float, optional
         The seed for the random color generator.
         Effective range is [0,1.0), as only the decimals are used.
+    background_value : int, optional
+        Which value should be treated as a background
+        and mapped to transparent color.
 
     Returns
     -------

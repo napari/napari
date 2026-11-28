@@ -11,7 +11,6 @@ from typing import (
     Literal,
     Self,
     TypeAlias,
-    cast,
     overload,
 )
 from warnings import warn
@@ -119,9 +118,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array = Field(
-        default_factory=lambda: cast(Array, []), validate_default=True
-    )
+    controls: Array = Field(default_factory=list, validate_default=True)
     nan_color: ColorValue = ColorValue('transparent')
     high_color: ColorValue | None = None
     low_color: ColorValue | None = None
@@ -277,8 +274,8 @@ class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
     background_value: int = 0
-    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(  # pyrefly: ignore [bad-override]
-        ColormapInterpolationMode.ZERO, frozen=True
+    interpolation: Literal[ColormapInterpolationMode.ZERO] = (
+        ColormapInterpolationMode.ZERO
     )
     _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
         default_factory=_RebuildableCache
@@ -577,7 +574,7 @@ class DirectLabelColormap(LabelColormapBase):
 
         Returns
         -------
-        res : (default)dict[int | None, np.ndarray[float]]
+        res : (default)dict of {int or None : np.ndarray of float}
             A properly-formatted dictionary mapping labels to RGBA arrays.
         """
         if not isinstance(v, defaultdict) and None not in v:
@@ -691,6 +688,9 @@ class DirectLabelColormap(LabelColormapBase):
         values : np.ndarray
             Values to be mapped. It need to be already cast using
             cast_labels_to_minimum_type_auto
+        apply_selection : bool
+            If True and ``use_selection`` is set, only the selected label
+            is mapped to its color and all others are transparent.
 
         Returns
         -------
@@ -735,9 +735,9 @@ class DirectLabelColormap(LabelColormapBase):
 
         Returns
         -------
-        Dict[Optional[int], int]
+        dict of {int or None : int}
             Mapping from original values to minimum values set.
-        Dict[int, np.ndarray]
+        dict of {int : np.ndarray}
             Mapping from new values to colors.
 
         """
@@ -942,14 +942,14 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     Parameters
     ----------
-    data : np.ndarray | np.integer
+    data : np.ndarray or np.integer
         Labels data to be converted.
     colormap : CyclicLabelColormap
         Colormap used to display the labels data.
 
     Returns
     -------
-    np.ndarray | np.integer
+    np.ndarray or np.integer
         Converted labels data.
     """
     original_shape = np.shape(data)
@@ -1018,14 +1018,14 @@ def _cast_labels_data_to_texture_dtype_direct(
 
     Parameters
     ----------
-    data : np.ndarray | np.integer
+    data : np.ndarray or np.integer
         Labels data to be converted.
     direct_colormap : DirectLabelColormap
         Colormap used to display the labels data.
 
     Returns
     -------
-    np.ndarray | np.integer
+    np.ndarray or np.integer
         Converted labels data.
     """
     data = _convert_small_ints_to_unsigned(data)
@@ -1103,13 +1103,13 @@ def _normalize_label_colormap(
 
     Parameters
     ----------
-    any_colormap_like : Sequence[color], MutableMapping[int, color], ...
+    any_colormap_like : sequence of color, mutable mapping of {int : color}, ...
         An object that can be interpreted as a LabelColormap, including a
         LabelColormap directly.
 
     Returns
     -------
-    CyclicLabelColormap | DirectLabelColormap
+    CyclicLabelColormap or DirectLabelColormap
         The computed LabelColormap object.
     """
     if isinstance(

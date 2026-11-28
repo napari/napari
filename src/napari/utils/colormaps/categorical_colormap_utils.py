@@ -4,12 +4,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Self, TypeAlias
 
 import numpy as np
+import numpy.typing as npt
 from pydantic_core import core_schema
+
+from napari.utils.color import ColorValueParam
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
 
-    import numpy.typing as npt
     from pydantic import GetCoreSchemaHandler
 
 
@@ -84,7 +86,11 @@ class ColorCycle:
 # inputs accepted by ColorCycle.validate_type, defined after the class so its
 # name can be used directly instead of as a quoted forward reference
 ValidColorCycleArg: TypeAlias = (
-    ColorCycle | dict[str, Any] | str | list | np.ndarray
+    ColorCycle
+    | dict[str, Any]
+    | str
+    | list[ColorValueParam]
+    | npt.NDArray[Any]
 )
 
 
