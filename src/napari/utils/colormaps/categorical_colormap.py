@@ -1,9 +1,11 @@
-from typing import Any
+from collections.abc import Hashable
+from typing import Any, TypeAlias
 
 import numpy as np
+import numpy.typing as npt
 from pydantic import Field, field_serializer, model_validator
 
-from napari.utils.color import ColorValue
+from napari.utils.color import ColorValue, ColorValueParam
 from napari.utils.colormaps.categorical_colormap_utils import (
     ColorCycle,
     compare_colormap_dicts,
@@ -67,7 +69,7 @@ class CategoricalColormap(EventedModel):
 
     @model_validator(mode='before')
     @classmethod
-    def _validate_args(cls, values):
+    def _validate_args(cls, values: Any) -> dict[str, Any]:
         if isinstance(values, dict):
             if ('colormap' in values) or ('fallback_color' in values):
                 if 'colormap' in values:
@@ -97,7 +99,7 @@ class CategoricalColormap(EventedModel):
 
         return values
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, CategoricalColormap)
             and compare_colormap_dicts(self.colormap, other.colormap)
@@ -107,16 +109,30 @@ class CategoricalColormap(EventedModel):
         )
 
     @field_serializer('colormap', when_used='json')
-    def _serialize_colormap(self, colormap):
+    def _serialize_colormap(
+        self, colormap: dict[Hashable, ColorValue]
+    ) -> dict[Hashable, list[float]]:
         return {
             k: v.tolist() if isinstance(v, np.ndarray) else v
             for k, v in colormap.items()
         }
 
     @field_serializer('fallback_color', when_used='json')
-    def _serialize_fallback_color(self, fallback_color):
+    def _serialize_fallback_color(
+        self, fallback_color: ColorCycle
+    ) -> dict[str, Any]:
         return {
             'values': fallback_color.values.tolist()
             if isinstance(fallback_color.values, np.ndarray)
             else fallback_color.values,
         }
+
+
+# inputs accepted for a CategoricalColormap, defined after the class it uses
+# (see ValidColorCycleArg in categorical_colormap_utils for why)
+ValidCategoricalColormapArg: TypeAlias = (
+    CategoricalColormap
+    | dict[Any, Any]
+    | list[ColorValueParam]
+    | npt.NDArray[Any]
+)

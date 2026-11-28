@@ -116,6 +116,8 @@ invalid_colors = [
     (34, 342, 2334, 4343, 32, 0.1, -1),
     np.array([[1, 1, 1, 1, 1]]),
     np.array([[[0, 1, 1, 1]]]),
+    [True, False, True, False],
+    [1 + 2j, 0, 0, 1],
     ColorArray(['r', 'r']),
     Color('red'),
     (REDARR, GREENARR),
