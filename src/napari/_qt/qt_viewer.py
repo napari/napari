@@ -80,6 +80,7 @@ if TYPE_CHECKING:
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari._vispy.layers.base import VispyBaseLayer
     from napari.components import ViewerModel
+    from napari.types import ScreenshotArray
     from napari.utils.events import Event
 
 _LayerTypeName = Literal[
@@ -1433,9 +1434,9 @@ class QtViewer(QSplitter):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
-    ) -> list[np.ndarray]:
+    ) -> list[ScreenshotArray]:
         """Export the given rectangular rois to specified file paths.
 
         For each shape, moves the camera to the center of the shape
@@ -1446,10 +1447,10 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        rois: list[np.ndarray]
+        rois: list of np.ndarray
             A list of arrays  with each being of shape (4, 2) representing
             a rectangular roi.
-        paths: str, Path, list[str, Path], optional
+        paths: str, Path, sequence of str or Path, optional
             Where to save the rois. If a string or a Path, a directory will
             be created if it does not exist yet and screenshots will be
             saved with filename `roi_{n}.png` where n is the nth roi. If
@@ -1475,7 +1476,7 @@ class QtViewer(QSplitter):
             )
         if (
             paths is not None
-            and isinstance(paths, list)
+            and not isinstance(paths, str | Path)
             and len(paths) != len(rois)
         ):
             raise ValueError(
@@ -1524,7 +1525,7 @@ class QtViewer(QSplitter):
         path: str | None = None,
         scale: float = 1,
         flash: bool = True,
-    ) -> np.ndarray:
+    ) -> ScreenshotArray:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view

@@ -100,6 +100,7 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
     from napari._qt.widgets.qt_viewer_tour import GuidedTour
+    from napari.types import ScreenshotArray
     from napari.viewer import Viewer
 
 _sentinel = object()
@@ -136,6 +137,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
+        self._viewer = viewer
         self._plugin_manager_dialog = None
         self._qt_viewer: QtViewer = QtViewer(
             viewer, show_welcome_screen=show_welcome_screen
@@ -277,9 +279,9 @@ class _QtMainWindow(QMainWindow):
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
-    def current_viewer(cls):
+    def current_viewer(cls) -> Viewer | None:
         window = cls.current()
-        return window._qt_viewer.viewer if window else None
+        return window._viewer if window else None
 
     def event(self, e: QEvent) -> bool:
         if (
@@ -1765,7 +1767,7 @@ class Window:
         path: str | None = None,
         scale: float = 1,
         flash=True,
-    ) -> np.ndarray:
+    ) -> ScreenshotArray:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
@@ -1796,9 +1798,9 @@ class Window:
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: str | Path | Sequence[str | Path] | None = None,
         scale: float = 1.0,
-    ):
+    ) -> list[ScreenshotArray]:
         """Export the given rectangular rois to specified file paths.
 
         For each shape, moves the camera to the center of the shape
@@ -1809,10 +1811,10 @@ class Window:
 
         Parameters
         ----------
-        rois: list[np.ndarray]
+        rois: list of np.ndarray
             A list of arrays  with each being of shape (4, 2) representing
             a rectangular roi.
-        paths: str, Path, list[str, Path], optional
+        paths: str, Path, sequence of str or Path, optional
             Where to save the rois. If a string or a Path, a directory will
             be created if it does not exist yet and screenshots will be
             saved with filename `roi_{n}.png` where n is the nth roi. If

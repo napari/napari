@@ -6,7 +6,7 @@ This module provides the `imshow` function.
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -129,7 +129,7 @@ def imshow(
     visible: bool = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
-    ndisplay: int | None = ...,
+    ndisplay: Literal[2, 3] | None = ...,
     order: Sequence[int] | None = ...,
     show: bool = ...,
 ) -> tuple[Viewer, Image]: ...
@@ -174,7 +174,7 @@ def imshow(
     visible: bool | Sequence[bool] = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
-    ndisplay: int | None = ...,
+    ndisplay: Literal[2, 3] | None = ...,
     order: Sequence[int] | None = ...,
     show: bool = ...,
 ) -> tuple[Viewer, tuple[Image, ...]]: ...
@@ -218,7 +218,7 @@ def imshow(
     visible: bool | Sequence[bool] = True,
     viewer: Viewer | None = None,
     title: str = 'napari',
-    ndisplay: int | None = None,
+    ndisplay: Literal[2, 3] | None = None,
     order: Sequence[int] | None = None,
     show: bool = True,
 ) -> tuple[Viewer, Image | tuple[Image, ...]]:
@@ -350,7 +350,7 @@ def imshow(
     viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.
-    ndisplay : {2, 3}, optional
+    ndisplay : {2, 3} or None, optional
         Number of displayed dimensions.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
